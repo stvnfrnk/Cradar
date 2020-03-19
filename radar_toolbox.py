@@ -1,0 +1,454 @@
+
+
+
+################################
+# Calculate True Elevation
+# from a cresis radar .mat file
+################################
+
+def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='narrowband'):
+
+    
+    '''
+    
+        in_path         = path with segment folders with twt matfiles
+        out_path        = path with segment folders where to save elevation matfiles
+        segment         = cresis segment
+        
+        region          = Antarctica or Greenland, this is relevant for the reprojection
+                          of the coordinates (lon, lat to X,Y)
+                          EPSG: 3413 for Greenland
+                          EPSG: 3031 for Antarctica
+                      
+        speed_of_ice    = Usually 1.689 for e=3.15, but it can be changed
+
+        setting         = 'narrowband' or 'wideband'
+    
+    
+    ''' 
+        
+        
+    import h5py                 # for newer .mat (usually cresis matfiles)
+    import scipy.io             # for older .mat (usually self-output matfiles)
+    import numpy as np
+    import pandas as pd
+    import glob, os
+    import pyproj
+    import geopy.distance
+    
+    
+    speed_of_light = 2.99792458e8
+    
+    #print('===> Processing File: __ {}'.format(file))
+    print('')
+    
+    if file == '':
+        print('Specify a file')
+        exit()
+    else:
+        print('Filename: {}'.format(file))
+
+    if region == '':
+        print('Specify a region (Greenland or Antarctica)')
+        exit()
+    else:
+        print('Region: {}'.format(region))
+
+    if in_path == '':
+        in_path = os.getcwd()
+        print('No in_path defined, setting cwd as in_path')
+
+    if out_path == '':
+        out_path = os.getcwd()
+        print('No out_path defined, setting cwd as out_path')
+
+        
+    
+    
+    #input_file = in_path + '/' + segment + '/' + filename
+    #out_folder = out_path + '/' + segment
+    
+   
+
+    if not os.path.exists(out_path):
+            os.mkdir(out_path)
+            
+    #for file in sorted(glob.glob(input_file)):
+
+    # don't process Data_img_... files      
+    if 'img' not in file:
+        # process only not already converted files
+        if not file.endswith('elevation.mat'):
+            print('')
+            print('Calculating true elevation for: {}'.format(file))
+        
+
+            # depending on the .mat file version
+            # either scipy.io (older versions) or h5py (newer versions)
+            # will be used to load the file        
+            try:
+                mat     = scipy.io.loadmat(file)
+                reader  = 'scipy'
+            except NotImplementedError:
+                mat     = h5py.File(file)
+                reader  = 'h5py'
+                
+        
+            # loading with scipy.io
+            if reader == 'scipy':   
+                print('Using scipy.io to load matfile')
+                
+                df_meta               = pd.DataFrame(np.array(mat['GPS_time'])).T                 
+                df_meta['Longitude']  = pd.DataFrame(np.array(mat['Longitude'])).T   
+                df_meta['Latitude']   = pd.DataFrame(np.array(mat['Latitude'])).T     
+                df_meta['Elevation']  = pd.DataFrame(np.array(mat['Elevation'])).T   
+                df_meta['Filename']   = file
+                df_meta.index.name    = 'index'
+                df_meta.columns       = ['GPS_time', 'Longitude', 'Latitude', \
+                                         'Aircraft_Elevation', 'Filename']
+
+                df      = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+                surf    = np.array(mat['Surface']).T # array with the twt of the surface reflection
+
+                if mat['Time'].shape[0] == 1:
+                    twt     = np.array(mat['Time']).T # array with the twt (y-axis)
+
+                if mat['Time'].shape[0] > 1:
+                    twt     = np.array(mat['Time']) # array with the twt (y-axis)
+
+                else:
+                    print('problem...')
+                    pass
+
+                elev    = np.array(mat['Elevation']).T # array with the aircraft elevation
+                bott    = np.array(mat['Bottom']).T
+                
+            #loading with h5py
+            if reader == 'h5py':
+                print('Using h5py to load matfile')
+                
+                df_meta = pd.DataFrame(np.array(mat['GPS_time']))                
+                df_meta['Longitude'] = pd.DataFrame(np.array(mat['Longitude']))   
+                df_meta['Latitude'] = pd.DataFrame(np.array(mat['Latitude']))     
+                df_meta['Elevation'] = pd.DataFrame(np.array(mat['Elevation']))  
+                df_meta['Filename'] = file
+            
+                df_meta.index.name = 'index'
+                df_meta.columns = ['GPS_time', 'Longitude', 'Latitude', \
+                                   'Aircraft_Elevation', 'Filename']
+                df      = pd.DataFrame(np.log10(np.array(mat['Data']))).T
+                surf    = np.array(mat['Surface'])
+                twt     = np.array(mat['Time']).T
+                elev    = np.array(mat['Elevation'])
+                bott    = np.array(mat['Bottom'])
+            
+            df = df.apply(pd.to_numeric).astype(float)
+            # df = df.iloc[::-1] # reverse rows (if you want to flip)
+        
+            df = df.reset_index(drop=True) # reset index
+            #df = df.T # transpose matrix
+        
+            ## create TWT time array
+            #twt = pd.DataFrame(np.array(mat['Time']))
+            
+            # Calculate
+            #surf_meter = elev - (surf * speed_of_light / 2)
+        
+            df_comb  = pd.DataFrame(columns = ['ElevationWGS84', 'dB', 'Trace'])
+        
+            # Log every 500 lines.
+            LOG_EVERY_N = 500
+
+            # create surface and bottom array (m)
+            surface_m = []
+            bottom_m  = []
+            
+            for i in np.arange(0, elev.size):
+                if (i % LOG_EVERY_N) == 0:
+                    print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
+                
+                # get index where surface reflection is located
+                idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
+        
+                # get single trace of radargram
+                data = np.array(df[i])
+                
+                # delete values until surface reflection
+                data = np.delete(data,np.s_[1:idx])
+                
+                #
+                T2 = np.delete(twt,np.s_[0:idx],axis=0)
+                T3 = T2 - twt[idx]
+        
+                Depth               = (T3 * speed_of_ice) / 2
+                Air_Column          = (surf[i] * speed_of_light) / 2
+                Airplane_Elevation  = elev[i]
+                
+                surface = Airplane_Elevation - Air_Column
+                surface_m.append(surface)
+
+                bottom = Airplane_Elevation - (bott[i] * speed_of_ice / 2)
+                bottom_m.append(bottom)
+        
+                ElevationWGS84 = Airplane_Elevation - Air_Column - Depth
+        
+                trace = np.ones(data.size) * i
+        
+        
+                df_trace            = pd.DataFrame(ElevationWGS84)
+                df_trace['dB']      = pd.DataFrame(data)
+                df_trace['Trace']   = pd.DataFrame(trace)
+                df_trace.columns    = ['ElevationWGS84', 'dB', 'Trace']
+                df_comb             = df_comb.append(df_trace)
+                df_comb             = df_comb.round({'ElevationWGS84': 0})
+        
+            if setting == 'wideband': 
+                df_comb         = df_comb.round({'ElevationWGS84': 1})
+                ## create pivot table for heatmap
+                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df.interpolate()
+                df = df.iloc[::-1]
+
+            if setting == 'narrowband':
+                df_comb         = df_comb.round({'ElevationWGS84': 0})
+                ## create pivot table for heatmap
+                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df.interpolate()
+                df.index = df.index.astype(int)
+                df = df.iloc[::-1]
+            
+            surface_m = np.array(surface_m)
+            bottom_m  = np.array(bottom_m)
+
+            if overlap == True:
+                df.drop(df.columns[-65:], axis=1, inplace=True)
+                df_meta.drop(df_meta.index[-65:], axis=0, inplace=True)
+            
+            
+            ## Get real distance for traces 
+            spacing = np.array([])
+            for i in range(1, len(df_meta)-1):
+                	coord_1    = (df_meta['Latitude'][i], df_meta['Longitude'][i])
+                	coord_2    = (df_meta['Latitude'][i + 1], df_meta['Longitude'][i + 1])
+                	f          = geopy.distance.geodesic(coord_1, coord_2).meters
+                	spacing    = np.append(spacing, f) 
+                    
+            distance       = np.cumsum(spacing[0:-1])
+            distance       = np.insert(distance, 0, 0)
+            distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+            distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+            spacing        = np.insert(spacing, 0, spacing.mean())
+            spacing        = np.insert(spacing, len(spacing), spacing.mean())
+            
+            
+            if region == 'Greenland':
+                ## Project Lat, Lon to X, Y in EPSG:3413
+                EPSG=pyproj.Proj("+init=EPSG:3413")
+                df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
+                                            np.array(df_meta['Latitude']))
+                
+            if region == 'Antarctica':       
+                ## Project Lat, Lon to X, Y in EPSG:3413
+                EPSG=pyproj.Proj("+init=EPSG:3031")
+                df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
+                                            np.array(df_meta['Latitude']))
+        
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+            
+            print('===> Done Calculating...')
+            
+            #####################
+            # Save as .mat file
+            #####################
+
+            # test if the following variables exist
+            # older files do not contain this information
+
+            try:
+                pitch = mat['Pitch'][0]
+            except:
+                pitch = 'empty'
+                pass
+
+            try:
+                roll = mat['Roll'][0]
+            except:
+                roll = 'empty'
+                pass
+
+            try:
+                heading = mat['Heading'][0]
+            except:
+                heading = 'empty'
+                pass                
+        
+            #data_dict = {name: col.values for name, col in df.items()}
+            
+            full_dict = {'Data'                 : df.values,
+                         'Elevation_WGS84'      : df.index.values,
+                         'GPS_time'             : df_meta['GPS_time'].values,
+                         'Latitude'             : df_meta['Latitude'].values, 
+                         'Longitude'            : df_meta['Longitude'].values, 
+                         'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                         'Spacing'              : spacing,
+                         'Distance'             : distance,
+                         'X'                    : df_meta['X'].values,
+                         'Y'                    : df_meta['Y'].values,
+                         'Pitch'                : pitch,
+                         'Roll'                 : roll,
+                         'Heading'              : heading,
+                         'Bottom'               : bottom_m,
+                         'Surface'              : surface_m
+                         }
+            
+            out_filename = file.split('/')[-1].split('.mat')[0] + '_elevation.mat'
+            
+            scipy.io.savemat(out_path + '/' + out_filename, full_dict)
+            print('===> Saved Frame as: {}'.format(out_filename))
+          
+    print('===> DONE !!')
+
+
+
+
+
+################################
+# Quickplot a radar section
+# from a cresis radar .mat file
+################################
+
+def plot_cresis(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
+
+    import h5py
+    import scipy.io 
+    import numpy as np
+    import pandas as pd
+    from matplotlib import pyplot as plt
+    import os, glob
+    import geopy.distance
+
+    #from matplotlib.ticker import FormatStrFormatter
+
+    if in_path == '':
+        in_path = os.getcwd()
+        print('No in_path defined, setting cwd as in_path')
+
+    if out_path == '':
+        out_path = os.getcwd()
+        print('No out_path defined, setting cwd as out_path')
+
+
+
+
+    # depending on the .mat file version
+    # either scipy.io (older versions) or h5py (newer versions)
+    # will be used to load the file        
+    try:
+        mat     = scipy.io.loadmat(file)
+        reader  = 'scipy'
+
+    except NotImplementedError:
+        mat     = h5py.File(file)
+        reader  = 'h5py'
+        
+
+    # loading with scipy.io
+    if reader == 'scipy':   
+        print('Using scipy.io to load matfile')
+
+        if z_type == 'twt':
+            df        = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+            twt       = np.array(mat['Time'][0])
+            longitude = np.array(mat['Longitude'][0].T)
+            latitude  = np.array(mat['Latitude'][0].T)
+
+        elif z_type == 'elevation':
+            df        = pd.DataFrame(np.array(mat['Data'])) # radar matrix
+            distance  = np.array(mat['Distance'][0]) # radar matrix
+            elevation = np.array(mat['Elevation_WGS84'][0])
+
+        else:
+            print("provide a z_type (z_type='twt' or 'elevation')")
+            exit()
+        
+    #loading with h5py
+    if reader == 'h5py':
+        print('Using h5py to load matfile')
+        
+        if z_type == 'twt':
+            df        = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+            twt       = np.array(mat['Time'][0])
+            longitude = np.array(mat['Longitude'][0])
+            latitude  = np.array(mat['Latitude'][0])
+
+        elif z_type == 'elevation':
+            df        = pd.DataFrame(np.array(mat['Data'])) # radar matrix
+            distance  = np.array(mat['Distance'][0]) # radar matrix
+            elevation = np.array(mat['Elevation_WGS84'][0])
+        else:
+            print("provide a z_type (z_type='twt' or 'elevation')")
+            exit()
+
+
+
+    if z_type == 'twt':
+
+        ## Get real distance for traces 
+        spacing = np.array([])
+        for i in range(1, len(latitude)-1):
+                coord_1    = (latitude[i], longitude[i])
+                coord_2    = (latitude[i + 1], longitude[i + 1])
+                f          = geopy.distance.geodesic(coord_1, coord_2).meters
+                spacing    = np.append(spacing, f) 
+                
+        distance       = np.cumsum(spacing[0:-1])
+        distance       = np.insert(distance, 0, 0)
+        distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+        spacing        = np.insert(spacing, 0, spacing.mean())
+        spacing        = np.insert(spacing, len(spacing), spacing.mean())
+
+    # 
+    df = df.reset_index(drop=True) # reset index
+
+    # set number of ticks on x axis
+    #number_of_xticks = 50
+    #step = np.round(df.shape[1] / number_of_xticks).astype(int)
+        
+    height      = 15
+    width       = df.shape[1] / 150
+
+    ## Plot Radargram
+    fig, ax = plt.subplots(figsize=(width, height))
+    
+    ims = ax.imshow(df, cmap=cmap, aspect="auto")
+    
+    if z_type == 'elevation':
+
+        x_step      = 250
+        y_spacing   = 250
+        offset      = int(np.min([y for y in elevation[0::y_spacing] if y > 0]))
+
+        plt.xticks(np.array(range(1, len(distance), 500)), \
+                   np.round((distance[0::500] / 1000), 0))
+        plt.yticks(df.index.values[0::500], elevation[0::500])
+        plt.xlabel('Along-track distance (km)', fontsize='16')
+        plt.ylabel('Elevation_WGS84 (m)', fontsize='16')
+        plt.title(file + ' ' + z_type, fontsize = '20')
+        plt.colorbar(ims)
+
+    if z_type == 'twt':
+
+        x_step      = 250
+        #y_spacing   = 250
+        #offset      = int(np.min([y for y in elevation[0::y_spacing] if y > 0]))
+
+        plt.xticks(np.array(range(1, len(distance), 500)), \
+                   np.round((distance[0::500] / 1000), 0))
+        plt.yticks(df.index.values[0::100], np.round(twt[0::100] * 1000 * 1000, 0))
+        plt.xlabel('Along-track distance (km)', fontsize='16')
+        plt.ylabel('TWT (ns)', fontsize='16')
+        plt.title(file + ' ' + z_type, fontsize = '20')
+        plt.colorbar(ims)
+            
+    fig.savefig(file.split('.')[0] +'_' + z_type + '.png', dpi=300, bbox_inches='tight')
