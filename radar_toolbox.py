@@ -318,7 +318,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 # from a cresis radar .mat file
 ################################
 
-def plot_cresis(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
+def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
 
     import h5py
     import scipy.io 
