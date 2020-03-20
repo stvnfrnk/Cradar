@@ -312,6 +312,136 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
 
 
+################################
+# Connect single frames to a
+# larger piece
+################################
+
+
+def conbine_frames(frame_list=frames, output_filename='', z_mode='elevation'):
+
+
+    '''
+    Reads a list of frames and connects them
+    The list should have the following format:
+
+        frames = ['Data_...._001_.mat', 'Data_...._002_.mat', 'Data_...._003_.mat', etc...]
+
+    '''
+    
+    
+    import scipy.io
+    import pandas as pd
+    import numpy as np
+    import sys
+    import glob
+    import os
+
+
+    # CHECKS
+
+    if output_filename == '':
+        print('you did not provide a output filename')
+        print('setting output filename to output.mat')
+        output_filename = 'output.mat'
+
+
+
+
+    Data_               = []
+    Elevation_WGS84_    = []
+    GPS_time_           = []
+    Latitude_           = []
+    Longitude_          = []
+    X_                  = []
+    Y_                  = []
+    Aircraft_Elevation_ = []
+    Spacing_            = []
+    Pitch_              = []
+    Roll_               = []
+    Heading_            = []
+    Bottom_             = []
+    Surface_            = []
+
+
+    for file in frames:
+
+        mat                = scipy.io.loadmat(file)
+
+        Data               = pd.DataFrame(np.array(mat['Data']))
+        Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
+        GPS_time           = np.array(mat['GPS_time'])[0]
+        Latitude           = np.array(mat['Latitude'])[0]
+        Longitude          = np.array(mat['Longitude'])[0]
+        X                  = np.array(mat['X'])[0]
+        Y                  = np.array(mat['Y'])[0]
+        Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
+        Spacing            = np.array(mat['Spacing'])[0]
+        Pitch              = np.array(mat['Pitch'])[0]
+        Roll               = np.array(mat['Roll'])[0]
+        Heading            = np.array(mat['Heading'])[0]
+        Bottom             = np.array(mat['Bottom'])[0]
+        Surface            = np.array(mat['Surface'])[0]
+
+        Data.index         = Elevation_WGS84
+
+        Data_.append(Data)
+        Elevation_WGS84_.append(Elevation_WGS84)
+        GPS_time_.append(GPS_time)
+        Latitude_.append(Latitude)
+        Longitude_.append(Longitude)
+        X_.append(X)
+        Y_.append(Y)
+        Aircraft_Elevation_.append(Aircraft_Elevation)
+        Spacing_.append(Spacing)
+        Pitch_.append(Pitch)
+        Roll_.append(Roll)
+        Heading_.append(Heading)
+        Bottom_.append(Bottom)
+        Surface_.append(Surface)
+
+
+    Data               = pd.concat(Data_, axis=1, ignore_index=True)
+    Data               = Data[::-1]
+    Elevation_WGS84    = np.concatenate(Elevation_WGS84_)
+    GPS_time           = np.concatenate(GPS_time_)
+    Latitude           = np.concatenate(Latitude_)
+    Longitude          = np.concatenate(Longitude_)
+    X                  = np.concatenate(X_)
+    Y                  = np.concatenate(Y_)
+    Aircraft_Elevation = np.concatenate(Aircraft_Elevation_)
+    Spacing            = np.concatenate(Spacing_)
+    Pitch              = np.concatenate(Pitch_)
+    Roll               = np.concatenate(Roll_)
+    Heading            = np.concatenate(Heading_)
+    Bottom             = np.concatenate(Bottom_)
+    Surface            = np.concatenate(Surface_)
+
+    Distance = np.cumsum(Spacing)
+
+
+    full_dict = {'Data'                 : Data.values,
+                 'Elevation_WGS84'      : Elevation_WGS84,
+                 'GPS_time'             : GPS_time,
+                 'Latitude'             : Latitude, 
+                 'Longitude'            : Longitude,
+                 'X'                    : X,
+                 'Y'                    : Y,
+                 'Aircraft_Elevation'   : Aircraft_Elevation,
+                 'Spacing'              : Spacing,
+                 'Distance'             : Distance,
+                 'Pitch'                : Pitch,
+                 'Roll'                 : Roll,
+                 'Heading'              : Heading,
+                 'Bottom'               : Bottom,
+                 'Surface'              : Surface
+                 }
+
+    scipy.io.savemat(combine_filename, full_dict)
+    print('===> Saved Frame as: {}'.format(combine_filename))
+
+
+
 
 ################################
 # Quickplot a radar section
@@ -451,4 +581,4 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         plt.title(file + ' ' + z_type, fontsize = '20')
         plt.colorbar(ims)
             
-    fig.savefig(file.split('.')[0] +'_' + z_type + '.png', dpi=300, bbox_inches='tight')
+    fig.savefig(file.split('.')[0] +'_' + z_type + '.png', dpi=200, bbox_inches='tight')
