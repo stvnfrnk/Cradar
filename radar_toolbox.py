@@ -318,7 +318,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 ################################
 
 
-def conbine_frames(frame_list=frames, output_filename='', z_mode='elevation'):
+def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
 
 
     '''
@@ -364,7 +364,7 @@ def conbine_frames(frame_list=frames, output_filename='', z_mode='elevation'):
     Surface_            = []
 
 
-    for file in frames:
+    for file in frame_list:
 
         mat                = scipy.io.loadmat(file)
 
@@ -437,8 +437,8 @@ def conbine_frames(frame_list=frames, output_filename='', z_mode='elevation'):
                  'Surface'              : Surface
                  }
 
-    scipy.io.savemat(combine_filename, full_dict)
-    print('===> Saved Frame as: {}'.format(combine_filename))
+    scipy.io.savemat(output_filename, full_dict)
+    print('===> Saved Frame as: {}'.format(output_filename))
 
 
 
@@ -581,4 +581,4 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         plt.title(file + ' ' + z_type, fontsize = '20')
         plt.colorbar(ims)
             
-    fig.savefig(file.split('.')[0] +'_' + z_type + '.png', dpi=200, bbox_inches='tight')
+    fig.savefig(file.split('.')[0] + '.png', dpi=200, bbox_inches='tight')

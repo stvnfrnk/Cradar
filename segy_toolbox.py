@@ -1,7 +1,7 @@
 # Toolbox to deal with SEGY Data
 
 
-def plot_segy(segy_input, png=False):
+def plot_segy(segy_input, png=False, cmap='bone_r'):
     
     '''
     
@@ -17,7 +17,7 @@ def plot_segy(segy_input, png=False):
     data    = np.stack(t.data for t in list(stream.traces))
     
     fig = plt.subplots(figsize=(20,10))
-    plt.imshow(data.T, cmap="bone_r", aspect='auto')
+    plt.imshow(data.T, cmap=cmap, aspect='auto')
     plt.colorbar()
     plt.show()
 
