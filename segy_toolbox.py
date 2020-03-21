@@ -1,5 +1,9 @@
 # Toolbox to deal with SEGY Data
 
+################################
+# Quickplot a radar section
+# from a SEGY file
+################################
 
 def plot_segy(segy_input, png=False, cmap='bone_r'):
     
@@ -11,7 +15,6 @@ def plot_segy(segy_input, png=False, cmap='bone_r'):
     import numpy as np
     import matplotlib.pyplot as plt
     from obspy.io.segy.segy import _read_segy
-    #from obspy import Trace, Stream
     
     stream  = _read_segy(segy_input, headonly=True)
     data    = np.stack(t.data for t in list(stream.traces))
@@ -30,6 +33,10 @@ def plot_segy(segy_input, png=False, cmap='bone_r'):
 
 
 
+#####################################
+# Converts CReSIS format .mat files
+# to SEGY format
+#####################################
 
 def mat2segy(matfile, elevation=True, region='', differenciate=False):
 
@@ -296,7 +303,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
         else:    
             stream.write(matfile.split('.')[0] + '.sgy', format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
             print('==> Written: {}.sgy'.format(matfile.split('.')[0]))
-        #return stream
+
         # Data Encoding = 4 byte IEEE floating points (float32)
         # Byte Order = big endian
         # print('Saved stream as : {}.sgy'.format(df))
@@ -369,8 +376,12 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
             fish = fish.flatten()
             trace = Trace(data=fish)
         
-            # trace = trace.differentiate(method='gradient')
-        
+
+            if differenciate == True:
+                trace = trace.differentiate(method='gradient')
+                
+            else:
+                pass        
         
             trace.stats.delta = 0.01
             # SEGY does not support microsecond precision! Any microseconds will
@@ -484,8 +495,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
             trace.stats.segy.trace_header.source_measurement_exponent = 0
             trace.stats.segy.trace_header.source_measurement_unit = 2
         
-        
-        
+
             # Add trace to stream
             stream.append(trace)
         
@@ -499,10 +509,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
         stream.stats.binary_file_header.number_of_samples_per_data_trace = num_of_samples
         stream.stats.binary_file_header.number_of_samples_per_data_trace_for_original_field_recording = num_of_samples
         stream.stats.binary_file_header.data_sample_format_code = 5
-        
-        # stream = stream.differentiate(method='gradient')
-        
-        
+                
         
         if differenciate == True:
             stream.write(matfile.split('.')[0] + '_diff.sgy', format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
@@ -511,7 +518,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
         else:    
             stream.write(matfile.split('.')[0] + '.sgy', format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
             print('==> Written: {}.sgy'.format(matfile.split('.')[0]))
-        #return stream
+        
         # Data Encoding = 4 byte IEEE floating points (float32)
         # Byte Order = big endian
         # print('Saved stream as : {}.sgy'.format(df))

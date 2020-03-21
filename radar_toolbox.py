@@ -1,6 +1,4 @@
 
-
-
 ################################
 # Calculate True Elevation
 # from a cresis radar .mat file
@@ -8,9 +6,7 @@
 
 def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='narrowband'):
 
-    
     '''
-    
         in_path         = path with segment folders with twt matfiles
         out_path        = path with segment folders where to save elevation matfiles
         segment         = cresis segment
@@ -24,10 +20,8 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
         setting         = 'narrowband' or 'wideband'
     
-    
     ''' 
-        
-        
+                
     import h5py                 # for newer .mat (usually cresis matfiles)
     import scipy.io             # for older .mat (usually self-output matfiles)
     import numpy as np
@@ -62,13 +56,6 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
         out_path = os.getcwd()
         print('No out_path defined, setting cwd as out_path')
 
-        
-    
-    
-    #input_file = in_path + '/' + segment + '/' + filename
-    #out_folder = out_path + '/' + segment
-    
-   
 
     if not os.path.exists(out_path):
             os.mkdir(out_path)
@@ -142,18 +129,8 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 elev    = np.array(mat['Elevation'])
                 bott    = np.array(mat['Bottom'])
             
-            df = df.apply(pd.to_numeric).astype(float)
-            # df = df.iloc[::-1] # reverse rows (if you want to flip)
-        
-            df = df.reset_index(drop=True) # reset index
-            #df = df.T # transpose matrix
-        
-            ## create TWT time array
-            #twt = pd.DataFrame(np.array(mat['Time']))
-            
-            # Calculate
-            #surf_meter = elev - (surf * speed_of_light / 2)
-        
+            df       = df.apply(pd.to_numeric).astype(float)        
+            df       = df.reset_index(drop=True) # reset index
             df_comb  = pd.DataFrame(columns = ['ElevationWGS84', 'dB', 'Trace'])
         
             # Log every 500 lines.
@@ -193,7 +170,6 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 ElevationWGS84 = Airplane_Elevation - Air_Column - Depth
         
                 trace = np.ones(data.size) * i
-        
         
                 df_trace            = pd.DataFrame(ElevationWGS84)
                 df_trace['dB']      = pd.DataFrame(data)
@@ -283,7 +259,6 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 heading = 'empty'
                 pass                
         
-            #data_dict = {name: col.values for name, col in df.items()}
             
             full_dict = {'Data'                 : df.values,
                          'Elevation_WGS84'      : df.index.values,
@@ -320,7 +295,6 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
 def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
 
-
     '''
     Reads a list of frames and connects them
     The list should have the following format:
@@ -328,8 +302,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
         frames = ['Data_...._001_.mat', 'Data_...._002_.mat', 'Data_...._003_.mat', etc...]
 
     '''
-    
-    
+        
     import scipy.io
     import pandas as pd
     import numpy as np
@@ -344,8 +317,6 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
         print('you did not provide a output filename')
         print('setting output filename to output.mat')
         output_filename = 'output.mat'
-
-
 
 
     Data_               = []
@@ -469,8 +440,6 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         print('No out_path defined, setting cwd as out_path')
 
 
-
-
     # depending on the .mat file version
     # either scipy.io (older versions) or h5py (newer versions)
     # will be used to load the file        
@@ -521,7 +490,6 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
             exit()
 
 
-
     if z_type == 'twt':
 
         ## Get real distance for traces 
@@ -540,10 +508,6 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
 
     # 
     df = df.reset_index(drop=True) # reset index
-
-    # set number of ticks on x axis
-    #number_of_xticks = 50
-    #step = np.round(df.shape[1] / number_of_xticks).astype(int)
         
     height      = 15
     width       = df.shape[1] / 150

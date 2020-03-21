@@ -1,12 +1,10 @@
 
 '''
-
-
  1. Function: extract_geotif_values
  2. Function: radartrack2shape
 
-
 '''
+
 ##############################################################################
 
 #################################
@@ -44,7 +42,7 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
     import pyproj
     
     
-    df= data_frame
+    df = data_frame
     
     
     if 'X' and 'Y' in df.columns:
@@ -99,11 +97,11 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
     return out_column
 
 
-
-#%%
-#############################
+#############################################
 # Function: radartrack2shape
-#############################
+# creates shape files (point, or linestring)
+# from a cresis radar .mat file
+#############################################
     
 def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
     
@@ -126,7 +124,6 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
         
                             - Example:                    
                             - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation'] 
-        
     '''
         
     
@@ -140,7 +137,6 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
     from fiona import collection
     from fiona.crs import from_epsg
     
-
 
     # depending on the .mat file version
     # either scipy.io (older versions) or h5py (newer versions)
