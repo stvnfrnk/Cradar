@@ -293,7 +293,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 ################################
 
 
-def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
+def combine_frames(frame_list='', output_filename='', z_mode='elevation', overlap=False):
 
     '''
     Reads a list of frames and connects them
@@ -319,6 +319,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
         output_filename = 'output.mat'
 
 
+
     Data_               = []
     Elevation_WGS84_    = []
     GPS_time_           = []
@@ -339,22 +340,52 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
 
         mat                = scipy.io.loadmat(file)
 
-        Data               = pd.DataFrame(np.array(mat['Data']))
-        Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
-        GPS_time           = np.array(mat['GPS_time'])[0]
-        Latitude           = np.array(mat['Latitude'])[0]
-        Longitude          = np.array(mat['Longitude'])[0]
-        X                  = np.array(mat['X'])[0]
-        Y                  = np.array(mat['Y'])[0]
-        Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
-        Spacing            = np.array(mat['Spacing'])[0]
-        Pitch              = np.array(mat['Pitch'])[0]
-        Roll               = np.array(mat['Roll'])[0]
-        Heading            = np.array(mat['Heading'])[0]
-        Bottom             = np.array(mat['Bottom'])[0]
-        Surface            = np.array(mat['Surface'])[0]
+        # for older frames with overlap
+        # cuts off 66 traces
+        if overlap == True:
 
-        Data.index         = Elevation_WGS84
+            Data               = pd.DataFrame(np.array(mat['Data']))
+            Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
+
+            GPS_time           = np.array(mat['GPS_time'])[0][0:-66]
+            Latitude           = np.array(mat['Latitude'])[0][0:-66]
+            Longitude          = np.array(mat['Longitude'])[0][0:-66]
+            X                  = np.array(mat['X'])[0][0:-66]
+            Y                  = np.array(mat['Y'])[0][0:-66]
+            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0][0:-66]
+            Spacing            = np.array(mat['Spacing'])[0][0:-66]
+            Pitch              = np.array(mat['Pitch'])[0][0:-66]
+            Roll               = np.array(mat['Roll'])[0][0:-66]
+            Heading            = np.array(mat['Heading'])[0][0:-66]
+            Bottom             = np.array(mat['Bottom'])[0][0:-66]
+            Surface            = np.array(mat['Surface'])[0][0:-66]
+
+            Data.index         = Elevation_WGS84
+            Data               = Data[Data.columns[0:-66]]
+
+        if overlap == False:
+
+            Data               = pd.DataFrame(np.array(mat['Data']))
+            Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
+            GPS_time           = np.array(mat['GPS_time'])[0]
+            Latitude           = np.array(mat['Latitude'])[0]
+            Longitude          = np.array(mat['Longitude'])[0]
+            X                  = np.array(mat['X'])[0]
+            Y                  = np.array(mat['Y'])[0]
+            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
+            Spacing            = np.array(mat['Spacing'])[0]
+            Pitch              = np.array(mat['Pitch'])[0]
+            Roll               = np.array(mat['Roll'])[0]
+            Heading            = np.array(mat['Heading'])[0]
+            Bottom             = np.array(mat['Bottom'])[0]
+            Surface            = np.array(mat['Surface'])[0]
+
+            Data.index         = Elevation_WGS84
+
+        # check if navigation data is available
+        # it might not be for files older than 2012
+        if Pitch == '':
+            navigation = 'off'
 
         Data_.append(Data)
         Elevation_WGS84_.append(Elevation_WGS84)
@@ -382,11 +413,23 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation'):
     Y                  = np.concatenate(Y_)
     Aircraft_Elevation = np.concatenate(Aircraft_Elevation_)
     Spacing            = np.concatenate(Spacing_)
-    Pitch              = np.concatenate(Pitch_)
-    Roll               = np.concatenate(Roll_)
-    Heading            = np.concatenate(Heading_)
     Bottom             = np.concatenate(Bottom_)
     Surface            = np.concatenate(Surface_)
+
+    # check if navigation data is available
+    if navigation == 'off':
+
+        Pitch   = 'empty'
+        Roll    = 'empty'
+        Heading = 'empty'
+
+    else:
+
+        Pitch              = np.concatenate(Pitch_)
+        Roll               = np.concatenate(Roll_)
+        Heading            = np.concatenate(Heading_)
+
+
 
     Distance = np.cumsum(Spacing)
 
