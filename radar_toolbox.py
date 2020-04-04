@@ -293,7 +293,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 ################################
 
 
-def combine_frames(frame_list='', output_filename='', z_mode='elevation', overlap=False):
+def combine_frames(frame_list='', output_filename='', z_mode='elevation', overlap=False, overlap_traces=0):
 
     '''
     Reads a list of frames and connects them
@@ -347,21 +347,26 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Data               = pd.DataFrame(np.array(mat['Data']))
             Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
 
-            GPS_time           = np.array(mat['GPS_time'])[0][0:-66]
-            Latitude           = np.array(mat['Latitude'])[0][0:-66]
-            Longitude          = np.array(mat['Longitude'])[0][0:-66]
-            X                  = np.array(mat['X'])[0][0:-66]
-            Y                  = np.array(mat['Y'])[0][0:-66]
-            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0][0:-66]
-            Spacing            = np.array(mat['Spacing'])[0][0:-66]
-            Pitch              = np.array(mat['Pitch'])[0][0:-66]
-            Roll               = np.array(mat['Roll'])[0][0:-66]
-            Heading            = np.array(mat['Heading'])[0][0:-66]
-            Bottom             = np.array(mat['Bottom'])[0][0:-66]
-            Surface            = np.array(mat['Surface'])[0][0:-66]
+            ol                 = Data.shape[1] - overlap_traces
+            
+            print(ol)
+            print(len(np.array(mat['Latitude'])))
+
+            GPS_time           = np.array(mat['GPS_time'])[0][0:ol]
+            Latitude           = np.array(mat['Latitude'])[0][0:ol]
+            Longitude          = np.array(mat['Longitude'])[0][0:ol]
+            X                  = np.array(mat['X'])[0][0:ol]
+            Y                  = np.array(mat['Y'])[0][0:ol]
+            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0][0:ol]
+            Spacing            = np.array(mat['Spacing'])[0][0:ol]
+            Pitch              = np.array(mat['Pitch'])[0][0:ol]
+            Roll               = np.array(mat['Roll'])[0][0:ol]
+            Heading            = np.array(mat['Heading'])[0][0:ol]
+            Bottom             = np.array(mat['Bottom'])[0][0:ol]
+            Surface            = np.array(mat['Surface'])[0][0:ol]
 
             Data.index         = Elevation_WGS84
-            Data               = Data[Data.columns[0:-66]]
+            Data               = Data[Data.columns[0:ol]]
 
         if overlap == False:
 
@@ -384,8 +389,9 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
         # check if navigation data is available
         # it might not be for files older than 2012
-        navigation = ''
         if Pitch == '':
+            navigation = 'off'
+        else:
             navigation = 'off'
 
         Data_.append(Data)

@@ -38,7 +38,7 @@ def plot_segy(segy_input, png=False, cmap='bone_r'):
 # to SEGY format
 #####################################
 
-def mat2segy(matfile, elevation=True, region='', differenciate=False):
+def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
 
     '''  
     Usage:
@@ -146,7 +146,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False):
         
         
         # Create Traces and Trace Header
-        for i in range(data.shape[1] - 1):
+        for i in range(1, data.shape[1] - 1, step):
             
             year            = int(time.strftime("%Y", time.gmtime(gps_time[0][i])))
             day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[0][i])))
