@@ -384,6 +384,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
         # check if navigation data is available
         # it might not be for files older than 2012
+        navigation = ''
         if Pitch == '':
             navigation = 'off'
 
@@ -405,7 +406,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
     Data               = pd.concat(Data_, axis=1, ignore_index=True)
     Data               = Data[::-1]
-    Elevation_WGS84    = np.concatenate(Elevation_WGS84_)
+    Elevation_WGS84    = np.array(Data.index.astype(int))#np.concatenate(Elevation_WGS84_)
     GPS_time           = np.concatenate(GPS_time_)
     Latitude           = np.concatenate(Latitude_)
     Longitude          = np.concatenate(Longitude_)
