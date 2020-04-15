@@ -1,3 +1,266 @@
+################################
+# Pull to surface reflection
+# from a cresis radar .mat file
+################################
+
+def pull2surface(in_path='', out_path='', file='', region='', overlap=False, setting='narrowband'):
+
+    '''
+        in_path         = path with segment folders with twt matfiles
+        out_path        = path with segment folders where to save elevation matfiles
+        segment         = cresis segment
+        
+        region          = Antarctica or Greenland, this is relevant for the reprojection
+                          of the coordinates (lon, lat to X,Y)
+                          EPSG: 3413 for Greenland
+                          EPSG: 3031 for Antarctica
+                      
+        setting         = 'narrowband' or 'wideband'
+    
+    ''' 
+
+
+    import h5py                 # for newer .mat (usually cresis matfiles)
+    import scipy.io             # for older .mat (usually self-output matfiles)
+    import numpy as np
+    import pandas as pd
+    import glob, os
+    import pyproj
+    import geopy.distance
+
+
+    speed_of_light = 2.99792458e8
+
+    #print('===> Processing File: __ {}'.format(file))
+    print('')
+
+    if file == '':
+        print('Specify a file')
+        exit()
+    else:
+        print('Filename: {}'.format(file))
+
+    if region == '':
+        print('Specify a region (Greenland or Antarctica)')
+        exit()
+    else:
+        print('Region: {}'.format(region))
+
+    if in_path == '':
+        in_path = os.getcwd()
+        print('No in_path defined, setting cwd as in_path')
+
+    if out_path == '':
+        out_path = os.getcwd()
+        print('No out_path defined, setting cwd as out_path')
+
+
+    if not os.path.exists(out_path):
+            os.mkdir(out_path)
+
+    #for file in sorted(glob.glob(input_file)):
+
+    # don't process Data_img_... files      
+    if 'img' not in file:
+        # process only not already converted files
+        if not file.endswith('elevation.mat'):
+            print('')
+            print('Calculating true elevation for: {}'.format(file))
+
+
+            # depending on the .mat file version
+            # either scipy.io (older versions) or h5py (newer versions)
+            # will be used to load the file        
+            try:
+                mat     = scipy.io.loadmat(file)
+                reader  = 'scipy'
+            except NotImplementedError:
+                mat     = h5py.File(file, mode='r')
+                reader  = 'h5py'
+
+
+            # loading with scipy.io
+            if reader == 'scipy':   
+                print('Using scipy.io to load matfile')
+
+                df_meta               = pd.DataFrame(np.array(mat['GPS_time'])).T                 
+                df_meta['Longitude']  = pd.DataFrame(np.array(mat['Longitude'])).T   
+                df_meta['Latitude']   = pd.DataFrame(np.array(mat['Latitude'])).T     
+                df_meta['Elevation']  = pd.DataFrame(np.array(mat['Elevation'])).T   
+                df_meta['Filename']   = file
+                df_meta.index.name    = 'index'
+                df_meta.columns       = ['GPS_time', 'Longitude', 'Latitude', \
+                                         'Aircraft_Elevation', 'Filename']
+            
+                df       = df.reset_index(drop=True) # reset index
+                surf    = np.array(mat['Surface']).T # array with the twt of the surface reflection
+
+                if mat['Time'].shape[0] == 1:
+                    twt     = np.array(mat['Time']).T # array with the twt (y-axis)
+
+                if mat['Time'].shape[0] > 1:
+                    twt     = np.array(mat['Time']) # array with the twt (y-axis)
+
+                else:
+                    print('problem...')
+                    pass
+
+                elev    = np.array(mat['Elevation']).T # array with the aircraft elevation
+                #bott    = np.array(mat['Bottom']).T
+
+            #loading with h5py
+            if reader == 'h5py':
+                print('Using h5py to load matfile')
+
+                df_meta = pd.DataFrame(np.array(mat['GPS_time']))                
+                df_meta['Longitude'] = pd.DataFrame(np.array(mat['Longitude']))   
+                df_meta['Latitude'] = pd.DataFrame(np.array(mat['Latitude']))     
+                df_meta['Elevation'] = pd.DataFrame(np.array(mat['Elevation']))  
+                df_meta['Filename'] = file
+
+                df_meta.index.name = 'index'
+                df_meta.columns = ['GPS_time', 'Longitude', 'Latitude', \
+                                   'Aircraft_Elevation', 'Filename']
+                df      = pd.DataFrame(np.log10(np.array(mat['Data']))).T
+                surf    = np.array(mat['Surface'])
+                twt     = np.array(mat['Time']).T
+                elev    = np.array(mat['Elevation'])
+                #bott    = np.array(mat['Bottom'])
+
+                
+            df       = df.apply(pd.to_numeric).astype(float)        
+            df       = df.reset_index(drop=True) # reset index
+            df_comb  = pd.DataFrame(columns = ['twt', 'dB', 'Trace'])
+
+            # Log every 500 lines.
+            LOG_EVERY_N = 500
+
+            for i in np.arange(0, elev.size):
+                if (i % LOG_EVERY_N) == 0:
+                    print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
+
+                # get index where surface reflection is located
+                idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
+
+                # get single trace of radargram
+                data = np.array(df[i])
+
+                # delete values until surface reflection
+                data = np.delete(data,np.s_[1:idx])
+
+                # delete twt values until surface reflection
+                TWT = np.delete(twt,np.s_[0:idx],axis=0)
+                
+                # subtract twt value from surface reflection from all values
+                # to start with twt zero in the array
+                TWT = TWT - twt[idx]
+                
+                trace = np.ones(data.size) * i
+
+                df_trace            = pd.DataFrame(TWT)
+                df_trace['dB']      = pd.DataFrame(data)
+                df_trace['Trace']   = pd.DataFrame(trace)
+                df_trace.columns    = ['twt', 'dB', 'Trace']
+                df_comb             = df_comb.append(df_trace)
+            
+            df = df_comb.pivot('twt', 'Trace', 'dB')
+            df = df.interpolate()
+                
+                
+            if overlap == True:
+                df.drop(df.columns[-65:], axis=1, inplace=True)
+                df_meta.drop(df_meta.index[-65:], axis=0, inplace=True)
+
+
+            ## Get real distance for traces 
+            spacing = np.array([])
+            for i in range(1, len(df_meta)-1):
+                    coord_1    = (df_meta['Latitude'][i], df_meta['Longitude'][i])
+                    coord_2    = (df_meta['Latitude'][i + 1], df_meta['Longitude'][i + 1])
+                    f          = geopy.distance.geodesic(coord_1, coord_2).meters
+                    spacing    = np.append(spacing, f) 
+
+            distance       = np.cumsum(spacing[0:-1])
+            distance       = np.insert(distance, 0, 0)
+            distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+            distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+            spacing        = np.insert(spacing, 0, spacing.mean())
+            spacing        = np.insert(spacing, len(spacing), spacing.mean())
+
+
+            if region == 'Greenland':
+                ## Project Lat, Lon to X, Y in EPSG:3413
+                EPSG=pyproj.Proj("+init=EPSG:3413")
+                df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
+                                            np.array(df_meta['Latitude']))
+
+            if region == 'Antarctica':       
+                ## Project Lat, Lon to X, Y in EPSG:3413
+                EPSG=pyproj.Proj("+init=EPSG:3031")
+                df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
+                                            np.array(df_meta['Latitude']))
+
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+
+            print('===> Done Calculating...')
+
+            #####################
+            # Save as .mat file
+            #####################
+
+            # test if the following variables exist
+            # older files do not contain this information
+
+            try:
+                pitch = mat['Pitch'][0]
+            except:
+                pitch = 'empty'
+                pass
+
+            try:
+                roll = mat['Roll'][0]
+            except:
+                roll = 'empty'
+                pass
+
+            try:
+                heading = mat['Heading'][0]
+            except:
+                heading = 'empty'
+                pass                
+
+
+            full_dict = {'Data'                 : df.values,
+                         'Time'                 : df.index.values,
+                         'GPS_time'             : df_meta['GPS_time'].values,
+                         'Latitude'             : df_meta['Latitude'].values, 
+                         'Longitude'            : df_meta['Longitude'].values, 
+                         'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                         'Spacing'              : spacing,
+                         'Distance'             : distance,
+                         'X'                    : df_meta['X'].values,
+                         'Y'                    : df_meta['Y'].values,
+                         'Pitch'                : pitch,
+                         'Roll'                 : roll,
+                         'Heading'              : heading
+                         #'Bottom'               : bottom_m,
+                         #'Surface'              : surface_m
+                         }
+
+            out_filename = file.split('/')[-1].split('.mat')[0] + '_surface.mat'
+
+            scipy.io.savemat(out_path + '/' + out_filename, full_dict)
+            print('===> Saved Frame as: {}'.format(out_filename))
+
+    print('===> DONE !!')
+
+
+
+################################################################################################
+################################################################################################
+################################################################################################
+
 
 ################################
 # Calculate True Elevation
