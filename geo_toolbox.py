@@ -145,7 +145,7 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
         mat     = scipy.io.loadmat(file)
         reader  = 'scipy'
     except NotImplementedError:
-        mat     = h5py.File(file)
+        mat     = h5py.File(file, mode='r')
         reader  = 'h5py'
         
 

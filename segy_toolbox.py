@@ -146,7 +146,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
         
         
         # Create Traces and Trace Header
-        for i in range(1, data.shape[1] - 1, step):
+        for i in range(0, data.shape[1] - 1):
             
             year            = int(time.strftime("%Y", time.gmtime(gps_time[0][i])))
             day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[0][i])))

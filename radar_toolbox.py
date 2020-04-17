@@ -340,7 +340,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 mat     = scipy.io.loadmat(file)
                 reader  = 'scipy'
             except NotImplementedError:
-                mat     = h5py.File(file)
+                mat     = h5py.File(file, mode='r')
                 reader  = 'h5py'
                 
         
@@ -761,7 +761,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         reader  = 'scipy'
 
     except NotImplementedError:
-        mat     = h5py.File(file)
+        mat     = h5py.File(file, mode='r')
         reader  = 'h5py'
         
 
