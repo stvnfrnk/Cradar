@@ -612,8 +612,8 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
             ol                 = Data.shape[1] - overlap_traces
             
-            print(ol)
-            print(len(np.array(mat['Latitude'])))
+            #print(ol)
+            #print(len(np.array(mat['Latitude'])))
 
             GPS_time           = np.array(mat['GPS_time'])[0][0:ol]
             Latitude           = np.array(mat['Latitude'])[0][0:ol]
