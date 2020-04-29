@@ -267,7 +267,7 @@ def pull2surface(in_path='', out_path='', file='', region='', overlap=False, set
 # from a cresis radar .mat file
 ################################
 
-def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='narrowband'):
+def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='narrowband', reference='Laserscanner'):
 
     '''
         in_path         = path with segment folders with twt matfiles
@@ -282,6 +282,8 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
         speed_of_ice    = Usually 1.689 for e=3.15, but it can be changed
 
         setting         = 'narrowband' or 'wideband'
+
+        reference       = 'surface_reflection' or 'Laserscanner'
     
     ''' 
                 
@@ -358,7 +360,14 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                                          'Aircraft_Elevation', 'Filename']
 
                 df      = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
-                surf    = np.array(mat['Surface']).T # array with the twt of the surface reflection
+
+                # chech how the ice surface boundary is defined
+                # surface reflection or Laserscanner data?
+                if reference == 'surface_reflection':
+                    surf    = np.array(mat['Surface']).T # array with the twt of the surface reflection
+                elif reference == 'Laserscanner':
+                    surf    = (ndf_meta['Elevation'] - df['ALS']) / 2.99792458e8 * 2
+
 
                 if mat['Time'].shape[0] == 1:
                     twt     = np.array(mat['Time']).T # array with the twt (y-axis)
@@ -407,6 +416,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 if (i % LOG_EVERY_N) == 0:
                     print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
                 
+
                 # get index where surface reflection is located
                 idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
         
