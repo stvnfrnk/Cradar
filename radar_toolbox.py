@@ -283,7 +283,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
         setting         = 'narrowband' or 'wideband'
 
-        reference       = 'surface_reflection' or 'Laserscanner'
+        reference       = 'Reflection' or 'Laserscanner'
     
     ''' 
                 
@@ -325,6 +325,29 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     if not os.path.exists(out_path):
             os.mkdir(out_path)
             
+            
+    ####################################################      
+    # check number of Laserscanner gaps (ALS_nans)
+            
+    try:
+        mat     = scipy.io.loadmat(file)
+    except NotImplementedError:
+        mat     = h5py.File(file, mode='r')
+                
+    try:
+        ALS_nans     = np.array(mat['ALS_nans']).mean()
+    except:
+        pass
+    
+    if ALS_nans > 100:
+        reference = 'Reflection'
+        print('===> Too many gaps in Laserscanner Data...')
+        print('===> Using surface reflection instead.')
+    else: 
+        pass
+    
+    ####################################################
+    
     #for file in sorted(glob.glob(input_file)):
 
     # don't process Data_img_... files      
@@ -569,10 +592,20 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                          'Roll'                 : roll,
                          'Heading'              : heading,
                          'Bottom'               : bottom_m,
-                         'Surface'              : surface_m
+                         'Surface'              : surface_m,
+                         'ALS'                  : df_meta['ALS'].values,
+                         'ALS_nans'             : ALS_nans
                          }
             
-            out_filename = file.split('/')[-1].split('.mat')[0] + '_elevation.mat'
+            
+            suffix = ''
+            if reference == 'Laserscanner':
+                suffix = 'ALS'
+            elif reference == 'Reflection':
+                suffix = 'reflection'
+                
+            
+            out_filename = file.split('/')[-1].split('.mat')[0] + '_elevation_' + suffix +  '.mat'
             
             scipy.io.savemat(out_path + '/' + out_filename, full_dict)
             print('===> Saved Frame as: {}'.format(out_filename))
