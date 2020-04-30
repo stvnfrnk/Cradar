@@ -363,10 +363,16 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
                 # chech how the ice surface boundary is defined
                 # surface reflection or Laserscanner data?
-                if reference == 'surface_reflection':
-                    surf    = np.array(mat['Surface']).T # array with the twt of the surface reflection
+                if reference == 'Reflection':
+                    surf    = np.array(mat['Surface']).T
+                    print('==> Using surface reflection as ice-surface boundary.')
                 elif reference == 'Laserscanner':
-                    surf    = (ndf_meta['Elevation'] - df['ALS']) / 2.99792458e8 * 2
+                    try:
+                        df_meta['ALS'] = pd.DataFrame(np.array(mat['ALS'])).T
+                    except:
+                        print('No Laserscanner data found')
+                    surf    = (np.array(df_meta['Aircraft_Elevation']) - np.array(df_meta['ALS'])) / 2.99792458e8 * 2
+                    print('==> Using Laserscanner data as ice-surface boundary.')
 
 
                 if mat['Time'].shape[0] == 1:
@@ -396,7 +402,23 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 df_meta.columns = ['GPS_time', 'Longitude', 'Latitude', \
                                    'Aircraft_Elevation', 'Filename']
                 df      = pd.DataFrame(np.log10(np.array(mat['Data']))).T
-                surf    = np.array(mat['Surface'])
+
+
+                # chech how the ice surface boundary is defined
+                # surface reflection or Laserscanner data?
+                if reference == 'Reflection':
+                    surf    = np.array(mat['Surface'])
+                    print('==> Using surface reflection as ice-surface boundary.')
+                elif reference == 'Laserscanner':
+                    try:
+                        df_meta['ALS'] = pd.DataFrame(np.array(mat['ALS']))
+                    except:
+                        print('No Laserscanner data found')
+
+                    surf    = (df_meta['Aircraft_Elevation'] - df_meta['ALS']) / 2.99792458e8 * 2
+                    print('==> Using Laserscanner data as ice-surface boundary.')
+
+
                 twt     = np.array(mat['Time']).T
                 elev    = np.array(mat['Elevation'])
                 bott    = np.array(mat['Bottom'])
