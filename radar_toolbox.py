@@ -333,17 +333,20 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
         mat     = scipy.io.loadmat(file)
     except NotImplementedError:
         mat     = h5py.File(file, mode='r')
-                
-    try:
-        ALS_nans     = np.array(mat['ALS_nans']).mean()
-    except:
-        pass
     
-    if ALS_nans > 100:
-        reference = 'Reflection'
-        print('===> Too many gaps in Laserscanner Data...')
-        print('===> Using surface reflection instead.')
-    else: 
+    if reference == 'Laserscanner':            
+        try:
+            ALS_nans     = np.array(mat['ALS_nans']).mean()
+        except:
+            pass
+        
+        if ALS_nans > 100:
+            reference = 'Reflection'
+            print('===> Too many gaps in Laserscanner Data...')
+            print('===> Using surface reflection instead.')
+        else: 
+            pass
+    else:
         pass
     
     ####################################################
@@ -351,7 +354,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     #for file in sorted(glob.glob(input_file)):
 
     # don't process Data_img_... files      
-    if 'img' not in file:
+    if 'img_01' not in file:
         # process only not already converted files
         if not file.endswith('elevation.mat'):
             print('')
@@ -575,27 +578,45 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 heading = mat['Heading'][0]
             except:
                 heading = 'empty'
-                pass                
+                pass    
+
         
-            
-            full_dict = {'Data'                 : df.values,
-                         'Elevation_WGS84'      : df.index.values,
-                         'GPS_time'             : df_meta['GPS_time'].values,
-                         'Latitude'             : df_meta['Latitude'].values, 
-                         'Longitude'            : df_meta['Longitude'].values, 
-                         'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
-                         'Spacing'              : spacing,
-                         'Distance'             : distance,
-                         'X'                    : df_meta['X'].values,
-                         'Y'                    : df_meta['Y'].values,
-                         'Pitch'                : pitch,
-                         'Roll'                 : roll,
-                         'Heading'              : heading,
-                         'Bottom'               : bottom_m,
-                         'Surface'              : surface_m,
-                         'ALS'                  : df_meta['ALS'].values,
-                         'ALS_nans'             : ALS_nans
-                         }
+            if reference == 'Laserscanner':
+                full_dict = {'Data'                 : df.values,
+                             'Elevation_WGS84'      : df.index.values,
+                             'GPS_time'             : df_meta['GPS_time'].values,
+                             'Latitude'             : df_meta['Latitude'].values, 
+                             'Longitude'            : df_meta['Longitude'].values, 
+                             'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                             'Spacing'              : spacing,
+                             'Distance'             : distance,
+                             'X'                    : df_meta['X'].values,
+                             'Y'                    : df_meta['Y'].values,
+                             'Pitch'                : pitch,
+                             'Roll'                 : roll,
+                             'Heading'              : heading,
+                             'Bottom'               : bottom_m,
+                             'Surface'              : surface_m,
+                             'ALS'                  : df_meta['ALS'].values,
+                             'ALS_nans'             : ALS_nans
+                             }
+            else:
+                full_dict = {'Data'                 : df.values,
+                             'Elevation_WGS84'      : df.index.values,
+                             'GPS_time'             : df_meta['GPS_time'].values,
+                             'Latitude'             : df_meta['Latitude'].values, 
+                             'Longitude'            : df_meta['Longitude'].values, 
+                             'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                             'Spacing'              : spacing,
+                             'Distance'             : distance,
+                             'X'                    : df_meta['X'].values,
+                             'Y'                    : df_meta['Y'].values,
+                             'Pitch'                : pitch,
+                             'Roll'                 : roll,
+                             'Heading'              : heading,
+                             'Bottom'               : bottom_m,
+                             'Surface'              : surface_m,
+                             }
             
             
             suffix = ''
