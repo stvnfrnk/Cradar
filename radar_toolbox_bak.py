@@ -325,6 +325,9 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     if not os.path.exists(out_path):
             os.mkdir(out_path)
             
+
+    ALS = 'empty'
+    ALS_nans = 'empty'
             
     ####################################################      
     # check number of Laserscanner gaps (ALS_nans)
@@ -381,6 +384,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 df_meta.index.name    = 'index'
                 df_meta.columns       = ['GPS_time', 'Longitude', 'Latitude', \
                                          'Aircraft_Elevation', 'Filename']
+                
 
                 df      = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
 
@@ -575,7 +579,16 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 heading = mat['Heading'][0]
             except:
                 heading = 'empty'
-                pass                
+                pass  
+
+
+            if reference == 'Reflection':
+                try:
+                    ALS      = df_meta['ALS'].values
+                    ALS_nans = ALS_nans
+                except:
+                    ALS      = 'empty'
+                    ALS_nans = 'empty'
         
             
             full_dict = {'Data'                 : df.values,
@@ -593,7 +606,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                          'Heading'              : heading,
                          'Bottom'               : bottom_m,
                          'Surface'              : surface_m,
-                         'ALS'                  : df_meta['ALS'].values,
+                         'ALS'                  : ALS,
                          'ALS_nans'             : ALS_nans
                          }
             
