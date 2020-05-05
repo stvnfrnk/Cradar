@@ -563,19 +563,19 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
             # older files do not contain this information
 
             try:
-                pitch = mat['Pitch'][0]
+                pitch = mat['Pitch']
             except:
                 pitch = 'empty'
                 pass
 
             try:
-                roll = mat['Roll'][0]
+                roll = mat['Roll']
             except:
                 roll = 'empty'
                 pass
 
             try:
-                heading = mat['Heading'][0]
+                heading = mat['Heading']
             except:
                 heading = 'empty'
                 pass    
