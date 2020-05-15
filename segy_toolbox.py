@@ -194,8 +194,8 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
             trace.stats.segy.trace_header.data_use = 1
             trace.stats.segy.trace_header.distance_from_center_of_the_source_point_to_the_center_of_the_receiver_group = 0
         
-            trace.stats.segy.trace_header.receiver_group_elevation = Elevation_max
-            trace.stats.segy.trace_header.surface_elevation_at_source = Elevation_max
+            trace.stats.segy.trace_header.receiver_group_elevation = int(Elevation_max)
+            trace.stats.segy.trace_header.surface_elevation_at_source = int(Elevation_max)
         
             trace.stats.segy.trace_header.source_depth_below_surface = 0
             trace.stats.segy.trace_header.datum_elevation_at_receiver_group = 36167

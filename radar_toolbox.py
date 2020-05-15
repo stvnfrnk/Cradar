@@ -281,7 +281,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                       
         speed_of_ice    = Usually 1.689 for e=3.15, but it can be changed
 
-        setting         = 'narrowband' or 'wideband'
+        setting         = 'narrowband', 'wideband' for rds or 'snow' for uwbm-snowradar
 
         reference       = 'Reflection' or 'Laserscanner'
     
@@ -354,7 +354,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     #for file in sorted(glob.glob(input_file)):
 
     # don't process Data_img_... files      
-    if 'img_01' not in file:
+    if 'img' not in file:
         # process only not already converted files
         if not file.endswith('elevation.mat'):
             print('')
@@ -513,6 +513,18 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 df = df.interpolate()
                 df.index = df.index.astype(int)
                 df = df.iloc[::-1]
+
+
+            if setting == 'snow':
+                df_comb         = df_comb.round({'ElevationWGS84': 3})
+                ## create pivot table for heatmap
+                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df.interpolate()
+                df.index = np.around(df.index.values, decimals=2)
+                df = df.loc[~df.index.duplicated(keep='first')]
+                df = df.iloc[::-1]
+                #df.index = (df.index * 10).astype(int)
+
             
             surface_m = np.array(surface_m)
             bottom_m  = np.array(bottom_m)
