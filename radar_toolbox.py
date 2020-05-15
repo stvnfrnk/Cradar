@@ -621,7 +621,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
             
             suffix = ''
             if reference == 'Laserscanner':
-                suffix = 'ALS'
+                suffix = 'REMA'
             elif reference == 'Reflection':
                 suffix = 'reflection'
                 
