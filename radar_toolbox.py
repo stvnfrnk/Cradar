@@ -830,7 +830,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 # from a cresis radar .mat file
 ################################
 
-def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
+def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r', dpi=300):
 
     import h5py
     import scipy.io 
@@ -868,7 +868,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         print('Using scipy.io to load matfile')
 
         if z_type == 'twt':
-            df        = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+            df        = pd.DataFrame(np.log10(np.array(mat['Data']))).T # radar matrix
             twt       = np.array(mat['Time'][0])
             longitude = np.array(mat['Longitude'][0].T)
             latitude  = np.array(mat['Latitude'][0].T)
@@ -887,10 +887,10 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         print('Using h5py to load matfile')
         
         if z_type == 'twt':
-            df        = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+            df        = pd.DataFrame(np.log10(np.array(mat['Data']))).T # radar matrix
             twt       = np.array(mat['Time'][0])
-            longitude = np.array(mat['Longitude'][0])
-            latitude  = np.array(mat['Latitude'][0])
+            longitude = np.array(mat['Longitude'])
+            latitude  = np.array(mat['Latitude'])
 
         elif z_type == 'elevation':
             df        = pd.DataFrame(np.array(mat['Data'])) # radar matrix
@@ -956,4 +956,4 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r'):
         plt.title(file + ' ' + z_type, fontsize = '20')
         plt.colorbar(ims)
             
-    fig.savefig(file.split('.')[0] + '.png', dpi=200, bbox_inches='tight')
+    fig.savefig(file.split('.')[0] + '.png', dpi=dpi, bbox_inches='tight')
