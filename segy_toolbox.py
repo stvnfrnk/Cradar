@@ -5,7 +5,7 @@
 # from a SEGY file
 ################################
 
-def plot_segy(segy_input, png=False, cmap='bone_r'):
+def plot_segy(segy_input, png=False, cmap='bone_r', log10=False):
     
     '''
     
@@ -20,7 +20,10 @@ def plot_segy(segy_input, png=False, cmap='bone_r'):
     data    = np.stack(t.data for t in list(stream.traces))
     
     fig = plt.subplots(figsize=(20,10))
-    plt.imshow(data.T, cmap=cmap, aspect='auto')
+    if log10 == False:
+        plt.imshow(data.T, cmap=cmap, aspect='auto')
+    elif log10 == True:
+        plt.imshow(np.log10(data).T, cmap=cmap, aspect='auto')
     plt.colorbar()
     plt.show()
 

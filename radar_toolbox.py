@@ -447,10 +447,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 
                 twt     = np.array(mat['Time']).T
                 elev    = np.array(mat['Elevation'])
-                try:
-                    bott    = np.array(mat['Bottom'])
-                except:
-                    bott = 'empty'
+                bott    = np.array(mat['Bottom'])
             
             df       = df.apply(pd.to_numeric).astype(float)        
             df       = df.reset_index(drop=True) # reset index
@@ -488,8 +485,8 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 surface = Airplane_Elevation - Air_Column
                 surface_m.append(surface)
 
-                #bottom = Airplane_Elevation - (bott[i] * speed_of_ice / 2)
-                #bottom_m.append(bottom)
+                bottom = Airplane_Elevation - (bott[i] * speed_of_ice / 2)
+                bottom_m.append(bottom)
         
                 ElevationWGS84 = Airplane_Elevation - Air_Column - Depth
         
@@ -610,7 +607,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                              'Pitch'                : pitch,
                              'Roll'                 : roll,
                              'Heading'              : heading,
-                             #'Bottom'               : bottom_m,
+                             'Bottom'               : bottom_m,
                              'Surface'              : surface_m,
                              'ALS'                  : df_meta['ALS'].values,
                              'ALS_nans'             : ALS_nans
@@ -629,7 +626,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                              'Pitch'                : pitch,
                              'Roll'                 : roll,
                              'Heading'              : heading,
-                             #'Bottom'               : bottom_m,
+                             'Bottom'               : bottom_m,
                              'Surface'              : surface_m,
                              }
             
@@ -726,10 +723,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Pitch              = np.array(mat['Pitch'])[0][0:ol]
             Roll               = np.array(mat['Roll'])[0][0:ol]
             Heading            = np.array(mat['Heading'])[0][0:ol]
-            try:
-                Bottom             = np.array(mat['Bottom'])[0][0:ol]
-            except:
-                Bottom = 'empty'
+            Bottom             = np.array(mat['Bottom'])[0][0:ol]
             Surface            = np.array(mat['Surface'])[0][0:ol]
 
             Data.index         = Elevation_WGS84
@@ -749,10 +743,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Pitch              = np.array(mat['Pitch'])[0]
             Roll               = np.array(mat['Roll'])[0]
             Heading            = np.array(mat['Heading'])[0]
-            try:
-                Bottom             = np.array(mat['Bottom'])[0]
-            except:
-                Bottom = 'empty'
+            Bottom             = np.array(mat['Bottom'])[0]
             Surface            = np.array(mat['Surface'])[0]
 
             Data.index         = Elevation_WGS84
@@ -790,7 +781,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
     Y                  = np.concatenate(Y_)
     Aircraft_Elevation = np.concatenate(Aircraft_Elevation_)
     Spacing            = np.concatenate(Spacing_)
-    #Bottom             = np.concatenate(Bottom_)
+    Bottom             = np.concatenate(Bottom_)
     Surface            = np.concatenate(Surface_)
 
     # check if navigation data is available
@@ -824,7 +815,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                  'Pitch'                : Pitch,
                  'Roll'                 : Roll,
                  'Heading'              : Heading,
-                # 'Bottom'               : Bottom,
+                 'Bottom'               : Bottom,
                  'Surface'              : Surface
                  }
 
