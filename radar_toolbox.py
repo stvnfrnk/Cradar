@@ -498,6 +498,8 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 df_trace.columns    = ['ElevationWGS84', 'dB', 'Trace']
                 df_comb             = df_comb.append(df_trace)
                 #df_comb             = df_comb.round({'ElevationWGS84': 0})
+            
+            df_comb = df_comb.dropna()
         
             if setting == 'wideband': 
                 df_comb         = df_comb.round({'ElevationWGS84': 1})
@@ -633,7 +635,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
             
             suffix = ''
             if reference == 'Laserscanner':
-                suffix = 'REMA'
+                suffix = 'DEM'
             elif reference == 'Reflection':
                 suffix = 'reflection'
                 
