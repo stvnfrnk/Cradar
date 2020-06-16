@@ -41,7 +41,7 @@ def plot_segy(segy_input, png=False, cmap='bone_r', log10=False):
 # to SEGY format
 #####################################
 
-def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
+def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1, radar='uwb'):
 
     '''  
     Usage:
@@ -125,16 +125,27 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
     
     # Check on TWT or Elevation Data
     if elevation == True:
-        
-        # Define variables
-        mat             = scipy.io.loadmat(matfile)
-        data            = mat['Data']
-        X               = mat['X']
-        Y               = mat['Y']
-        Elevation       = mat['Elevation_WGS84'][0]
-        Elevation_max   = mat['Elevation_WGS84'].max()
-        num_of_samples  = mat['Elevation_WGS84'].shape[1]  
-        gps_time        = mat['GPS_time']
+
+        if radar == 'emr':
+            # Define variables
+            mat             = scipy.io.loadmat(matfile)
+            data            = mat['Data']
+            X               = mat['X']
+            Y               = mat['Y']
+            Elevation       = mat['Elevation'][0]
+            Elevation_max   = mat['Elevation'].max()
+            num_of_samples  = mat['Elevation'].shape[1]  
+
+        elif radar == 'uwb':
+            # Define variables
+            mat             = scipy.io.loadmat(matfile)
+            data            = mat['Data']
+            X               = mat['X']
+            Y               = mat['Y']
+            Elevation       = mat['Elevation_WGS84'][0]
+            Elevation_max   = mat['Elevation_WGS84'].max()
+            num_of_samples  = mat['Elevation_WGS84'].shape[1]  
+            gps_time        = mat['GPS_time']
     
         # Create empty stream
         stream = Stream()
@@ -150,12 +161,20 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1):
         
         # Create Traces and Trace Header
         for i in range(0, data.shape[1] - 1):
-            
-            year            = int(time.strftime("%Y", time.gmtime(gps_time[0][i])))
-            day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[0][i])))
-            hour            = int(time.strftime("%H", time.gmtime(gps_time[0][i])))
-            minute          = int(time.strftime("%M", time.gmtime(gps_time[0][i])))
-            second          = int(time.strftime("%S", time.gmtime(gps_time[0][i])))
+
+            if radar == 'emr':
+                year        = 0
+                day_of_year = 0
+                hour        = 0
+                minute      = 0
+                second      = 0
+
+            elif radar == 'uwb':
+                year            = int(time.strftime("%Y", time.gmtime(gps_time[0][i])))
+                day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[0][i])))
+                hour            = int(time.strftime("%H", time.gmtime(gps_time[0][i])))
+                minute          = int(time.strftime("%M", time.gmtime(gps_time[0][i])))
+                second          = int(time.strftime("%S", time.gmtime(gps_time[0][i])))
             
             # Create some random data.
             trace_  = data[:, i]

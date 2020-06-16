@@ -50,11 +50,11 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
     
     else:
         if EPSG == '3413':
-            EPSG3413=pyproj.Proj("+init=EPSG:3413")
+            EPSG3413=pyproj.Proj("EPSG:3413")
             df['X'], df['Y'] = EPSG3413(np.array(df['Longitude']), np.array(df['Latitude']))
         
-        if EPSG == '3031':
-            EPSG3031=pyproj.Proj("+init=EPSG:3031")
+        elif EPSG == '3031':
+            EPSG3031=pyproj.Proj("EPSG:3031")
             df['X'], df['Y'] = EPSG3031(np.array(df['Longitude']), np.array(df['Latitude']))
 
         else:
