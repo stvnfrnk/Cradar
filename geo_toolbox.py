@@ -103,7 +103,7 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
 # from a cresis radar .mat file
 #############################################
     
-def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
+def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=[]):
     
     '''
         Usage ==>> radartrack2shape(file, geometry='Point' or 'LineString', 
@@ -132,39 +132,55 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, Attributes=[]):
     import h5py
     import os
     import numpy as np
+    import pandas as pd
     from collections import OrderedDict
     from shapely.geometry import Point, LineString, mapping
     from fiona import collection
     from fiona.crs import from_epsg
     
 
-    # depending on the .mat file version
-    # either scipy.io (older versions) or h5py (newer versions)
-    # will be used to load the file        
-    try:
-        mat     = scipy.io.loadmat(file)
-        reader  = 'scipy'
-    except NotImplementedError:
-        mat     = h5py.File(file, mode='r')
-        reader  = 'h5py'
-        
+    if radar == 'uwb':
+        print('===> Dealing with UWB radar data...')
 
-    # loading with scipy.io
-    if reader == 'scipy':   
-        print('Using scipy.io to load matfile')
-        
-        # Lat and Lon Required
-        Latitude  = np.array(mat['Latitude'])[0]
-        Longitude = np.array(mat['Longitude'])[0]
+        # depending on the .mat file version
+        # either scipy.io (older versions) or h5py (newer versions)
+        # will be used to load the file        
+        try:
+            mat     = scipy.io.loadmat(file)
+            reader  = 'scipy'
+        except NotImplementedError:
+            mat     = h5py.File(file, mode='r')
+            reader  = 'h5py'
+            
+
+        # loading with scipy.io
+        if reader == 'scipy':   
+            print('Using scipy.io to load matfile')
+            
+            # Lat and Lon Required
+            Latitude  = np.array(mat['Latitude'])[0]
+            Longitude = np.array(mat['Longitude'])[0]
 
 
-    #loading with h5py
-    if reader == 'h5py':
-        print('Using h5py to load matfile')
+        #loading with h5py
+        if reader == 'h5py':
+            print('Using h5py to load matfile')
 
-        # Lat and Lon Required
-        Latitude  = np.array(mat['Latitude']).T[0]
-        Longitude = np.array(mat['Longitude']).T[0]
+            # Lat and Lon Required
+            Latitude  = np.array(mat['Latitude']).T[0]
+            Longitude = np.array(mat['Longitude']).T[0]
+
+
+    elif radar == 'emr':
+        print('===> Dealing with EMR radar data...')
+
+        koord       = pd.read_csv(file, delim_whitespace=True)
+        Longitude   = np.array(koord['GPSLon'])
+        Latitude    = np.array(koord['GPSLat'])
+
+
+    else:
+        print("Pleas provide a radar type ('uwb' or 'emr')")
     
     shape_name  = file.split('.')[0]
     CRS         = from_epsg(EPSG)
