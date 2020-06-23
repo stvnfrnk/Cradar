@@ -190,13 +190,13 @@ def pull2surface(in_path='', out_path='', file='', region='', overlap=False, set
 
             if region == 'Greenland':
                 ## Project Lat, Lon to X, Y in EPSG:3413
-                EPSG=pyproj.Proj("+init=EPSG:3413")
+                EPSG=pyproj.Proj("EPSG:3413")
                 df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
                                             np.array(df_meta['Latitude']))
 
             if region == 'Antarctica':       
                 ## Project Lat, Lon to X, Y in EPSG:3413
-                EPSG=pyproj.Proj("+init=EPSG:3031")
+                EPSG=pyproj.Proj("EPSG:3031")
                 df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
                                             np.array(df_meta['Latitude']))
 

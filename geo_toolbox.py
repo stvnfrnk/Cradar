@@ -199,7 +199,7 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
         
         import pyproj
         
-        Projection  = "+init=EPSG:3413"
+        Projection  = "EPSG:3413"
         EPSG_       = pyproj.Proj(Projection)
         X, Y        = EPSG_(Longitude, Latitude)
         X_, Y_      = 'X', 'Y'
@@ -209,7 +209,7 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
         
         import pyproj
         
-        Projection  = "+init=EPSG:3031"
+        Projection  = "EPSG:3031"
         EPSG_       = pyproj.Proj(Projection)
         X, Y        = EPSG_(Longitude, Latitude)
         X_, Y_      = 'X', 'Y'
