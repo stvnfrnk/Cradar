@@ -267,7 +267,7 @@ def pull2surface(in_path='', out_path='', file='', region='', overlap=False, set
 # from a cresis radar .mat file
 ################################
 
-def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='narrowband', reference='Laserscanner'):
+def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='', reference='DEM', number_of_gaps=100, decimate=[False, 2]):
 
     '''
         in_path         = path with segment folders with twt matfiles
@@ -297,7 +297,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     
     
     speed_of_light = 2.99792458e8
-    
+
     #print('===> Processing File: __ {}'.format(file))
     print('')
     
@@ -306,43 +306,43 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
         exit()
     else:
         print('Filename: {}'.format(file))
-
+    
     if region == '':
         print('Specify a region (Greenland or Antarctica)')
         exit()
     else:
         print('Region: {}'.format(region))
-
+    
     if in_path == '':
         in_path = os.getcwd()
         print('No in_path defined, setting cwd as in_path')
-
+    
     if out_path == '':
         out_path = os.getcwd()
         print('No out_path defined, setting cwd as out_path')
-
-
+    
+    
     if not os.path.exists(out_path):
             os.mkdir(out_path)
-            
-            
+    
+    
     ####################################################      
     # check number of Laserscanner gaps (ALS_nans)
-            
+    
     try:
         mat     = scipy.io.loadmat(file)
     except NotImplementedError:
         mat     = h5py.File(file, mode='r')
     
-    if reference == 'Laserscanner':            
+    if reference == 'DEM':            
         try:
-            ALS_nans     = np.array(mat['ALS_nans']).mean()
+            DEM_nans     = np.array(mat['DEM_nans']).mean()
         except:
             pass
-        
-        if ALS_nans > 100:
+    
+        if DEM_nans > number_of_gaps:
             reference = 'Reflection'
-            print('===> Too many gaps in Laserscanner Data...')
+            print('===> More than {} gaps in DEM Data...'.format(number_of_gaps))
             print('===> Using surface reflection instead.')
         else: 
             pass
@@ -352,15 +352,15 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     ####################################################
     
     #for file in sorted(glob.glob(input_file)):
-
+    
     # don't process Data_img_... files      
     if 'img' not in file:
         # process only not already converted files
         if not file.endswith('elevation.mat'):
             print('')
             print('Calculating true elevation for: {}'.format(file))
-        
-
+    
+    
             # depending on the .mat file version
             # either scipy.io (older versions) or h5py (newer versions)
             # will be used to load the file        
@@ -370,238 +370,302 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
             except NotImplementedError:
                 mat     = h5py.File(file, mode='r')
                 reader  = 'h5py'
-                
-        
+    
+    
             # loading with scipy.io
             if reader == 'scipy':   
                 print('Using scipy.io to load matfile')
+                ######################### EMR ####################################
+                if setting == 'emr':
+                    print('Dealing with AWI EMR data...')
+                    
+                    df_meta              = pd.DataFrame(np.array(mat['Longitude'])).T   
+                    df_meta['Latitude']  = pd.DataFrame(np.array(mat['Latitude'])).T     
+                    df_meta['Elevation'] = pd.DataFrame(np.array(mat['Altitude'])).T  
+                    df_meta['Filename']  = file
+                    df_meta['GPS_time']  = np.ones(len(df_meta['Latitude'])) * -9999
+                    df_meta['DEM']       = pd.DataFrame(np.array(mat['DEM'])).T
+    
+                    df_meta.index.name = 'index'
+                    df_meta.columns = ['Longitude', 'Latitude', 'Aircraft_Elevation', 'Filename', 'GPS_time', 'DEM']
+                    df      = pd.DataFrame(np.log10(np.array(mat['Data'])))
+    
+                    twt     = np.array(mat['Time'][0]).T
+                    elev    = np.array(mat['Altitude'][0])
+                    surf    = np.ones(len(elev)) * -9999
+                    bott    = np.ones(len(elev)) * -9999
+                    idx     = np.array(mat['Surface_idx'][0])
+                    
                 
-                df_meta               = pd.DataFrame(np.array(mat['GPS_time'])).T                 
-                df_meta['Longitude']  = pd.DataFrame(np.array(mat['Longitude'])).T   
-                df_meta['Latitude']   = pd.DataFrame(np.array(mat['Latitude'])).T     
-                df_meta['Elevation']  = pd.DataFrame(np.array(mat['Elevation'])).T   
-                df_meta['Filename']   = file
-                df_meta.index.name    = 'index'
-                df_meta.columns       = ['GPS_time', 'Longitude', 'Latitude', \
-                                         'Aircraft_Elevation', 'Filename']
-
-                df      = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
-
-                # chech how the ice surface boundary is defined
-                # surface reflection or Laserscanner data?
-                if reference == 'Reflection':
-                    surf    = np.array(mat['Surface']).T
-                    print('==> Using surface reflection as ice-surface boundary.')
-                elif reference == 'Laserscanner':
-                    try:
-                        df_meta['ALS'] = pd.DataFrame(np.array(mat['ALS'])).T
-                    except:
-                        print('No Laserscanner data found')
-                    surf    = (np.array(df_meta['Aircraft_Elevation']) - np.array(df_meta['ALS'])) / 2.99792458e8 * 2
-                    print('==> Using Laserscanner data as ice-surface boundary.')
-
-
-                if mat['Time'].shape[0] == 1:
-                    twt     = np.array(mat['Time']).T # array with the twt (y-axis)
-
-                if mat['Time'].shape[0] > 1:
-                    twt     = np.array(mat['Time']) # array with the twt (y-axis)
-
                 else:
-                    print('problem...')
-                    pass
-
-                elev    = np.array(mat['Elevation']).T # array with the aircraft elevation
-                bott    = np.array(mat['Bottom']).T
-                
+    
+                    df_meta               = pd.DataFrame(np.array(mat['GPS_time'])).T                 
+                    df_meta['Longitude']  = pd.DataFrame(np.array(mat['Longitude'])).T   
+                    df_meta['Latitude']   = pd.DataFrame(np.array(mat['Latitude'])).T     
+                    df_meta['Elevation']  = pd.DataFrame(np.array(mat['Elevation'])).T   
+                    df_meta['Filename']   = file
+                    df_meta.index.name    = 'index'
+                    df_meta.columns       = ['GPS_time', 'Longitude', 'Latitude', \
+                                             'Aircraft_Elevation', 'Filename']
+    
+                    df      = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
+    
+                    # chech how the ice surface boundary is defined
+                    # surface reflection or Laserscanner data?
+                    if reference == 'Reflection':
+                        surf    = np.array(mat['Surface']).T
+                        print('==> Using surface reflection as ice-surface boundary.')
+                    elif reference == 'DEM':
+                        #print('==> Trying to use DEM data as ice-surface boundary.')
+                        try:
+                            df_meta['DEM'] = pd.DataFrame(np.array(mat['DEM'])).T
+                        except:
+                            print('No DEM data found')
+                        #surf    = (np.array(df_meta['Aircraft_Elevation']) - np.array(df_meta['DEM'])) / 2.99792458e8 * 2
+                        surf    = np.array(mat['Surface']).T
+                        print('==> Using DEM data as ice-surface boundary.')
+    
+    
+                    if mat['Time'].shape[0] == 1:
+                        twt     = np.array(mat['Time']).T # array with the twt (y-axis)
+    
+                    elif mat['Time'].shape[0] > 1:
+                        twt     = np.array(mat['Time']) # array with the twt (y-axis)
+    
+                    else:
+                        print('...(problem) ==> Time array shape smaller than 1')
+                        pass
+    
+                    elev    = np.array(mat['Elevation']).T # array with the aircraft elevation
+                    bott    = np.array(mat['Bottom']).T
+    
             #loading with h5py
-            if reader == 'h5py':
+            elif reader == 'h5py':
                 print('Using h5py to load matfile')
-                
+    
                 df_meta = pd.DataFrame(np.array(mat['GPS_time']))                
                 df_meta['Longitude'] = pd.DataFrame(np.array(mat['Longitude']))   
                 df_meta['Latitude'] = pd.DataFrame(np.array(mat['Latitude']))     
                 df_meta['Elevation'] = pd.DataFrame(np.array(mat['Elevation']))  
                 df_meta['Filename'] = file
-            
+    
                 df_meta.index.name = 'index'
                 df_meta.columns = ['GPS_time', 'Longitude', 'Latitude', \
                                    'Aircraft_Elevation', 'Filename']
                 df      = pd.DataFrame(np.log10(np.array(mat['Data']))).T
-
-
+    
+    
                 # chech how the ice surface boundary is defined
                 # surface reflection or Laserscanner data?
                 if reference == 'Reflection':
                     surf    = np.array(mat['Surface'])
                     print('==> Using surface reflection as ice-surface boundary.')
-                elif reference == 'Laserscanner':
+                elif reference == 'DEM':
                     try:
-                        df_meta['ALS'] = pd.DataFrame(np.array(mat['ALS']))
+                        df_meta['DEM'] = pd.DataFrame(np.array(mat['DEM']))
                     except:
                         print('No Laserscanner data found')
-
-                    surf    = (df_meta['Aircraft_Elevation'] - df_meta['ALS']) / 2.99792458e8 * 2
+    
+                    #surf    = (df_meta['Aircraft_Elevation'] - df_meta['ALS']) / 2.99792458e8 * 2
+                    surf    = np.array(mat['Surface'])
                     print('==> Using Laserscanner data as ice-surface boundary.')
-
-
+    
+    
                 twt     = np.array(mat['Time']).T
                 elev    = np.array(mat['Elevation'])
                 bott    = np.array(mat['Bottom'])
+    
+    
             
+    
+    
+    
             df       = df.apply(pd.to_numeric).astype(float)        
             df       = df.reset_index(drop=True) # reset index
-            df_comb  = pd.DataFrame(columns = ['ElevationWGS84', 'dB', 'Trace'])
-        
+            df_comb  = pd.DataFrame(columns = ['Elevation', 'dB', 'Trace'])
+    
             # Log every 500 lines.
             LOG_EVERY_N = 500
-
+    
             # create surface and bottom array (m)
             surface_m = []
             bottom_m  = []
-            
+    
             for i in np.arange(0, elev.size):
                 if (i % LOG_EVERY_N) == 0:
                     print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
-                
-
+    
+    
                 # get index where surface reflection is located
-                idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
-        
+                if setting == 'emr':
+                    surf_idx = idx[i]
+                else:
+                    surf_idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
+    
                 # get single trace of radargram
                 data = np.array(df[i])
-                
+    
                 # delete values until surface reflection
-                data = np.delete(data,np.s_[1:idx])
-                
+                data = np.delete(data,np.s_[0:surf_idx])
+    
                 #
-                T2 = np.delete(twt,np.s_[0:idx],axis=0)
-                T3 = T2 - twt[idx]
-        
-                Depth               = (T3 * speed_of_ice) / 2
+                T  = np.delete(twt,np.s_[0:surf_idx],axis=0) # delete traces abofe surface reflection
+                T_ = T - twt[surf_idx] # set start of new twt array to zero
+    
+                Depth               = T_ * (speed_of_ice / 2)
+    
                 Air_Column          = (surf[i] * speed_of_light) / 2
                 Airplane_Elevation  = elev[i]
-                
-                surface = Airplane_Elevation - Air_Column
+    
+                if reference == 'Reflection':
+                    surface   = Airplane_Elevation - Air_Column
+                    Elevation = Airplane_Elevation - Air_Column - Depth
+                elif reference == 'DEM':
+                    surface   = df_meta['DEM'][i]
+                    Elevation = df_meta['DEM'][i] - Depth
+    
                 surface_m.append(surface)
-
+    
                 bottom = Airplane_Elevation - (bott[i] * speed_of_ice / 2)
                 bottom_m.append(bottom)
-        
-                ElevationWGS84 = Airplane_Elevation - Air_Column - Depth
-        
+    
+    
+    
                 trace = np.ones(data.size) * i
-        
-                df_trace            = pd.DataFrame(ElevationWGS84)
+    
+                df_trace            = pd.DataFrame(Elevation)
                 df_trace['dB']      = pd.DataFrame(data)
                 df_trace['Trace']   = pd.DataFrame(trace)
-                df_trace.columns    = ['ElevationWGS84', 'dB', 'Trace']
+                df_trace.columns    = ['Elevation', 'dB', 'Trace']
+    
+    
+    
                 df_comb             = df_comb.append(df_trace)
                 #df_comb             = df_comb.round({'ElevationWGS84': 0})
-            
+    
             df_comb = df_comb.dropna()
-        
+    
             if setting == 'wideband': 
-                df_comb         = df_comb.round({'ElevationWGS84': 1})
+                df_comb         = df_comb.round({'Elevation': 1})
+                
                 ## create pivot table for heatmap
-                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df_comb.pivot('Elevation', 'Trace', 'dB')
                 df = df.interpolate()
                 df = df.iloc[::-1]
-
-            if setting == 'narrowband':
-                df_comb         = df_comb.round({'ElevationWGS84': 0})
+    
+    
+                if len(df) > 32767 :
+                    print('...(problem) ===> Number of samples: {}'.format(len(df)))
+                    print('...(problem) ===> Exceeding maximum number of samples for SEGY conversion ( >32767 samples )')
+                    print('...(action)  ===> Deleting every >>{}<< row'.format(int(decimate[1])))
+    
+                    if decimate[0] == False:
+                        pass
+                    elif decimate[0] == True:
+    
+                        decimate_factor = int(decimate[1])
+                        df = df.iloc[::decimate_factor, :]
+    
+            if setting == 'narrowband' or setting == 'emr':
+                df_comb = df_comb.dropna()
+                df_comb = df_comb.round({'Elevation': 0})
+    
                 ## create pivot table for heatmap
-                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df_comb.pivot('Elevation', 'Trace', 'dB')
                 df = df.interpolate()
                 df.index = df.index.astype(int)
                 df = df.iloc[::-1]
-
-
+    
+    
             if setting == 'snow':
-                df_comb         = df_comb.round({'ElevationWGS84': 3})
+                df_comb         = df_comb.round({'Elevation': 3})
+                
                 ## create pivot table for heatmap
-                df = df_comb.pivot('ElevationWGS84', 'Trace', 'dB')
+                df = df_comb.pivot('Elevation', 'Trace', 'dB')
                 df = df.interpolate()
                 df.index = np.around(df.index.values, decimals=2)
                 df = df.loc[~df.index.duplicated(keep='first')]
                 df = df.iloc[::-1]
                 #df.index = (df.index * 10).astype(int)
-
-            
+    
+    
             surface_m = np.array(surface_m)
             bottom_m  = np.array(bottom_m)
-
+    
             if overlap == True:
                 df.drop(df.columns[-65:], axis=1, inplace=True)
                 df_meta.drop(df_meta.index[-65:], axis=0, inplace=True)
-            
-            
+    
+    
             ## Get real distance for traces 
             spacing = np.array([])
             for i in range(1, len(df_meta)-1):
-                	coord_1    = (df_meta['Latitude'][i], df_meta['Longitude'][i])
-                	coord_2    = (df_meta['Latitude'][i + 1], df_meta['Longitude'][i + 1])
-                	f          = geopy.distance.geodesic(coord_1, coord_2).meters
-                	spacing    = np.append(spacing, f) 
-                    
+                    coord_1    = (df_meta['Latitude'][i], df_meta['Longitude'][i])
+                    coord_2    = (df_meta['Latitude'][i + 1], df_meta['Longitude'][i + 1])
+                    f          = geopy.distance.geodesic(coord_1, coord_2).meters
+                    spacing    = np.append(spacing, f) 
+    
             distance       = np.cumsum(spacing[0:-1])
             distance       = np.insert(distance, 0, 0)
             distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
             distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
             spacing        = np.insert(spacing, 0, spacing.mean())
             spacing        = np.insert(spacing, len(spacing), spacing.mean())
-            
-            
+    
+    
             if region == 'Greenland':
                 ## Project Lat, Lon to X, Y in EPSG:3413
-                EPSG=pyproj.Proj("+init=EPSG:3413")
+                EPSG=pyproj.Proj("EPSG:3413")
                 df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
                                             np.array(df_meta['Latitude']))
-                
+    
             if region == 'Antarctica':       
                 ## Project Lat, Lon to X, Y in EPSG:3413
-                EPSG=pyproj.Proj("+init=EPSG:3031")
+                EPSG=pyproj.Proj("EPSG:3031")
                 df_meta['X'], df_meta['Y'] = EPSG(np.array(df_meta['Longitude']), \
                                             np.array(df_meta['Latitude']))
-        
+    
             if not os.path.exists(out_path):
                 os.makedirs(out_path)
-            
+    
             print('===> Done Calculating...')
-            
+    
             #####################
             # Save as .mat file
             #####################
-
+    
             # test if the following variables exist
             # older files do not contain this information
-
+    
             try:
                 pitch = mat['Pitch']
             except:
                 pitch = 'empty'
                 pass
-
+    
             try:
                 roll = mat['Roll']
             except:
                 roll = 'empty'
                 pass
-
+    
             try:
                 heading = mat['Heading']
             except:
                 heading = 'empty'
-                pass    
-
-        
-            if reference == 'Laserscanner':
+                pass   
+    
+    
+    
+    
+    
+            if reference == 'DEM':
                 full_dict = {'Data'                 : df.values,
-                             'Elevation_WGS84'      : df.index.values,
+                             'Elevation'            : df.index.values,
                              'GPS_time'             : df_meta['GPS_time'].values,
                              'Latitude'             : df_meta['Latitude'].values, 
                              'Longitude'            : df_meta['Longitude'].values, 
-                             'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                             #'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
                              'Spacing'              : spacing,
                              'Distance'             : distance,
                              'X'                    : df_meta['X'].values,
@@ -611,16 +675,17 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                              'Heading'              : heading,
                              'Bottom'               : bottom_m,
                              'Surface'              : surface_m,
-                             'ALS'                  : df_meta['ALS'].values,
-                             'ALS_nans'             : ALS_nans
+                             'DEM'                  : df_meta['DEM'].values,
+                             'DEM_nans'             : DEM_nans
                              }
+           
             else:
                 full_dict = {'Data'                 : df.values,
-                             'Elevation_WGS84'      : df.index.values,
+                             'Elevation'            : df.index.values,
                              'GPS_time'             : df_meta['GPS_time'].values,
                              'Latitude'             : df_meta['Latitude'].values, 
                              'Longitude'            : df_meta['Longitude'].values, 
-                             'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
+                             #'Aircraft_Elevation'   : df_meta['Aircraft_Elevation'].values,
                              'Spacing'              : spacing,
                              'Distance'             : distance,
                              'X'                    : df_meta['X'].values,
@@ -631,20 +696,32 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                              'Bottom'               : bottom_m,
                              'Surface'              : surface_m,
                              }
-            
-            
+                
+            if setting == 'emr':
+                full_dict = {'Data'                 : df.values,
+                             'Elevation'            : df.index.values,
+                             'Latitude'             : df_meta['Latitude'].values, 
+                             'Longitude'            : df_meta['Longitude'].values,
+                             'X'                    : df_meta['X'].values,
+                             'Y'                    : df_meta['Y'].values,
+                             'Spacing'              : spacing,
+                             'Distance'             : distance,
+                             'DEM'                  : df_meta['DEM'].values,
+                              }
+    
+    
             suffix = ''
-            if reference == 'Laserscanner':
+            if reference == 'DEM':
                 suffix = 'DEM'
             elif reference == 'Reflection':
                 suffix = 'reflection'
-                
-            
-            out_filename = file.split('/')[-1].split('.mat')[0] + '_elevation_' + suffix +  '.mat'
-            
+    
+    
+            out_filename = file.split('/')[-1].split('.mat')[0] + '_elevation_' + suffix + '.mat'
+    
             scipy.io.savemat(out_path + '/' + out_filename, full_dict)
             print('===> Saved Frame as: {}'.format(out_filename))
-          
+    
     print('===> DONE !!')
 
 
