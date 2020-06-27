@@ -90,7 +90,11 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
         row = int((yOrigin - point[1] ) / pixelHeight)
     
         #print(row,col, data[row][col])
-        lst.append(data[row][col])
+        try:
+            lst.append(data[row][col])
+        except:
+            print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
+            lst.append(lst[-1])
         
     out_column = pd.DataFrame(lst)
     
