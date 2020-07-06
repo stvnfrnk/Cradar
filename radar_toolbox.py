@@ -761,7 +761,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
 
     Data_               = []
-    Elevation_WGS84_    = []
+    Elevation_          = []
     GPS_time_           = []
     Latitude_           = []
     Longitude_          = []
@@ -785,7 +785,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
         if overlap == True:
 
             Data               = pd.DataFrame(np.array(mat['Data']))
-            Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
+            Elevation          = np.array(mat['Elevation'])[0]
 
             ol                 = Data.shape[1] - overlap_traces
             
@@ -797,7 +797,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Longitude          = np.array(mat['Longitude'])[0][0:ol]
             X                  = np.array(mat['X'])[0][0:ol]
             Y                  = np.array(mat['Y'])[0][0:ol]
-            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0][0:ol]
+            #Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0][0:ol]
             Spacing            = np.array(mat['Spacing'])[0][0:ol]
             Pitch              = np.array(mat['Pitch'])[0][0:ol]
             Roll               = np.array(mat['Roll'])[0][0:ol]
@@ -805,27 +805,31 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Bottom             = np.array(mat['Bottom'])[0][0:ol]
             Surface            = np.array(mat['Surface'])[0][0:ol]
 
-            Data.index         = Elevation_WGS84
+            Data.index         = Elevation
             Data               = Data[Data.columns[0:ol]]
 
         if overlap == False:
 
             Data               = pd.DataFrame(np.array(mat['Data']))
-            Elevation_WGS84    = np.array(mat['Elevation_WGS84'])[0]
+            Elevation          = np.array(mat['Elevation'])[0]
             GPS_time           = np.array(mat['GPS_time'])[0]
             Latitude           = np.array(mat['Latitude'])[0]
             Longitude          = np.array(mat['Longitude'])[0]
             X                  = np.array(mat['X'])[0]
             Y                  = np.array(mat['Y'])[0]
-            Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
+           # Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
             Spacing            = np.array(mat['Spacing'])[0]
             Pitch              = np.array(mat['Pitch'])[0]
             Roll               = np.array(mat['Roll'])[0]
             Heading            = np.array(mat['Heading'])[0]
-            Bottom             = np.array(mat['Bottom'])[0]
-            Surface            = np.array(mat['Surface'])[0]
+            try:
+                Bottom             = np.array(mat['Bottom'])[0]
+                Surface            = np.array(mat['Surface'])[0]
+            except:
+                Bottom = 'empty'
+                Surface = 'empty'
 
-            Data.index         = Elevation_WGS84
+            Data.index         = Elevation
 
         # check if navigation data is available
         # it might not be for files older than 2012
@@ -835,13 +839,13 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             navigation = 'off'
 
         Data_.append(Data)
-        Elevation_WGS84_.append(Elevation_WGS84)
+        Elevation_.append(Elevation)
         GPS_time_.append(GPS_time)
         Latitude_.append(Latitude)
         Longitude_.append(Longitude)
         X_.append(X)
         Y_.append(Y)
-        Aircraft_Elevation_.append(Aircraft_Elevation)
+        #Aircraft_Elevation_.append(Aircraft_Elevation)
         Spacing_.append(Spacing)
         Pitch_.append(Pitch)
         Roll_.append(Roll)
@@ -852,16 +856,21 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
     Data               = pd.concat(Data_, axis=1, ignore_index=True)
     Data               = Data[::-1]
-    Elevation_WGS84    = np.array(Data.index.astype(int))#np.concatenate(Elevation_WGS84_)
+    Elevation          = np.array(Data.index.astype(int))#np.concatenate(Elevation_WGS84_)
     GPS_time           = np.concatenate(GPS_time_)
     Latitude           = np.concatenate(Latitude_)
     Longitude          = np.concatenate(Longitude_)
     X                  = np.concatenate(X_)
     Y                  = np.concatenate(Y_)
-    Aircraft_Elevation = np.concatenate(Aircraft_Elevation_)
+    #Aircraft_Elevation = np.concatenate(Aircraft_Elevation_)
     Spacing            = np.concatenate(Spacing_)
-    Bottom             = np.concatenate(Bottom_)
-    Surface            = np.concatenate(Surface_)
+    try:
+        Bottom             = np.concatenate(Bottom_)
+        Surface            = np.concatenate(Surface_)
+    except:
+        Bottom = 'empty'
+        Surface = 'empty'
+
 
     # check if navigation data is available
     if navigation == 'off':
@@ -882,13 +891,13 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
 
 
     full_dict = {'Data'                 : Data.values,
-                 'Elevation_WGS84'      : Elevation_WGS84,
+                 'Elevation'            : Elevation,
                  'GPS_time'             : GPS_time,
                  'Latitude'             : Latitude, 
                  'Longitude'            : Longitude,
                  'X'                    : X,
                  'Y'                    : Y,
-                 'Aircraft_Elevation'   : Aircraft_Elevation,
+                 #'Aircraft_Elevation'   : Aircraft_Elevation,
                  'Spacing'              : Spacing,
                  'Distance'             : Distance,
                  'Pitch'                : Pitch,
@@ -902,6 +911,183 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
     print('===> Saved Frame as: {}'.format(output_filename))
 
 
+
+##################################
+# Flip single frame left to right
+##################################
+
+
+def flip_frame(file='', output_filename='', z_mode='elevation'):
+
+    '''
+    Reads a list of frames and connects them
+    The list should have the following format:
+
+        frames = ['Data_...._001_.mat', 'Data_...._002_.mat', 'Data_...._003_.mat', etc...]
+
+    '''
+        
+    import scipy.io
+    import pandas as pd
+    import numpy as np
+    import sys
+    import glob
+    import os
+
+
+    # CHECKS
+
+    if output_filename == '':
+        print('you did not provide a output filename')
+        print('setting output filename to output.mat')
+        output_filename = 'output.mat'
+
+
+
+
+    mat                = scipy.io.loadmat(file)
+
+
+    navigation = 'off'
+
+    Data               = pd.DataFrame(np.array(mat['Data'])).T[::-1].T
+    Elevation          = np.array(mat['Elevation'])[0]
+    GPS_time           = np.array(mat['GPS_time'])[0][::-1]
+    Latitude           = np.array(mat['Latitude'])[0][::-1]
+    Longitude          = np.array(mat['Longitude'])[0][::-1]
+    X                  = np.array(mat['X'])[0][::-1]
+    Y                  = np.array(mat['Y'])[0][::-1]
+   # Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
+    Spacing            = np.array(mat['Spacing'])[0][::-1]
+    Pitch              = np.array(mat['Pitch'])[0][::-1]
+    Roll               = np.array(mat['Roll'])[0][::-1]
+    Heading            = np.array(mat['Heading'])[0][::-1]
+    Bottom             = np.array(mat['Bottom'])[0][::-1]
+    Surface            = np.array(mat['Surface'])[0][::-1]
+
+
+    if navigation == 'off':
+
+        Pitch   = 'empty'
+        Roll    = 'empty'
+        Heading = 'empty'
+
+
+    Distance = np.cumsum(Spacing)
+
+
+    full_dict = {'Data'                 : Data.values,
+                 'Elevation'            : Elevation,
+                 'GPS_time'             : GPS_time,
+                 'Latitude'             : Latitude, 
+                 'Longitude'            : Longitude,
+                 'X'                    : X,
+                 'Y'                    : Y,
+                 #'Aircraft_Elevation'   : Aircraft_Elevation,
+                 'Spacing'              : Spacing,
+                 'Distance'             : Distance,
+                 'Pitch'                : Pitch,
+                 'Roll'                 : Roll,
+                 'Heading'              : Heading,
+                 'Bottom'               : Bottom,
+                 'Surface'              : Surface
+                 }
+
+    scipy.io.savemat(output_filename, full_dict)
+    print('===> Saved Frame as: {}'.format(output_filename))
+
+
+
+
+
+##################################
+# Truncate a frame
+##################################
+
+
+def truncate_frame(file='', output_filename='', start=0, end=-1, z_mode='elevation'):
+
+    '''
+    Reads a list of frames and connects them
+    The list should have the following format:
+
+        frames = ['Data_...._001_.mat', 'Data_...._002_.mat', 'Data_...._003_.mat', etc...]
+
+    '''
+        
+    import scipy.io
+    import pandas as pd
+    import numpy as np
+    import sys
+    import glob
+    import os
+
+
+    # CHECKS
+
+    if output_filename == '':
+        print('you did not provide a output filename')
+        print('setting output filename to output.mat')
+        output_filename = 'output.mat'
+
+
+
+
+    mat                = scipy.io.loadmat(file)
+
+
+    navigation = 'off'
+
+    Data               = pd.DataFrame(np.array(mat['Data'])).T[start:end].T
+    Elevation          = np.array(mat['Elevation'])
+    GPS_time           = np.array(mat['GPS_time'])[0][start:end]
+    Latitude           = np.array(mat['Latitude'])[0][start:end]
+    Longitude          = np.array(mat['Longitude'])[0][start:end]
+    X                  = np.array(mat['X'])[0][start:end]
+    Y                  = np.array(mat['Y'])[0][start:end]
+   # Aircraft_Elevation = np.array(mat['Aircraft_Elevation'])[0]
+    Spacing            = np.array(mat['Spacing'])[0][start:end]
+    try:
+        Pitch              = np.array(mat['Pitch'])[0][start:end]
+        Roll               = np.array(mat['Roll'])[0][start:end]
+        Heading            = np.array(mat['Heading'])[0][start:end]
+    except:
+        pass
+    try:
+        Bottom             = np.array(mat['Bottom'])[0][start:end]
+        Surface            = np.array(mat['Surface'])[0][start:end]
+    except:
+        pass
+
+    if navigation == 'off':
+
+        Pitch   = 'empty'
+        Roll    = 'empty'
+        Heading = 'empty'
+
+
+    Distance = np.cumsum(Spacing)
+
+
+    full_dict = {'Data'                 : Data.values,
+                 'Elevation'            : Elevation,
+                 'GPS_time'             : GPS_time,
+                 'Latitude'             : Latitude, 
+                 'Longitude'            : Longitude,
+                 'X'                    : X,
+                 'Y'                    : Y,
+                 #'Aircraft_Elevation'   : Aircraft_Elevation,
+                 'Spacing'              : Spacing,
+                 'Distance'             : Distance,
+                 'Pitch'                : Pitch,
+                 'Roll'                 : Roll,
+                 'Heading'              : Heading,
+                 'Bottom'               : Bottom,
+                 'Surface'              : Surface
+                 }
+
+    scipy.io.savemat(output_filename, full_dict)
+    print('===> Saved Frame as: {}'.format(output_filename))
 
 
 ################################
@@ -955,7 +1141,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r', d
         elif z_type == 'elevation':
             df        = pd.DataFrame(np.array(mat['Data'])) # radar matrix
             distance  = np.array(mat['Distance'][0]) # radar matrix
-            elevation = np.array(mat['Elevation_WGS84'][0])
+            elevation = np.array(mat['Elevation'][0])
 
         else:
             print("provide a z_type (z_type='twt' or 'elevation')")
@@ -974,7 +1160,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r', d
         elif z_type == 'elevation':
             df        = pd.DataFrame(np.array(mat['Data'])) # radar matrix
             distance  = np.array(mat['Distance'][0]) # radar matrix
-            elevation = np.array(mat['Elevation_WGS84'][0])
+            elevation = np.array(mat['Elevation'][0])
         else:
             print("provide a z_type (z_type='twt' or 'elevation')")
             exit()
@@ -1017,7 +1203,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', cmap='bone_r', d
                    np.round((distance[0::500] / 1000), 0))
         plt.yticks(df.index.values[0::500], elevation[0::500])
         plt.xlabel('Along-track distance (km)', fontsize='16')
-        plt.ylabel('Elevation_WGS84 (m)', fontsize='16')
+        plt.ylabel('Elevation (m)', fontsize='16')
         plt.title(file + ' ' + z_type, fontsize = '20')
         plt.colorbar(ims)
 
