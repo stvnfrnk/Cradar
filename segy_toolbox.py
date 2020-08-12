@@ -142,9 +142,15 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1, ra
             data            = mat['Data']
             X               = mat['X']
             Y               = mat['Y']
-            Elevation       = mat['Elevation'][0]
-            Elevation_max   = mat['Elevation'].max()
-            num_of_samples  = mat['Elevation'].shape[1]  
+            try:
+                Elevation       = mat['Elevation'][0]
+                Elevation_max   = mat['Elevation'].max()
+                num_of_samples  = mat['Elevation'].shape[1]
+            except:
+                Elevation       = mat['Elevation_WGS84'][0]
+                Elevation_max   = mat['Elevation_WGS84'].max()
+                num_of_samples  = mat['Elevation_WGS84'].shape[1]
+ 
             gps_time        = mat['GPS_time']
     
         
