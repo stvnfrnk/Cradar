@@ -1108,8 +1108,12 @@ def flip_frame(file='', output_filename='', z_mode='elevation'):
     Pitch              = np.array(mat['Pitch'])[0][::-1]
     Roll               = np.array(mat['Roll'])[0][::-1]
     Heading            = np.array(mat['Heading'])[0][::-1]
-    Bottom             = np.array(mat['Bottom'])[0][::-1]
-    Surface            = np.array(mat['Surface'])[0][::-1]
+    try:
+        Bottom             = np.array(mat['Bottom'])[0][::-1]
+        Surface            = np.array(mat['Surface'])[0][::-1]
+    except:
+        Bottom = 'empty'
+        Surface = 'empty'
 
 
     if navigation == 'off':
