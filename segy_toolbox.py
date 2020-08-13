@@ -168,7 +168,7 @@ def mat2segy(matfile, elevation=True, region='', differenciate=False, step=1, ra
         
         
         # Create Traces and Trace Header
-        for i in range(0, data.shape[1] - 1):
+        for i in range(0, data.shape[1] - 1, step):
 
             if radar == 'emr':
                 year        = 0
