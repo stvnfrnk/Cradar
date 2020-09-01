@@ -933,6 +933,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
         Heading_            = []
         Bottom_             = []
         Surface_            = []
+        Shot_ID_            = []
 
 
         for file in frame_list:
@@ -998,6 +999,12 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             else:
                 navigation = 'off'
 
+
+            # create shot ID
+            frame   = file.split('.')[0].split('Data_')[1]
+            shots   = np.arange(1, len(Longitude) + 1)
+            shot_id = np.array([frame + '_' + str(shot) for shot in shots])
+
             Data_.append(Data)
             Elevation_.append(Elevation)
             GPS_time_.append(GPS_time)
@@ -1008,6 +1015,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             Heading_.append(Heading)
             Bottom_.append(Bottom)
             Surface_.append(Surface)
+            Shot_ID_.append(shot_id)
 
 
         Data               = pd.concat(Data_, axis=1, ignore_index=True)
@@ -1017,6 +1025,8 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
         Elevation          = np.concatenate(Elevation_)
         Latitude           = np.concatenate(Latitude_)
         Longitude          = np.concatenate(Longitude_)
+        Shot_ID            = np.concatenate(Shot_ID_)
+
         
         try:
             Bottom             = np.concatenate(Bottom_)
@@ -1049,8 +1059,9 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                      'Pitch'                : Pitch,
                      'Roll'                 : Roll,
                      'Heading'              : Heading,
-                     'Bottom'               : Bottom,
-                     'Surface'              : Surface
+                     'Bottom'               : Bottom.T,
+                     'Surface'              : Surface.T,
+                     'Shot_ID'              : Shot_ID.T
                      }
 
     scipy.io.savemat(output_filename, full_dict)
