@@ -1256,7 +1256,7 @@ def truncate_frame(file='', output_filename='', start=0, end=-1, z_mode='elevati
 # from a cresis radar .mat file
 ################################
 
-def plot_mat(file, in_path='', out_path='', z_type='elevation', flip=False, cmap='bone_r', legend=False, dpi=300):
+def plot_mat(file, in_path='', out_path='', z_type='elevation', scale=15, flip=False, cmap='bone_r', legend=False, dpi=300):
 
     import h5py
     import scipy.io 
@@ -1353,7 +1353,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', flip=False, cmap
         pass
 
         
-    height      = 15
+    height      = scale
     width       = df.shape[1] / 150
 
     ## Plot Radargram
