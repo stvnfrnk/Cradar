@@ -733,7 +733,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
 ################################
 
 
-def combine_frames(frame_list='', output_filename='', z_mode='elevation', overlap=False, overlap_traces=0):
+def combine_frames(frame_list='', output_filename='', z_mode='elevation', overlap=False, overlap_traces=0, Time_Array=False):
 
     '''
     Reads a list of frames and connects them
@@ -921,6 +921,8 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
     ##################################################
     ##################################################
 
+    navigation = 'off'
+
     if z_mode == 'twt':
 
         Data_               = []
@@ -935,9 +937,9 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
         Surface_            = []
         Shot_ID_            = []
 
-
+        '''
         for file in frame_list:
-
+    
             mat     = h5py.File(file, mode='r')
 
             # for older frames with overlap
@@ -1067,6 +1069,108 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
     scipy.io.savemat(output_filename, full_dict)
     print('===> Saved Frame as: {}'.format(output_filename))
 
+    '''
+
+        for file in frame_list:
+
+            mat     = scipy.io.loadmat(file)
+
+
+            if overlap == False:
+
+                Data               = pd.DataFrame(np.array(mat['Data']))
+
+                if Time_Array == False:
+                    Time               = np.array(mat['Time'].T[0])
+                elif Time_Array == True:
+                    Time               = np.cumsum(np.repeat(1.666666666666657e-08, len(Data)))
+
+                ol                 = Data.shape[1] - overlap_traces
+
+                Elevation          = np.array(mat['Elevation'][0]) # aircraft elevation
+
+                GPS_time           = np.array(mat['GPS_time'][0])
+                Latitude           = np.array(mat['Latitude'][0])
+                Longitude          = np.array(mat['Longitude'][0])
+                Pitch              = np.array(mat['Pitch'][0])
+                Roll               = np.array(mat['Roll'][0])
+                Heading            = np.array(mat['Heading'][0])
+                try:
+                    Bottom             = np.array(mat['Bottom'][0])
+                    Surface            = np.array(mat['Surface'][0])
+                except:
+                    Bottom = 'empty'
+                    Surface = 'empty'
+
+
+                Data.index         = Time
+
+
+            frame   = file.split('.')[0].split('Data_')[1]
+            shots   = np.arange(1, len(Longitude) + 1)
+            shot_id = np.array([frame + '_' + str(shot) for shot in shots])
+
+            Data_.append(Data)
+            Elevation_.append(Elevation)
+            GPS_time_.append(GPS_time)
+            Latitude_.append(Latitude)
+            Longitude_.append(Longitude)
+            Pitch_.append(Pitch)
+            Roll_.append(Roll)
+            Heading_.append(Heading)
+            Bottom_.append(Bottom)
+            Surface_.append(Surface)
+            Shot_ID_.append(shot_id)
+
+
+        Data               = pd.concat(Data_, axis=1, ignore_index=True)
+        #Data               = Data[::-1]
+        Time               = np.array(Data.index)
+        GPS_time           = np.concatenate(GPS_time_)
+        Elevation          = np.concatenate(Elevation_)
+        Latitude           = np.concatenate(Latitude_)
+        Longitude          = np.concatenate(Longitude_)
+        Shot_ID            = np.concatenate(Shot_ID_)
+
+
+        try:
+            Bottom             = np.concatenate(Bottom_)
+            Surface            = np.concatenate(Surface_)
+        except:
+            Bottom = 'empty'
+            Surface = 'empty'
+
+
+        # check if navigation data is available
+        if navigation == 'off':
+            Pitch   = 'empty'
+            Roll    = 'empty'
+            Heading = 'empty'
+
+        else:
+            Pitch              = np.concatenate(Pitch_)
+            Roll               = np.concatenate(Roll_)
+            Heading            = np.concatenate(Heading_)
+
+
+
+
+        full_dict = {'Data'                 : Data.values,
+                     'Time'                 : Time,
+                     'Elevation'            : Elevation.T,
+                     'GPS_time'             : GPS_time.T,
+                     'Latitude'             : Latitude.T, 
+                     'Longitude'            : Longitude.T,
+                     'Pitch'                : Pitch,
+                     'Roll'                 : Roll,
+                     'Heading'              : Heading,
+                     'Bottom'               : Bottom.T,
+                     'Surface'              : Surface.T,
+                     'Shot_ID'              : Shot_ID.T
+                     }
+
+        scipy.io.savemat(output_filename, full_dict)
+        print('===> Saved Frame as: {}'.format(output_filename))
 
 
 ##################################
