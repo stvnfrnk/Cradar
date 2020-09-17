@@ -86,15 +86,17 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
     lst = []
     
     for point in points_list:
-        col = int((point[0] - xOrigin) / pixelWidth)
-        row = int((yOrigin - point[1] ) / pixelHeight)
-    
-        #print(row,col, data[row][col])
         try:
-            lst.append(data[row][col])
-        except:
-            print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
-            lst.append(lst[-1])
+            col = int((point[0] - xOrigin) / pixelWidth)
+            row = int((yOrigin - point[1] ) / pixelHeight)
+
+            try:
+                lst.append(data[row][col])
+            except:
+                print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
+                lst.append(lst[-1])
+        except OverflowError:
+            lst.append(np.nan)
         
     out_column = pd.DataFrame(lst)
     
