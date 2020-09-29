@@ -914,7 +914,10 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                      'Surface'              : Surface
                      }
 
+        scipy.io.savemat(output_filename, full_dict)
+        print('===> Saved Frame as: {}'.format(output_filename))
 
+    
     ##################################################
     ##################################################
     # TWT
