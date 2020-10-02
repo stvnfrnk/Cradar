@@ -914,6 +914,8 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                      'Surface'              : Surface
                      }
 
+        scipy.io.savemat(output_filename, full_dict)
+        print('===> Saved Frame as: {}'.format(output_filename))
 
     ##################################################
     ##################################################
@@ -1066,8 +1068,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                      'Shot_ID'              : Shot_ID.T
                      }
 
-    scipy.io.savemat(output_filename, full_dict)
-    print('===> Saved Frame as: {}'.format(output_filename))
+    
 
     '''
 
@@ -1399,7 +1400,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', scale=15, flip=F
 
         if z_type == 'twt':
             df        = pd.DataFrame(np.log10(np.array(mat['Data']))) # radar matrix
-            twt       = np.array(mat['Time'].T)
+            twt       = np.array(mat['Time']).T
             longitude = np.array(mat['Longitude'])
             latitude  = np.array(mat['Latitude'])
 
@@ -1418,7 +1419,7 @@ def plot_mat(file, in_path='', out_path='', z_type='elevation', scale=15, flip=F
         
         if z_type == 'twt':
             df        = pd.DataFrame(np.log10(np.array(mat['Data']))).T # radar matrix
-            twt       = np.array(mat['Time'].T)
+            twt       = np.array(mat['Time']).T
             longitude = np.array(mat['Longitude'])
             latitude  = np.array(mat['Latitude'])
 
