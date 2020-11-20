@@ -267,7 +267,7 @@ def pull2surface(in_path='', out_path='', file='', region='', overlap=False, set
 # from a cresis radar .mat file
 ################################
 
-def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='', reference='DEM', number_of_gaps=100, decimate=[False, 2]):
+def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.689e8, overlap=False, setting='', reference='DEM', geotif = '', number_of_gaps=100, decimate=[False, 2]):
 
     '''
         in_path         = path with segment folders with twt matfiles
@@ -327,16 +327,35 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
     
     
     ####################################################      
-    # check number of Laserscanner gaps (ALS_nans)
+    # check number of DEM gaps (ALS_nans)
     
     try:
         mat     = scipy.io.loadmat(file)
     except NotImplementedError:
         mat     = h5py.File(file, mode='r')
     
-    if reference == 'DEM':            
+    if reference == 'DEM': 
+
+        from geo_toolbox import extract_geotif_values
+
+        if region == 'Greenland':
+            EPSG = 3413
+        if region == 'Antarctica':       
+            EPSG = 3031
+
         try:
-            DEM_nans     = np.array(mat['DEM_nans']).mean()
+            mat     = scipy.io.loadmat(file)
+        except NotImplementedError:
+            mat     = h5py.File(file, mode='r')
+
+        df_tmp             = pd.DataFrame(np.array(mat['Longitude']))#.T   
+        df_tmp['Latitude'] = pd.DataFrame(np.array(mat['Latitude']))#.T
+        df_tmp.columns     = ['Longitude', 'Latitude']
+
+        df_tmp['DEM'] = extract_geotif_values(geotif, df_tmp, EPSG=EPSG)
+
+        try:
+            DEM_nans     = int(df_tmp['DEM'].isna().sum())
         except:
             pass
     
@@ -384,7 +403,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                     df_meta['Elevation'] = pd.DataFrame(np.array(mat['Altitude'])).T  
                     df_meta['Filename']  = file
                     df_meta['GPS_time']  = np.ones(len(df_meta['Latitude'])) * -9999
-                    df_meta['DEM']       = pd.DataFrame(np.array(mat['DEM'])).T
+                    df_meta['DEM']       = df_tmp['DEM']#pd.DataFrame(np.array(mat['DEM'])).T
     
                     df_meta.index.name = 'index'
                     df_meta.columns = ['Longitude', 'Latitude', 'Aircraft_Elevation', 'Filename', 'GPS_time', 'DEM']
@@ -418,7 +437,7 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                     elif reference == 'DEM':
                         #print('==> Trying to use DEM data as ice-surface boundary.')
                         try:
-                            df_meta['DEM'] = pd.DataFrame(np.array(mat['DEM'])).T
+                            df_meta['DEM'] = df_tmp['DEM']
                         except:
                             print('No DEM data found')
                         #surf    = (np.array(df_meta['Aircraft_Elevation']) - np.array(df_meta['DEM'])) / 2.99792458e8 * 2
@@ -462,13 +481,13 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                     print('==> Using surface reflection as ice-surface boundary.')
                 elif reference == 'DEM':
                     try:
-                        df_meta['DEM'] = pd.DataFrame(np.array(mat['DEM']))
+                        df_meta['DEM'] = df_tmp['DEM']
                     except:
-                        print('No Laserscanner data found')
+                        print('No DEM data found')
     
                     #surf    = (df_meta['Aircraft_Elevation'] - df_meta['ALS']) / 2.99792458e8 * 2
                     surf    = np.array(mat['Surface'])
-                    print('==> Using Laserscanner data as ice-surface boundary.')
+                    print('==> Using DEM data as ice-surface boundary.')
     
     
                 twt     = np.array(mat['Time']).T
