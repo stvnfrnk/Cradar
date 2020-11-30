@@ -959,7 +959,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
         Surface_            = []
         Shot_ID_            = []
 
-        '''
+        
         for file in frame_list:
     
             mat     = h5py.File(file, mode='r')
@@ -969,7 +969,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             if overlap == True:
 
                 Data               = pd.DataFrame(np.array(mat['Data'])).T
-                Time               = np.array(mat['Time'])[0].T
+                Time               = np.array(mat['Time'])[0]
 
                 ol                 = Data.shape[1] - overlap_traces
                 
@@ -994,7 +994,7 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
             if overlap == False:
 
                 Data               = pd.DataFrame(np.array(mat['Data'])).T
-                Time               = np.array(mat['Time']).T
+                Time               = np.array(mat['Time'])[0]
 
                 ol                 = Data.shape[1] - overlap_traces
                 
@@ -1085,12 +1085,13 @@ def combine_frames(frame_list='', output_filename='', z_mode='elevation', overla
                      'Heading'              : Heading,
                      'Bottom'               : Bottom.T,
                      'Surface'              : Surface.T,
-                     'Shot_ID'              : Shot_ID.T
                      }
+        scipy.io.savemat(output_filename, full_dict)
+        print('===> Saved Frame as: {}'.format(output_filename))
 
     
 
-    '''
+    if z_mode == 'elevation':
 
         for file in frame_list:
 
