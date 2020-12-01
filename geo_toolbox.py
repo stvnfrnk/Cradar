@@ -94,8 +94,12 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
                 lst.append(data[row][col])
             except:
                 print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
-                lst.append(lst[-1])
-        except OverflowError:
+                try:
+                    lst.append(lst[-1])
+                except:
+                    lst.append(np.nan)
+                    
+        except: #OverflowError:
             lst.append(np.nan)
         
     out_column = pd.DataFrame(lst)
