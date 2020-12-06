@@ -43,7 +43,7 @@ def twt2elevation(data='',
 
     for i in np.arange(0, elev.size):
         if (i % LOG_EVERY_N) == 0:
-            print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
+            print('... Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
 
         # get index where surface reflection is located
         if setting == 'emr':
@@ -134,10 +134,11 @@ def twt2elevation(data='',
         df.drop(df.columns[-65:], axis=1, inplace=True)
         df_meta.drop(df_meta.index[-65:], axis=0, inplace=True)
 
+    print('==> Done ...')
     
     return df
 
-    print('===> Done Calculating...')
+    
 
 
 

@@ -3,16 +3,13 @@
 
 class Cradar:
     
-    _allObjects = []
+    #_allObjects = []
     
     # initiate an instance and read all important parameters 
     # from a CReSIS mcords matfile
     def __init__(self):
-        
-        self._allObjects.append(self)
-        
+        #self._allObjects.append(self)
         pass
-    
     
     def load(self, filename):
         
@@ -21,103 +18,74 @@ class Cradar:
         import numpy as np
         import pandas as pd
         
-        self._allObjects.append(self)
-        
+        #self._allObjects.append(self)
+
+
+        ##############################
+        # Try with scipy.io.loadmat()
         try:
             self.File      = scipy.io.loadmat(filename)
             self.Frame     = filename.split('.mat')[0]
             self.Reader    = 'scipy'
-            self.Domain    = 'twt'
-
-            # 
-            self.Data      = pd.DataFrame(np.array(self.File['Data']))
-
-
-            self.Latitude  = np.array(self.File['Latitude'])#.T[0]
-            self.Longitude = np.array(self.File['Longitude'])#.T[0]
-            self.GPS_time  = np.array(self.File['GPS_time'])#.T[0]
-            self.Surface   = np.array(self.File['Surface'])#.T[0]
-            self.Bottom    = np.array(self.File['Bottom'])#.T[0]
-            self.Elevation = np.array(self.File['Elevation'])#.T[0]
             
-            # depends if file is in TWT or Elevation
-            try:
-                self.Time    = np.array(self.File['Time'])
-            except:
-                pass
+            # Iterate over almost all items in HDF5 File
+            for k, v in self.File.items():
+                if 'Time' not in k:
+                    try:
+                        setattr(self, k, np.array(v)[0])
+                    except:
+                        setattr(self, k, v)
 
-            try:
-                self.Z    = np.array(self.File['Z'])
-            except:
-                pass
-            
-            # optional
-            try:
-                self.Heading = np.array(self.File['Heading']).T[0]
-            except:
-                pass
-            try:
-                self.Pitch   = np.array(self.File['Pitch']).T[0]
-            except: 
-                pass
-            try:
-                self.Roll    = np.array(self.File['Roll']).T[0]
-            except:
-                pass
-            
+                if 'Time' in k:
+                    self.Time = np.array(self.File['Time'])[0]
+
+                if 'Time' in k and 'Z' not in k:
+                    self.Domain = 'twt'
+                
+                if 'Z' in k:
+                    self.Domain = 'Z'
+
+            self.Data = pd.DataFrame(np.array(self.File['Data']))
+          
+
+        ######################
+        # Try with h5py.File()  
         except:
             self.File      = h5py.File(filename, 'r')
             self.Frame     = filename.split('.mat')[0]
             self.Reader    = 'h5py'
-            #self.Domain    = 'twt'
             
-
+            # Iterate over almost all items in HEF5 File
             for k, v in self.File.items():
-                if '#refs#' or 'param_combine' or 'param_csarp' or 'param_records' not in k:
-                    if 'Time' not in k:
+                if 'Time' not in k:
+                    try:
                         setattr(self, k, np.array(v).T[0])
-                    elif 'Time' in k:
-                        setattr(self, k, np.array(v)[0])
+                    except:
+                        setattr(self, k, v)
+                    
+                if 'Time' in k:
+                    self.Time = np.array(self.File['Time'])[0]
 
+                if 'Time' in k and 'Z' not in k:
+                    self.Domain    = 'twt'
 
-             
-            '''self.Data      = pd.DataFrame(np.array(self.File['Data'])).T
-                                                self.Latitude  = np.array(self.File['Latitude']).T[0]
-                                                self.Longitude = np.array(self.File['Longitude']).T[0]
-                                                self.GPS_time  = np.array(self.File['GPS_time']).T[0]
-                                                self.Surface   = np.array(self.File['Surface']).T[0]
-                                                self.Bottom    = np.array(self.File['Bottom']).T[0]
-                                                self.Elevation = np.array(self.File['Elevation']).T[0]
-                                                
-                                                # depends if file is in TWT or Elevation
-                                                try:
-                                                    self.Time    = np.array(self.File['Time'])[0]
-                                                except:
-                                                    pass
-                                                
-                                                # optional
-                                                try:
-                                                    self.Heading = np.array(self.File['Heading']).T[0]
-                                                except:
-                                                    pass
-                                                try:
-                                                    self.Pitch   = np.array(self.File['Pitch']).T[0]
-                                                except: 
-                                                    pass
-                                                try:
-                                                    self.Roll    = np.array(self.File['Roll']).T[0]
-                                                except:
-                                                    pass'''
-        
-    
-    
-        # after reading all elements: deleting the matfile
+            self.Data = pd.DataFrame(np.array(self.File['Data'])).T
+
+        # Delete the HDF5 file
         del self.File
         
         return self
+
     
+    ########## END of load() ###########
+
+
+
+
+
+
     #############################
-    # Method: twt2elevation 
+    # Method: calc_elevation 
     #############################
     
     def calc_elevation(twt_object, 
@@ -244,27 +212,6 @@ class Cradar:
     ########## END of twt2elevation() ###########
     
     
-    
-    
-    #############################
-    # Method: write matfile
-    #############################
-    
-    def write_mat(self):
-        
-        import scipy.io
-        import pandas as pd
-        import numpy as np
-                        
-        self.Data    = self.Data.values
-        full_dict    = self.__dict__
-        out_filename = self.Frame + '.mat'
-        
-        scipy.io.savemat(out_filename, full_dict)
-        print('===> Saved Frame as: {}'.format(out_filename))
-        
-        
-    ########## END of write_mat() ###########
         
         
         
@@ -464,6 +411,39 @@ class Cradar:
         
         
     ########## END of rename() ###########
+
+
+
+
+
+
+    #############################
+    # Method: write matfile
+    #############################
+    
+    def write_mat(self, out_filename=''):
+        
+        import scipy.io
+        import pandas as pd
+        import numpy as np
+        import copy
+
+        out_object = copy.deepcopy(self)
+                        
+        out_object.Data    = out_object.Data.values
+        full_dict          = out_object.__dict__
+        mat_filename       = out_object.Frame + '_' + out_object.Domain + '.mat'
+
+        if out_filename=='':
+            pass
+        else: 
+            mat_filename = out_filename
+        
+        scipy.io.savemat(mat_filename, full_dict)
+        print('==> Written: {}'.format(mat_filename))
+        
+        
+    ########## END of write_mat() ###########
     
     
     
@@ -475,7 +455,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def write_segy(self, region='', differenciate=False, step=1):
+    def write_segy(self, region='', out_filename='', differenciate=False, step=1):
 
         '''  
         ==>    Writes Cradar Object as SEGY-Format File.
@@ -565,6 +545,12 @@ class Cradar:
                             gps_time=gps_time,
                             differenciate=differenciate
                             )
+
+        if out_filename=='':
+            pass
+        else: 
+            segy_filename = out_filename
+
 
         stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
         print('==> Written: {}'.format(segy_filename))
