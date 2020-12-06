@@ -1,3 +1,239 @@
+
+
+def twt2elevation(data='',
+                  twt='',
+                  elevation='',
+                  surface='',
+                  speed_of_ice=1.689e8,
+                  reference='GPS',
+                  setting='narrowband',
+                  overlap=False,
+                  overlap_traces=0
+                  ):
+
+
+    import pandas as pd
+    import numpy  as np
+
+
+    speed_of_light = 2.99792458e8
+    speed_of_ice   = speed_of_ice
+
+    data = data
+
+    # define data frames
+    df       = data
+    df       = df.apply(pd.to_numeric).astype(float)        
+    df       = df.reset_index(drop=True) # reset index
+    df_comb  = pd.DataFrame(columns = ['Elevation', 'dB', 'Trace'])
+
+    # define some short variables
+    twt  = twt
+    elev = elevation
+    surf = surface
+
+
+
+    
+    # Log every 500 lines.
+    LOG_EVERY_N = 1000
+
+    # create surface and bottom array (m)
+    surface_m = []
+
+    for i in np.arange(0, elev.size):
+        if (i % LOG_EVERY_N) == 0:
+            print('===> Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
+
+        # get index where surface reflection is located
+        if setting == 'emr':
+            surf_idx = idx[i]
+        else:
+            surf_idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
+
+        # get single trace of radargram
+        data = np.array(df[i])
+
+        # delete values until surface reflection
+        data = np.delete(data,np.s_[0:surf_idx])
+
+        #
+        T                   = np.delete(twt,np.s_[0:surf_idx],axis=0) # delete traces abofe surface reflection
+        T_                  = T - twt[surf_idx] # set start of new twt array to zero
+        Depth               = T_ * (speed_of_ice / 2)
+        Air_Column          = (surf[i] * speed_of_light) / 2
+        Airplane_Elevation  = elev[i]
+
+        if reference == 'GPS':
+            surface   = Airplane_Elevation - Air_Column
+            Elevation = Airplane_Elevation - Air_Column - Depth
+        elif reference == 'DEM':
+            surface   = DEM_surface[i]
+            Elevation = DEM_surface[i] - Depth
+
+        surface_m.append(surface)
+
+        trace               = np.ones(data.size) * i
+        df_trace            = pd.DataFrame(Elevation)
+        df_trace['dB']      = pd.DataFrame(data)
+        df_trace['Trace']   = pd.DataFrame(trace)
+        df_trace.columns    = ['Elevation', 'dB', 'Trace']
+        df_comb             = df_comb.append(df_trace)
+
+    # drop nan's
+    df_comb = df_comb.dropna()
+
+    # create final data frame
+    # the range interval depends on the frequency range
+    if setting == 'wideband': 
+        df_comb         = df_comb.round({'Elevation': 1})
+
+        ## create pivot table for heatmap
+        df = df_comb.pivot('Elevation', 'Trace', 'dB')
+        df = df.interpolate()
+        df = df.iloc[::-1]
+
+        # special section for SEGY conversion:
+        # traces with a length of more than 32767 samples are not supported
+        if len(df) > 32767 :
+            print('...(problem) ===> Number of samples: {}'.format(len(df)))
+            print('...(problem) ===> Exceeding maximum number of samples for SEGY conversion ( >32767 samples )')
+            print('...(action)  ===> Deleting every >>{}<< row'.format(int(decimate[1])))
+
+            # decimate if it is set TRUE
+            if decimate[0] == False:
+                pass
+            elif decimate[0] == True:
+                decimate_factor = int(decimate[1])
+                df = df.iloc[::decimate_factor, :]
+
+    if setting == 'narrowband' or setting == 'emr':
+        df_comb = df_comb.dropna()
+        df_comb = df_comb.round({'Elevation': 0})
+
+        ## create pivot table for heatmap
+        df = df_comb.pivot('Elevation', 'Trace', 'dB')
+        df = df.interpolate()
+        df.index = df.index.astype(int)
+        df = df.iloc[::-1]
+
+    if setting == 'snow':
+        df_comb         = df_comb.round({'Elevation': 3})
+
+        ## create pivot table for heatmap
+        df = df_comb.pivot('Elevation', 'Trace', 'dB')
+        df = df.interpolate()
+        df.index = np.around(df.index.values, decimals=2)
+        df = df.loc[~df.index.duplicated(keep='first')]
+        df = df.iloc[::-1]
+
+    surface_m = np.array(surface_m)
+    #bottom_m  = np.array(bottom_m)
+
+    if overlap == True:
+        df.drop(df.columns[-65:], axis=1, inplace=True)
+        df_meta.drop(df_meta.index[-65:], axis=0, inplace=True)
+
+    
+    return df
+
+    print('===> Done Calculating...')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ################################
 # Pull to surface reflection
 # from a cresis radar .mat file
