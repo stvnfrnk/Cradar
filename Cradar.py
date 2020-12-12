@@ -421,6 +421,63 @@ class Cradar:
     # Method: write matfile
     #############################
     
+    def write_shape(self, out_filename='', out_format='shapefile'):
+        
+        import numpy as np
+        import geopandas
+        from geo_toolbox import coords2shape
+        import copy
+        import os
+
+        out_object = copy.deepcopy(self)
+
+        X = out_object.Longitude
+        Y = out_object.Latitude
+
+        out_filename = out_filename
+        out_format   = out_format
+
+        if out_filename == '':
+            shape_filename = out_object.Frame + '_' + out_object.Domain
+
+        if out_format == '':
+            out_format = 'shapefile'
+
+
+        out = coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes='')
+
+        if out_format == 'shapefile':
+            if not os.path.exists('shapes'):
+                os.makedirs('shapes')
+
+            out.to_file('shapes/' + shape_filename + '.shp')
+            print('==> Written: shapes/{}.shp'.format(shape_filename))
+
+        if out_format == 'geojson':
+            if not os.path.exists('geojson'):
+                os.makedirs('geojson')
+
+            out.to_file('geojson/' + shape_filename + '.geojson', driver='GeoJSON')
+            print('==> Written: geojson/{}.geojson'.format(shape_filename))
+
+        
+        
+        
+    ########## END of write_mat() ###########
+
+
+
+
+
+
+
+
+
+
+    #############################
+    # Method: write matfile
+    #############################
+    
     def write_mat(self, out_filename=''):
         
         import scipy.io
