@@ -82,6 +82,25 @@ class Cradar:
 
 
 
+    #############################
+    # Method: add_raster_values
+    #############################
+
+    def add_raster_values(self, geotif='', EPSG_raster='', name=''):
+
+        geotif      = geotif
+        X           = self.Longitude
+        Y           = self.Latitude
+        EPSG_raster = EPSG_raster
+
+        vals = gridtrack(geotif, X, Y, EPSG_xy=4326, EPSG_raster=EPSG_raster)
+
+        self.name = vals
+
+
+    ########## END of rename() ###########
+
+
 
 
     #############################
@@ -121,11 +140,7 @@ class Cradar:
         
         import numpy as np
         import pandas as pd
-        #import pyproj
-        #import geopy.distance 
-
         from radar_toolbox import twt2elevation
-
         import copy 
 
         # makes a copy of the first object (serves as a blue print)
@@ -147,19 +162,7 @@ class Cradar:
         
         # Get ice surface elevation values from DEM
         if reference == 'DEM': 
-
-            # load the function from geo_toolbox
-            from geo_toolbox import extract_geotif_values
-
-            # Check for the region
-            if region == 'Greenland':
-                EPSG = 3413
-            if region == 'Antarctica':       
-                EPSG = 3031
-
-            # extract DEM values at shot locations
-            elev_obj.DEM_surface = extract_geotif_values(geotif, elev_obj.Longitude, elev_obj.Latitude, EPSG)
-            surface      = elev_obj.DEM_surface
+            surface = elev_obj.DEM_surface
 
         elif reference == 'GPS':
             surface = elev_obj.Surface
@@ -414,6 +417,7 @@ class Cradar:
 
 
 
+    
 
 
 
