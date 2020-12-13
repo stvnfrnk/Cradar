@@ -122,7 +122,7 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
 # Function extract_geotif_values
 #################################
 
-def gridtrack(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
+def gridtrack2(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
     
     '''
     Required Libraries:
@@ -149,7 +149,7 @@ def gridtrack(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
     import numpy as np
     import pandas as pd
     from osgeo import gdal
-    import pyproj
+    from pyproj import Transformer
     
     geotif      = geotif
     X_in        = X
@@ -186,21 +186,28 @@ def gridtrack(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
     lst = []
     
     for point in points_list:
-        try:
-            col = int((point[0] - xOrigin) / pixelWidth)
-            row = int((yOrigin - point[1] ) / pixelHeight)
+        col = int((point[0] - xOrigin) / pixelWidth)
+        row = int((yOrigin - point[1] ) / pixelHeight)
+                        
+        lst.append(data[row][col])
 
-            try:
-                lst.append(data[row][col])
-            except:
-                print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
-                try:
-                    lst.append(lst[-1])
-                except:
-                    lst.append(np.nan)
-                    
-        except: #OverflowError:
-            lst.append(np.nan)
+
+
+        '''try:
+                                    col = int((point[0] - xOrigin) / pixelWidth)
+                                    row = int((yOrigin - point[1] ) / pixelHeight)
+                        
+                                    try:
+                                        lst.append(data[row][col])
+                                    except:
+                                        print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
+                                        try:
+                                            lst.append(lst[-1])
+                                        except:
+                                            lst.append(np.nan)
+                                            
+                                except: #OverflowError:
+                                    lst.append(np.nan)'''
         
     out_column = np.array(lst)
     

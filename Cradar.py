@@ -86,16 +86,35 @@ class Cradar:
     # Method: add_raster_values
     #############################
 
-    def add_raster_values(self, geotif='', EPSG_raster='', name=''):
+    def gridtrack(self, geotif='', geotif_name=''):
+
+        import pygmt
+        import rioxarray
+        import pandas as pd
 
         geotif      = geotif
-        X           = self.Longitude
-        Y           = self.Latitude
-        EPSG_raster = EPSG_raster
+        geotif_name = geotif_name
+        Longitude   = self.Longitude
+        Latitude    = self.Latitude
 
-        vals = gridtrack(geotif, X, Y, EPSG_xy=4326, EPSG_raster=EPSG_raster)
+        df             = pd.DataFrame(Longitude)
+        df['Latitude'] = pd.DataFrame(Latitude)
+        df.columns     = ['Longitude', 'Latitude']
 
-        self.name = vals
+        rds = rioxarray.open_rasterio(geotif)
+        rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+        rds = rds.squeeze('band')
+        rds = rds.astype(float)
+        df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
+        
+        raster_vals = df[geotif_name].values
+
+        setattr(self, geotif_name, raster_vals)
+        print('==> Added {} to the data'.format(geotif_name))
+
+        del df
+        del rds
+        del raster_vals
 
 
     ########## END of rename() ###########
@@ -210,6 +229,8 @@ class Cradar:
             
     
         return elev_obj
+
+        del df
     
     
     ########## END of twt2elevation() ###########
@@ -465,7 +486,7 @@ class Cradar:
             print('==> Written: geojson/{}.geojson'.format(shape_filename))
 
         
-        
+        del X, Y, out
         
     ########## END of write_mat() ###########
 
