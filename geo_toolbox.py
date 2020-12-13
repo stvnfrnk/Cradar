@@ -1,4 +1,155 @@
 
+
+#############################################
+# Function: coords2shape
+# creates shape files (point, or linestring)
+# from a cresis radar .mat file
+#############################################
+
+def coords2distance(X, Y, EPSG=4326):
+
+    import numpy as np
+    import geopy.distance
+    from pyproj import Transformer
+
+    X    = X
+    Y    = Y
+    EPSG = EPSG
+
+    if EPSG == 4326:
+        pass
+    else:
+        # convert coordinates from EPSG:???? to EPSG:4326
+        transformer = Transformer.from_crs(EPSG, 4326)
+        X, Y        = transformer.transform(X, Y)
+
+    ## Get real distance for traces 
+    spacing = np.array([])
+    for i in range(1, len(X)-1):
+        coord_1    = (Y[i], X[i])
+        coord_2    = (Y[i + 1], X[i + 1])
+        spacing_i  = geopy.distance.geodesic(coord_1, coord_2).meters
+        spacing    = np.append(spacing, spacing_i)
+
+    distance       = np.cumsum(spacing)        # cumulative sum of spacing
+    distance       = np.insert(distance, 0, 0) # insert zero at first location
+    #distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+    spacing        = np.insert(spacing, 0, spacing.mean()) # insert mean spacing at first position
+    spacing        = np.insert(spacing, len(spacing), spacing.mean()) # insert mean spacing at last position
+
+    return spacing, distance
+
+
+
+
+#############################################
+# Function: coords2shape
+# creates shape files (point, or linestring)
+# from a cresis radar .mat file
+#############################################
+
+def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes=[]):
+
+    '''
+        Usage ==>> coords2shape(x, y, EPSG, attributes=[])
+        geometry types:
+                        - Point
+                        - LineString
+                        - Both
+                        
+        EPSG (CRS):     Set the output EPSG.
+                        - 4326 (standard, uses Lat/Lon)
+                        - 3413 (for Greenland  - NSIDC Sea Ice Polar Stereographic North)
+                        - 3031 (for Antarctica - Antarctic Polar Stereographic)
+                        
+        Attributes:     List of Attributes to hand over to shape files
+                        - Example:                    
+                        - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation'] 
+    '''
+
+
+    import numpy as np
+    import pandas as pd
+    import geopandas as gpd
+    from shapely.geometry import Point, LineString
+    from pyproj import Transformer
+
+    X          = X
+    Y          = Y
+    EPSG_in    = EPSG_in
+    EPSG_out   = EPSG_out
+    attributes = attributes
+
+
+    if EPSG_in and EPSG_out == 4326:
+        pass
+    else:
+        X_in = X
+        Y_in = Y
+
+        # convert coordinates from EPSG_in to EPSG_out
+        transformer = Transformer.from_crs(EPSG_in, EPSG_out)
+        X, Y        = transformer.transform(X_in, Y_in)
+
+    # create the data frame with the coordinates as well as the attributes
+    df         = pd.DataFrame(X)
+    df['Y']    = pd.DataFrame(Y)
+    df.columns = ['X', 'Y']
+
+    if attributes:
+        for key, value in attributes.items():
+            df[key] = value 
+    else:
+        pass
+
+    # create geopandas data frame with geometry
+    gdf = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
+
+    return gdf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################
+###########################################################################
+###########################################################################
+#
+#                   OLD
+#
+###########################################################################
+###########################################################################
+###########################################################################
+
+
+
+
+
+
+
+
 '''
  1. Function: extract_geotif_values
  2. Function: radartrack2shape
@@ -215,106 +366,9 @@ def gridtrack2(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
 
 
 
-#############################################
-# Function: coords2shape
-# creates shape files (point, or linestring)
-# from a cresis radar .mat file
-#############################################
-
-def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes=[]):
-
-    '''
-        Usage ==>> coords2shape(x, y, EPSG, attributes=[])
-        geometry types:
-                        - Point
-                        - LineString
-                        - Both
-                        
-        EPSG (CRS):     Set the output EPSG.
-                        - 4326 (standard, uses Lat/Lon)
-                        - 3413 (for Greenland  - NSIDC Sea Ice Polar Stereographic North)
-                        - 3031 (for Antarctica - Antarctic Polar Stereographic)
-                        
-        Attributes:     List of Attributes to hand over to shape files
-                        - Example:                    
-                        - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation'] 
-    '''
-
-
-    import numpy as np
-    import pandas as pd
-    import geopandas as gpd
-    from shapely.geometry import Point, LineString
-    from pyproj import Transformer
-
-    X          = X
-    Y          = Y
-    EPSG_in    = EPSG_in
-    EPSG_out   = EPSG_out
-    attributes = attributes
-
-
-    if EPSG_in and EPSG_out == 4326:
-        pass
-    else:
-        X_in = X
-        Y_in = Y
-
-        # convert coordinates from EPSG_in to EPSG_out
-        transformer = Transformer.from_crs(EPSG_in, EPSG_out)
-        X, Y        = transformer.transform(X_in, Y_in)
-
-    # create the data frame with the coordinates as well as the attributes
-    df         = pd.DataFrame(X)
-    df['Y']    = pd.DataFrame(Y)
-    df.columns = ['X', 'Y']
-
-    if attributes:
-        for key, value in attributes.items():
-            df[key] = value 
-    else:
-        pass
-
-    # create geopandas data frame with geometry
-    gdf = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
-
-    return gdf
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###########################################################################
-###########################################################################
-###########################################################################
-#
-#                   OLD
-#
-###########################################################################
-###########################################################################
-###########################################################################
 
     
 def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=[]):

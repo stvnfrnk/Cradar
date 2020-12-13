@@ -2,10 +2,11 @@
 
 def twt2elevation(data='',
                   twt='',
-                  elevation='',
-                  surface='',
+                  twt_surface='',
+                  aircraft_elevation='',
                   speed_of_ice=1.689e8,
                   reference='GPS',
+                  DEM_surface='',
                   setting='narrowband',
                   overlap=False,
                   overlap_traces=0
@@ -28,10 +29,9 @@ def twt2elevation(data='',
     df_comb  = pd.DataFrame(columns = ['Elevation', 'dB', 'Trace'])
 
     # define some short variables
-    twt  = twt
-    elev = elevation
-    surf = surface
-
+    twt      = twt                 # Time array
+    elev     = aircraft_elevation  # Aircraft Elevation
+    twt_surf = twt_surface         # twt of surf. reflection
 
 
     
@@ -49,7 +49,7 @@ def twt2elevation(data='',
         if setting == 'emr':
             surf_idx = idx[i]
         else:
-            surf_idx = (np.abs(np.array(twt) - np.array(surf)[i])).argmin()
+            surf_idx = (np.abs(np.array(twt) - np.array(twt_surf)[i])).argmin()
 
         # get single trace of radargram
         data = np.array(df[i])
@@ -61,15 +61,15 @@ def twt2elevation(data='',
         T                   = np.delete(twt,np.s_[0:surf_idx],axis=0) # delete traces abofe surface reflection
         T_                  = T - twt[surf_idx] # set start of new twt array to zero
         Depth               = T_ * (speed_of_ice / 2)
-        Air_Column          = (surf[i] * speed_of_light) / 2
+        Air_Column          = (twt_surf[i] * speed_of_light) / 2
         Airplane_Elevation  = elev[i]
 
         if reference == 'GPS':
             surface   = Airplane_Elevation - Air_Column
             Elevation = Airplane_Elevation - Air_Column - Depth
         elif reference == 'DEM':
-            surface   = DEM_surface[i]
-            Elevation = DEM_surface[i] - Depth
+            surface   = DEM_surface  # DEM_surface[i]
+            Elevation = surface[i] - Depth
 
         surface_m.append(surface)
 

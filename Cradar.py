@@ -125,11 +125,34 @@ class Cradar:
     #############################
     # Method: calc_elevation 
     #############################
+
+
+    def add_distance(self):
+
+        from geo_toolbox import coords2distance
+
+        X = self.Longitude
+        Y = self.Latitude
+
+        Spacing, Distance = coords2distance(X, Y, EPSG=4326)
+
+        self.Spacing  = Spacing
+        self.Distance = Distance
+
+        del X, Y, Spacing, Distance
+
+
+    ########## END of add_distance() ###########
+
+
+
+
+    #############################
+    # Method: calc_elevation 
+    #############################
     
-    def calc_elevation(twt_object, 
+    def twt2elevation(twt_object, 
                        reference='', 
-                       geotif='', 
-                       region='', 
                        setting='', 
                        speed_of_ice=1.689e8, 
                        overlap=False, 
@@ -143,10 +166,6 @@ class Cradar:
             aircraft to the surface reflection or by a ice surface DEM
         
         reference       = 'reflection' or 'DEM'
-        region          = Antarctica or Greenland, this is relevant for the reprojection
-                          of the coordinates (lon, lat to X,Y). E.g. for the DEM grdtrack
-                          ==> EPSG: 3413 for Greenland
-                          ==> EPSG: 3031 for Antarctica
         speed_of_ice    = Usually 1.689 for e=3.15, but it can be changed
         setting         = 'narrowband', 'wideband' for rds or 'snow' for uwbm-snowradar
         overlap         = some older CReSIS .mat files used to be processed with an overlap
@@ -181,35 +200,37 @@ class Cradar:
         
         # Get ice surface elevation values from DEM
         if reference == 'DEM': 
-            surface = elev_obj.DEM_surface
+            twt_surface = elev_obj.Surface
+            DEM_surface = elev_obj.DEM_surface
 
         elif reference == 'GPS':
-            surface = elev_obj.Surface
+            twt_surface = elev_obj.Surface
+            DEM_surface = ''
+        
+        # imput variables from instance
+        data               = elev_obj.Data
+        twt                = elev_obj.Time
+        aircraft_elevation = elev_obj.Elevation
 
-            # imput variables from instance
-            data      = elev_obj.Data
-            twt       = elev_obj.Time
-            elevation = elev_obj.Elevation
+        # input variables defined in prior steps
+        twt_surface   = twt_surface
 
-            # input variables defined in prior steps
-            surface   = surface
-
-            # input variables from input of method above
-            reference = reference 
-            setting   = setting 
-            overlap   = overlap 
+        # input variables from input of method above
+        reference = reference 
+        setting   = setting 
+        overlap   = overlap 
 
         df = twt2elevation(data=data,
                            twt=twt,
-                           elevation=elevation,
-                           surface=surface,
+                           twt_surface=twt_surface,
+                           aircraft_elevation=aircraft_elevation,
                            speed_of_ice=1.689e8,
                            reference=reference,
+                           DEM_surface=DEM_surface,
                            setting=setting,
                            overlap=overlap,
                            overlap_traces=0
                            )
-                
         
 
         # re-define instance atributes
@@ -428,7 +449,7 @@ class Cradar:
     
     ##################
     # Method: rename
-    ################################## 
+    ##################
     
     def rename_frame(self, new_framename):
         self.Frame = new_framename
@@ -443,7 +464,7 @@ class Cradar:
 
 
     #############################
-    # Method: write matfile
+    # Method: write shape
     #############################
     
     def write_shape(self, out_filename='', out_format='shapefile'):
@@ -494,11 +515,6 @@ class Cradar:
 
 
 
-
-
-
-
-
     #############################
     # Method: write matfile
     #############################
@@ -523,6 +539,10 @@ class Cradar:
         
         scipy.io.savemat(mat_filename, full_dict)
         print('==> Written: {}'.format(mat_filename))
+
+        del out_object
+        del full_dict
+        del mat_filename
         
         
     ########## END of write_mat() ###########
@@ -637,5 +657,7 @@ class Cradar:
         stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
         print('==> Written: {}'.format(segy_filename))
 
-
-        
+        del Lon, Lat, X, Y
+        del sample_interval, gps_time
+        del stream, data, domain
+        del receiver_elevation, num_of_samples
