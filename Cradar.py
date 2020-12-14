@@ -121,6 +121,33 @@ class Cradar:
 
 
 
+    #############################
+    # Method: get_surf_idx()
+    #############################
+
+    def get_surf_idx(self):
+
+        import numpy as np
+
+        twt      = self.Time
+        twt_surf = self.Surface
+        traces   = self.Data.shape[1]
+
+        surf_idx = np.array([])
+
+        for i in range(traces):
+            s_idx = (np.abs(np.array(twt) - np.array(twt_surf)[i])).argmin()
+            surf_idx = np.append(surf_idx, s_idx)
+            #print(surf_idx)
+
+        self.Surface_idx = surf_idx
+
+        del twt, twt_surf, traces, surf_idx
+
+
+    ########## END of get_surf_idx() ###########
+
+
 
     #############################
     # Method: calc_elevation 
