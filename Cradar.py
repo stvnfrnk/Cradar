@@ -149,8 +149,41 @@ class Cradar:
 
 
 
+
     #############################
-    # Method: calc_elevation 
+    # Method: correct_geom_spreading 
+    #############################
+
+    def correct_geom_spreading(raw_object):
+
+        from radar_toolbox import correct4geo_spreading
+        import copy
+
+        geom_obj = copy.deepcopy(raw_object)
+
+        geom_obj.get_surf_idx()
+
+        data     = geom_obj.Data
+        twt      = geom_obj.Time
+        surf_idx = geom_obj.Surface_idx
+
+        data_new = correct4geo_spreading(data, twt, surf_idx, v_ice=1.68914e8)
+
+        geom_obj.Data = data_new
+
+        return geom_obj
+
+        del geom_obj, data, twt, surf_idx, data_new
+
+
+    ########## END of get_surf_idx() ###########
+
+
+
+
+
+    #############################
+    # Method: add_distance 
     #############################
 
 

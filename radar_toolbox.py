@@ -141,6 +141,69 @@ def twt2elevation(data='',
     
 
 
+def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, factor=0):
+
+    '''
+    modes:  0 = geometric spreading 
+            1 = constant ice thickness loss in dB
+            2 = both, 1 & 2
+
+    factor: ice thickness dependend loss in dB
+    
+    '''
+
+    import numpy as np
+    import pandas as pd
+
+
+    data      = data
+    twt       = twt
+    surf_idx  = surf_idx
+    mode      = mode
+
+    if mode == 1 or 2:
+        factor = factor / 1000
+
+    v_ice     = v_ice / 2
+    v_air     = (2.99792458e8 / 2)
+
+    new_matrix = []
+
+    # a little tweak to avoid too small amplitudes in the first array
+    twt[0] = twt[1]
+
+    # for every trace
+    for trace in range(data.shape[1]):
+        
+        air_col   = range(int(surf_idx[trace]))
+        ice_col   = range(int(surf_idx[trace]), len(data[trace]))
+        ice_ref   = ice_col[]
+        power     = np.array(data[trace])
+        range_    = []
+        att_loss  = []
+        
+        # for every pixel in the air col.
+        for pixel in air_col:
+            air_m = twt[pixel] * v_air
+            range_.append(air_m)                    
+            if mode == 1 or 2:
+                att_loss.append(0)
+            
+        for pixel in ice_col:
+            ice_m = twt[pixel] * v_ice
+            range_.append(ice_m)
+
+            if mode == i or 2:
+            loss = ice_m - ...null... * factor_10 * 2
+            
+        range_    = np.array(range_)
+        new_power = power * (range_ ** 2)
+        
+        new_matrix.append(new_power)
+    
+    new_data = pd.DataFrame(np.array(new_matrix)).T
+
+    return new_data
 
 
 
