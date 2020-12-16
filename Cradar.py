@@ -688,7 +688,8 @@ class Cradar:
 
         transformer = Transformer.from_crs(4326, EPSG)
         Lon, Lat    = self.Longitude, self.Latitude
-        X, Y        = transformer.transform(Lon, Lat)
+        # ==> BEWARE I think here is a bug, Lon and Lat switched in the function!!
+        X, Y        = transformer.transform(Lat, Lon) 
 
 
 
