@@ -141,7 +141,7 @@ def twt2elevation(data='',
     
 
 
-def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, factor=0):
+def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_factor=0):
 
     '''
     modes:  0 = geometric spreading 
@@ -161,8 +161,20 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, factor=0):
     surf_idx  = surf_idx
     mode      = mode
 
-    if mode == 1 or 2:
-        factor = factor / 1000
+    if mode == 0:
+        print('==> Correcting for geometrical spreading')
+
+    elif mode == 1:
+        print('==> Correcting for geometrical spreading and (constant) ice thickness')
+
+    if mode == 1:
+        
+
+        # transform dB to amplitude (inverse of: 20 * log10 ?)
+        loss_factor == 10**loss_factor / 20
+
+        # loss factor given in dB/km --> db/m
+        loss_factor = loss_factor / 1000
 
     v_ice     = v_ice / 2
     v_air     = (2.99792458e8 / 2)
@@ -175,29 +187,34 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, factor=0):
     # for every trace
     for trace in range(data.shape[1]):
         
-        air_col   = range(int(surf_idx[trace]))
-        ice_col   = range(int(surf_idx[trace]), len(data[trace]))
-        ice_ref   = ice_col[]
-        power     = np.array(data[trace])
-        range_    = []
-        att_loss  = []
+        air_col    = range(int(surf_idx[trace]))
+        ice_col    = range(int(surf_idx[trace]), len(data[trace]))
+        power      = np.array(data[trace])
+        geom_range = []
+        att_range  = []
         
         # for every pixel in the air col.
         for pixel in air_col:
             air_m = twt[pixel] * v_air
-            range_.append(air_m)                    
-            if mode == 1 or 2:
-                att_loss.append(0)
+            geom_range.append(air_m)                    
+            if mode == 1:
+                att_range.append(1)
             
         for pixel in ice_col:
             ice_m = twt[pixel] * v_ice
-            range_.append(ice_m)
+            geom_range.append(ice_m)
 
-            if mode == i or 2:
-            loss = ice_m - ...null... * factor_10 * 2
+            if mode == 1:
+                atrange = twt[pixel] * v_ice - twt[int(surf_idx[trace])]
+                att_range.append(atrange)
             
-        range_    = np.array(range_)
-        new_power = power * (range_ ** 2)
+        geom_range = np.array(geom_range)
+        new_power  = power * (geom_range ** 2)
+
+        if mode == 1:
+            att_range = np.array(att_range)
+            the_loss  = att_range * loss_factor * 2 
+            new_power = new_power + the_loss
         
         new_matrix.append(new_power)
     

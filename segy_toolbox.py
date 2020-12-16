@@ -95,7 +95,7 @@ def radar2segy(data='',
 
     receiver_elevation = receiver_elevation
     num_of_samples     = num_of_samples
-    sample_interval   = sample_interval
+    sample_interval   = 0.1#sample_interval
 
     X = X
     Y = Y
@@ -114,7 +114,7 @@ def radar2segy(data='',
     stream = Stream()
 
     # Create Traces and Trace Header
-    for i in range(0, len(X) - 1, step):
+    for i in range(0, len(X) - 1, step)[0:-1]:
 
         if time_mode == 'gmtime':
 
@@ -132,7 +132,7 @@ def radar2segy(data='',
             second       = second[i]
 
         # Create some random data.
-        trace_  = np.array(data[:, i])
+        trace_  = np.array(20*np.log10(data[i]))
         trace_  = np.require(trace_, dtype=np.float32)
         trace_  = trace_.flatten()
         trace   = Trace(data=trace_)
@@ -141,6 +141,15 @@ def radar2segy(data='',
             trace = trace.differentiate(method='gradient')
         else:
             pass
+
+
+        print(i)
+        print(X[i].astype(int))
+        print(Y[i].astype(int))
+        print(trace)
+        print(np.array(20*np.log10(data[i])))
+        print(np.array(20*np.log10(data[i])).shape)
+        print()
 
 
         trace.stats.delta = 0.01
@@ -152,7 +161,8 @@ def radar2segy(data='',
         # header will be created for you with default values.
 
         if not hasattr(trace.stats, 'segy.trace_header'):
-            trace.stats.segy = {}
+            pass
+        trace.stats.segy = {}
             
         trace.stats.segy.trace_header = SEGYTraceHeader()
 
@@ -270,7 +280,6 @@ def radar2segy(data='',
     stream.stats.binary_file_header.data_sample_format_code = 5
 
     return stream
-
 
 
 
