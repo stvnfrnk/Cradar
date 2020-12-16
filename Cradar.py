@@ -297,8 +297,8 @@ class Cradar:
         
 
         # re-define instance atributes
-        elev_obj.Data     = df
         elev_obj.Z        = df.index.values
+        elev_obj.Data     = pd.DataFrame(np.array(df))
         elev_obj.Domain   = 'Z'
         
         # define range resolution depending on the setting
@@ -669,7 +669,7 @@ class Cradar:
         elif self.Domain == 'Z':
             domain              = self.Z
             receiver_elevation  = self.Z.max()
-            num_of_samples      = len(self.Time)
+            num_of_samples      = len(self.Z)
             segy_filename       = self.Frame + '_Z.segy'
             
         # the data

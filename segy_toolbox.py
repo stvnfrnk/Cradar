@@ -143,13 +143,13 @@ def radar2segy(data='',
             pass
 
 
-        print(i)
-        print(X[i].astype(int))
-        print(Y[i].astype(int))
-        print(trace)
-        print(np.array(20*np.log10(data[i])))
-        print(np.array(20*np.log10(data[i])).shape)
-        print()
+        #print(i)
+        #print(X[i].astype(int))
+        #print(Y[i].astype(int))
+        #print(trace)
+        #print(np.array(20*np.log10(data[i])))
+        #print(np.array(20*np.log10(data[i])).shape)
+        #print()
 
 
         trace.stats.delta = 0.01
