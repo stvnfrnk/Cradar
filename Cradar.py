@@ -149,8 +149,44 @@ class Cradar:
 
 
 
+
     #############################
-    # Method: calc_elevation 
+    # Method: correct_geom_spreading 
+    #############################
+
+    def correct4attenuation(raw_object, mode=0, loss_factor=0):
+
+        from radar_toolbox import correct4attenuation
+        import copy
+
+        mode        = mode
+        loss_factor = loss_factor
+
+        geom_obj = copy.deepcopy(raw_object)
+
+        geom_obj.get_surf_idx()
+
+        data     = geom_obj.Data
+        twt      = geom_obj.Time
+        surf_idx = geom_obj.Surface_idx
+
+        data_new = correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=mode, loss_factor=loss_factor)
+
+        geom_obj.Data = data_new
+
+        return geom_obj
+
+        del geom_obj, data, twt, surf_idx, data_new
+
+
+    ########## END of get_surf_idx() ###########
+
+
+
+
+
+    #############################
+    # Method: add_distance 
     #############################
 
 
@@ -263,8 +299,8 @@ class Cradar:
         
 
         # re-define instance atributes
-        elev_obj.Data     = df
         elev_obj.Z        = df.index.values
+        elev_obj.Data     = pd.DataFrame(np.array(df))
         elev_obj.Domain   = 'Z'
         
         # define range resolution depending on the setting
@@ -626,6 +662,7 @@ class Cradar:
         #from obspy.io.segy.segy import SEGYTraceHeader, SEGYBinaryFileHeader
 
         from pyproj import Transformer
+        import pdb
         #import time
         #import sys
 
@@ -642,7 +679,7 @@ class Cradar:
         elif self.Domain == 'Z':
             domain              = self.Z
             receiver_elevation  = self.Z.max()
-            num_of_samples      = len(self.Time)
+            num_of_samples      = len(self.Z)
             segy_filename       = self.Frame + '_Z.segy'
             
         # the data
@@ -661,7 +698,10 @@ class Cradar:
 
         transformer = Transformer.from_crs(4326, EPSG)
         Lon, Lat    = self.Longitude, self.Latitude
-        X, Y        = transformer.transform(Lon, Lat)
+        # ==> BEWARE I think here is a bug, Lon and Lat switched in the function!!
+        X, Y        = transformer.transform(Lat, Lon) 
+
+
 
         # Figure out TWT sampling interval
         diff_domain = np.array([])
@@ -671,6 +711,13 @@ class Cradar:
 
         # get sample interval | doesn't matter if twt or Z
         sample_interval = diff_domain.mean()
+
+        #print(receiver_elevation)
+        #print(num_of_samples)
+        #print(sample_interval)
+        #print(X, Y)
+        #print(gps_time)
+        #pdb.set_trace()
         
         # apply radar2segy method
         stream = radar2segy(data=data, 
@@ -678,7 +725,7 @@ class Cradar:
                             num_of_samples=num_of_samples, 
                             sample_interval=sample_interval,
                             X=X, 
-                            Y=X,
+                            Y=Y,
                             step=1,
                             time_mode='gmtime',
                             gps_time=gps_time,
@@ -690,11 +737,11 @@ class Cradar:
         else: 
             segy_filename = out_filename
 
-
+        self.Stream = stream
         stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
         print('==> Written: {}'.format(segy_filename))
 
-        del Lon, Lat, X, Y
-        del sample_interval, gps_time
-        del stream, data, domain
-        del receiver_elevation, num_of_samples
+        #del Lon, Lat, X, Y
+        #del sample_interval, gps_time
+        #del stream, data, domain
+        #del receiver_elevation, num_of_samples
