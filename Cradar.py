@@ -742,7 +742,104 @@ class Cradar:
         stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
         print('==> Written: {}'.format(segy_filename))
 
-        #del Lon, Lat, X, Y
-        #del sample_interval, gps_time
-        #del stream, data, domain
-        #del receiver_elevation, num_of_samples
+        del Lon, Lat, X, Y
+        del sample_interval, gps_time
+        del stream, data, domain
+        del receiver_elevation, num_of_samples
+
+
+    ########## END of write_mat() ###########
+    
+    
+    
+        
+    
+    #####################################
+    # Converts CReSIS format .mat files
+    # to SEGY format
+    #####################################
+
+    def plot_overview(self, flight_lines, save_png=True, dpi=100):
+
+        import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+        import numpy as np
+        import pandas as pd
+        import geopandas as gpd
+        import os
+
+        flight_lines = flight_lines
+        Lon          = self.Longitude
+        Lat          = self.Latitude
+
+        survey_lines = gpd.read_file(flight_lines)
+
+        # generate data frames for points
+        df          = pd.DataFrame(Lon)
+        df['Lat']   = pd.DataFrame(Lat)
+        df.columns  = ['Lon', 'Lat']
+        df_first    = df[0:1]
+        
+        # create geopandas data frames
+        frame  = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.Lon, df.Lat))
+        first  = gpd.GeoDataFrame(df_first, geometry=gpd.points_from_xy(df_first.Lon, df_first.Lat))
+        
+        # set crs to EPSG:4326
+        frame        = frame.set_crs(epsg=4326)
+        first        = first.set_crs(epsg=4326)
+        survey_lines = survey_lines.set_crs(epsg=4326)
+
+        # get distance and spacing
+        self.add_distance()
+
+        # define x and y ticks + labels
+        xticks  = np.array(range(0, len(self.Distance)))[0::334]
+        xlabels = (self.Distance[0::334]/1000).astype(int)
+
+        yticks  = np.array(range(0, len(self.Time)))[0::152]
+        ylabels = (self.Time[0::152]*1000000).astype(int)
+
+
+        # Plotting
+        fig, ax = plt.subplots(figsize=(30,10))
+        gs      = gridspec.GridSpec(1, 2,
+                                    width_ratios=[1.2, 3],
+                                    height_ratios=[1]
+                                    )
+
+        ax0 = plt.subplot(gs[0])
+        survey_lines.plot(ax=ax0, color='black', linewidth=0.5, zorder=1)
+        frame.plot(ax=ax0, color='blue', markersize=15, zorder=2)
+        first.plot(ax=ax0, color='red', markersize=35, zorder=3)
+        plt.xlabel('Longitude')
+        plt.ylabel('Latitude')
+
+        ax1 = plt.subplot(gs[1])
+        img = plt.imshow(20 * np.log10(self.Data), aspect='auto', cmap='binary')
+        plt.axvline(x=0, color='red', linewidth=5)
+        plt.xticks(xticks, xlabels, fontsize=16)
+        plt.yticks(yticks, ylabels, fontsize=16)
+        plt.xlabel('along-track distance (m)', fontsize=16)
+        plt.ylabel('TWT (µs)', fontsize=16)
+        plt.title(self.Frame, fontsize=16)
+
+        cbr = plt.colorbar(img)
+        cbr.set_label('dB', fontsize='16')
+
+        if save_png == True:
+            if not os.path.exists('figures'):
+                os.makedirs('figures')
+
+            figname = str(self.Frame) + '.png' 
+
+            plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
+            print('==> Written: figures/{}'.format(figname))
+
+
+
+
+
+
+
+
+
