@@ -9,7 +9,8 @@ def twt2elevation(data='',
                   DEM_surface='',
                   setting='narrowband',
                   overlap=False,
-                  overlap_traces=0
+                  overlap_traces=0,
+                  decimate=[True, 1]
                   ):
 
 

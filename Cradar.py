@@ -183,7 +183,8 @@ class Cradar:
                        setting='', 
                        speed_of_ice=1.689e8, 
                        overlap=False, 
-                       number_of_gaps=100):
+                       number_of_gaps=100,
+                       decimate=[True, 2]):
         
         '''
         ==> Takes a Cradar object and transforms from twt domain 
@@ -256,7 +257,8 @@ class Cradar:
                            DEM_surface=DEM_surface,
                            setting=setting,
                            overlap=overlap,
-                           overlap_traces=0
+                           overlap_traces=0,
+                           decimate=[True, 2]
                            )
         
 
@@ -333,8 +335,16 @@ class Cradar:
 
         '''
         '''
+
+        import pandas as pd
+        import numpy as np
     
         self.Data      = self.Data.T[start:end].T
+
+        # tweak to make col. names start with zero
+        # important later for indexing
+        self.Data      = pd.DataFrame(np.array(self.Data))
+
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
         self.GPS_time  = self.GPS_time[start:end]
