@@ -10,7 +10,7 @@ def twt2elevation(data='',
                   setting='narrowband',
                   overlap=False,
                   overlap_traces=0,
-                  decimate=[True, 1]
+                  decimate=[False, 1]
                   ):
 
 

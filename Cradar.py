@@ -422,10 +422,11 @@ class Cradar:
         domain     = self.Domain
         
         if domain == 'twt':
-            self.Time[start:end]
+            self.Time = self.Time[start:end]
+            # if not starting at 0, ggf. noch was tun?
     
         if domain == 'Z':
-            self.Z[start:end]
+            self.Z = self.Z[start:end]
         
         
     ########## END of clip_range() ###########
