@@ -541,7 +541,7 @@ class Cradar:
     # Method: write shape
     #############################
     
-    def write_shape(self, out_filename='', out_format='shapefile'):
+    def write_shape(self, out_filename='', out_folder='', out_format='shapefile'):
         
         import numpy as np
         import geopandas
@@ -558,7 +558,7 @@ class Cradar:
         out_format   = out_format
 
         if out_filename == '':
-            shape_filename = out_object.Frame + '_' + out_object.Domain
+            shape_filename = out_object.Frame# + '_' + out_object.Domain
 
         if out_format == '':
             out_format = 'shapefile'
@@ -566,20 +566,29 @@ class Cradar:
 
         out = coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes='')
 
-        if out_format == 'shapefile':
-            if not os.path.exists('shapes'):
-                os.makedirs('shapes')
+        if out_folder == '':
+            if out_format == 'shapefile':
+                if not os.path.exists('shapes'):
+                    os.makedirs('shapes')
 
-            out.to_file('shapes/' + shape_filename + '.shp')
-            print('==> Written: shapes/{}.shp'.format(shape_filename))
+                out.to_file('shapes/' + shape_filename + '.shp')
+                print('==> Written: shapes/{}.shp'.format(shape_filename))
 
-        if out_format == 'geojson':
-            if not os.path.exists('geojson'):
-                os.makedirs('geojson')
+            if out_format == 'geojson':
+                if not os.path.exists('geojson'):
+                    os.makedirs('geojson')
 
-            out.to_file('geojson/' + shape_filename + '.geojson', driver='GeoJSON')
-            print('==> Written: geojson/{}.geojson'.format(shape_filename))
+                out.to_file('geojson/' + shape_filename + '.geojson', driver='GeoJSON')
+                print('==> Written: geojson/{}.geojson'.format(shape_filename))
 
+        else:
+            if out_format == 'shapefile':
+                out.to_file(out_folder + '/' + shape_filename + '.shp')
+                print('==> Written: {}/{}.shp'.format(out_folder, shape_filename))
+
+            if out_format == 'geojson':
+                out.to_file(out_folder + '/' + shape_filename + '.geojson', driver='GeoJSON')
+                print('==> Written: {}/{}.geojson'.format(out_folder, shape_filename))
         
         del X, Y, out
         
@@ -624,8 +633,6 @@ class Cradar:
     
     
     
-    
-    
     #####################################
     # Converts CReSIS format .mat files
     # to SEGY format
@@ -651,9 +658,7 @@ class Cradar:
                 3) choose weather to take the data as it is or to differenciate
                    --> set differenciate=True (default is differenciate=False)
                 4) step=N, every N'th trace will be considered (to reduce data size if needed)
-
         ''' 
-
 
         import numpy as np
         from segy_toolbox import radar2segy
@@ -712,13 +717,6 @@ class Cradar:
 
         # get sample interval | doesn't matter if twt or Z
         sample_interval = diff_domain.mean()
-
-        #print(receiver_elevation)
-        #print(num_of_samples)
-        #print(sample_interval)
-        #print(X, Y)
-        #print(gps_time)
-        #pdb.set_trace()
         
         # apply radar2segy method
         stream = radar2segy(data=data, 
@@ -759,7 +757,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def plot_overview(self, flight_lines, save_png=True, dpi=100):
+    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder=''):
 
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -827,16 +825,30 @@ class Cradar:
         cbr.set_label('dB', fontsize='16')
 
         if save_png == True:
-            if not os.path.exists('figures'):
-                os.makedirs('figures')
+            if out_folder == '':
+                if not os.path.exists('figures'):
+                    os.makedirs('figures')
 
-            figname = str(self.Frame) + '.png' 
+                figname = str(self.Frame) + '.png' 
 
-            plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
-            print('==> Written: figures/{}'.format(figname))
+                plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
+                print('==> Written: figures/{}'.format(figname))
+            else:
 
+                figname = str(self.Frame) + '.png' 
 
+                plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
+                print('==> Written: {}/{}'.format(out_folder, figname))
 
+        #return fig
+
+        # clean up
+        plt.clf()
+        plt.close('all')
+
+        del xticks, xlabels, yticks, ylabels
+        del frame, first, survey_lines
+        del df, flight_lines, Lon, Lat
 
 
 
