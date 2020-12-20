@@ -766,7 +766,7 @@ class Cradar:
             print('==> Written: {}'.format(segy_filename))
 
         elif save_segy == False:
-            print('==> Returning: SEGY Stream (self.Stream)')            
+            print('==> Returning: SEGY Stream Object')            
 
         del Lon, Lat, X, Y
         del sample_interval, gps_time
@@ -844,7 +844,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False):
+    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False, show=True):
 
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -944,8 +944,11 @@ class Cradar:
                 plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
 
-        
-        plt.show()
+        if show == True:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close('all')
 
         del xticks, xlabels, yticks, ylabels
         del frame, first, survey_lines
