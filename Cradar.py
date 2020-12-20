@@ -11,7 +11,7 @@ class Cradar:
         #self._allObjects.append(self)
         pass
     
-    def load(self, filename):
+    def load(self, filename, dB=False):
         
         import h5py
         import scipy.io
@@ -46,6 +46,13 @@ class Cradar:
                     self.Domain = 'Z'
 
             self.Data = pd.DataFrame(np.array(self.File['Data']))
+
+            if dB == False:
+                self.dB = False
+            elif dB == True:
+                self.dB = True
+            else:
+                print('==> dB True or False? Is set to False.')
           
 
         ######################
@@ -70,6 +77,13 @@ class Cradar:
                     self.Domain    = 'twt'
 
             self.Data = pd.DataFrame(np.array(self.File['Data'])).T
+
+            if dB == False:
+                self.dB = False
+            elif dB == True:
+                self.dB = True
+            else:
+                print('==> dB True or False? Is set to False.')
 
         # Delete the HDF5 file
         del self.File
@@ -638,7 +652,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def write_segy(self, region='', out_filename='', differenciate=False, step=1):
+    def to_segy(self, region='', out_filename='', differenciate=False, step=1, save_segy=True, to_dB=False):
 
         '''  
         ==>    Writes Cradar Object as SEGY-Format File.
@@ -674,7 +688,12 @@ class Cradar:
 
         print('')
         print('==> Processing Frame: {} located in {}'.format(self.Frame, region))
-        print('==> This file is in >> {} << domain'.format(self.Domain))
+        print('... This file is in >> {} << domain'.format(self.Domain))
+
+        # check if to_dB is set True, but data is already in dB
+        if self.dB and to_dB == True:
+            print('... to_dB is set True, but the data is already in dB!')
+
         
         # Check on TWT or Elevation Data
         if self.Domain == 'twt':
@@ -716,7 +735,7 @@ class Cradar:
             diff_domain = np.append(diff_domain, domain[i] - domain[i+1])
 
         # get sample interval | doesn't matter if twt or Z
-        sample_interval = diff_domain.mean()
+        sample_interval = np.abs(diff_domain.mean()) * 1000000
         
         # apply radar2segy method
         stream = radar2segy(data=data, 
@@ -728,7 +747,8 @@ class Cradar:
                             step=1,
                             time_mode='gmtime',
                             gps_time=gps_time,
-                            differenciate=differenciate
+                            differenciate=differenciate,
+                            to_dB=to_dB
                             )
 
         if out_filename=='':
@@ -737,8 +757,16 @@ class Cradar:
             segy_filename = out_filename
 
         self.Stream = stream
-        stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
-        print('==> Written: {}'.format(segy_filename))
+
+        #if to_dB == True:
+        #    self.dB = True
+
+        if save_segy == True:
+            stream.write(segy_filename, format='SEGY', data_encoding=5, byteorder='>',textual_file_encoding='ASCII')
+            print('==> Written: {}'.format(segy_filename))
+
+        elif save_segy == False:
+            print('==> Returning: SEGY Stream (self.Stream)')            
 
         del Lon, Lat, X, Y
         del sample_interval, gps_time
@@ -749,7 +777,66 @@ class Cradar:
     ########## END of write_mat() ###########
     
     
-    
+    #####################################
+    # Filter
+    # 
+    #####################################
+
+    def filter(raw_object, filter_type='', freq='', freq_min='', freq_max='', corners=2, zerophase=False):
+
+        '''
+        This method will apply a filter on an existing Stream object.
+
+            type      =  lowpass
+                         highpass
+                         bandpass
+            freq      =  a frequency as a limit for lowpass or highpass filter
+            freq_min  =  lower frequency for bandpass filter
+            freq_max  =  upper frequency for bandpass filter
+            corners   =  corners
+            zerophase =  zerophase
+        '''
+
+        import pandas as pd
+        import numpy as np
+        import copy
+
+        filtered_object = copy.deepcopy(raw_object)
+
+        if filtered_object.Stream:
+            pass
+        else:
+            print('... No Stream Object found.')
+            print('==> Consider running to_segy() to create a Stream Object.')
+
+        stream = filtered_object.Stream
+
+        if filter_type == 'highpass':
+            print('==> Applying a highpass filter at {} MHz'.format(freq))  
+            stream_filtered = stream.filter('highpass', freq=freq, corners=corners, zerophase=zerophase)
+
+        elif filter_type == 'lowpass':
+            print('==> Applying a lowpass filter at {} MHz'.format(freq))
+            stream_filtered = stream.filter('lowpass', freq=freq, corners=corners, zerophase=zerophase)
+
+        elif filter_type == 'bandpass':
+            print('==> Applying a bandpass filter between {} - {} MHz'.format(freq_min, freq_max))
+            stream_filtered = stream.filter('bandpass', freqmin=freq_min, freqmax=freq_max, corners=corners, zerophase=zerophase)
+
+        data_filtered = np.array([t.data for t in list(stream_filtered.traces)]).T
+
+        filtered_object.Stream = stream_filtered
+        filtered_object.Data   = pd.DataFrame(data_filtered)
+
+        filtered_object.dB = True
+
+        del stream, data_filtered
+
+        return filtered_object
+
+
+
+
         
     
     #####################################
@@ -757,7 +844,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder=''):
+    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False):
 
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -765,6 +852,12 @@ class Cradar:
         import pandas as pd
         import geopandas as gpd
         import os
+
+        # remove old crap
+        plt.clf()
+        plt.close('all')
+
+        cmap = cmap
 
         flight_lines = flight_lines
         Lon          = self.Longitude
@@ -813,7 +906,18 @@ class Cradar:
         plt.ylabel('Latitude')
 
         ax1 = plt.subplot(gs[1])
-        img = plt.imshow(20 * np.log10(self.Data), aspect='auto', cmap='binary')
+        if self.dB == False:
+            img = plt.imshow(20 * np.log10(self.Data), aspect='auto', cmap=cmap)
+        elif self.dB == True:
+            if divergent == True:
+                data = self.Data
+                ende = data.min().min()
+                vmin = np.abs(ende) * -1
+                vmax = np.abs(ende)
+                img  = plt.imshow(data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax)
+            else:
+                img = plt.imshow(self.Data, aspect='auto', cmap=cmap)
+
         plt.axvline(x=0, color='red', linewidth=5)
         plt.xticks(xticks, xlabels, fontsize=16)
         plt.yticks(yticks, ylabels, fontsize=16)
@@ -840,11 +944,8 @@ class Cradar:
                 plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
 
-        #return fig
-
-        # clean up
-        plt.clf()
-        plt.close('all')
+        
+        plt.show()
 
         del xticks, xlabels, yticks, ylabels
         del frame, first, survey_lines

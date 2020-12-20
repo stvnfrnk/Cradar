@@ -53,8 +53,8 @@ def radar2segy(data='',
                hour='',
                minute='',
                second='',
-               differenciate=''
-               ):
+               differenciate='',
+               to_dB=False):
 
     '''  
     ==>    Writes Cradar Object as SEGY-Format File.
@@ -95,7 +95,9 @@ def radar2segy(data='',
 
     receiver_elevation = receiver_elevation
     num_of_samples     = num_of_samples
-    sample_interval   = 0.1#sample_interval
+    sample_interval    = sample_interval
+
+    sample_interval    = sample_interval
 
     X = X
     Y = Y
@@ -132,7 +134,10 @@ def radar2segy(data='',
             second       = second[i]
 
         # Create some random data.
-        trace_  = np.array(20*np.log10(data[i]))
+        if to_dB == False:
+            trace_  = np.array(data[i])
+        elif to_dB == True:
+            trace_  = np.array(20*np.log10(data[i]))
         trace_  = np.require(trace_, dtype=np.float32)
         trace_  = trace_.flatten()
         trace   = Trace(data=trace_)
@@ -152,7 +157,8 @@ def radar2segy(data='',
         #print()
 
 
-        trace.stats.delta = 0.01
+        #trace.stats.delta = 0.01
+        trace.stats.sampling_rate = 1/sample_interval
         # SEGY does not support microsecond precision! Any microseconds will
         # be discarded.
 
