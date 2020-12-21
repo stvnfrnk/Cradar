@@ -969,7 +969,7 @@ class Cradar:
 
                 figname = str(self.Frame) + '.png' 
 
-                plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
+                plt.savefig(out_folder + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
 
         if show == True:
