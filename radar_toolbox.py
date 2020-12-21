@@ -166,13 +166,12 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
         print('==> Correcting for geometrical spreading')
 
     elif mode == 1:
-        print('==> Correcting for geometrical spreading and (constant) ice thickness')
+        print('==> Correcting for geometrical spreading and ice thickness ({} dB/km)'.format(loss_factor))
 
     if mode == 1:
-        
 
         # transform dB to amplitude (inverse of: 20 * log10 ?)
-        loss_factor == 10**loss_factor / 20
+        #loss_factor == 10**loss_factor / 20
 
         # loss factor given in dB/km --> db/m
         loss_factor = loss_factor / 1000
@@ -211,8 +210,10 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
             
         geom_range = np.array(geom_range)
         new_power  = power * (geom_range ** 2)
-
+        new_power  = 20 * np.log10(new_power)
+        
         if mode == 1:
+
             att_range = np.array(att_range)
             the_loss  = att_range * loss_factor * 2 
             new_power = new_power + the_loss

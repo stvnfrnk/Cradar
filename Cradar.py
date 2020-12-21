@@ -11,7 +11,7 @@ class Cradar:
         #self._allObjects.append(self)
         pass
     
-    def load(self, filename, dB=False):
+    def load_mat(self, filename, dB=False):
         
         import h5py
         import scipy.io
@@ -145,18 +145,18 @@ class Cradar:
 
         twt      = self.Time
         twt_surf = self.Surface
-        traces   = self.Data.shape[1]
+        #traces   = self.Data.shape[1]
 
         surf_idx = np.array([])
 
-        for i in range(traces):
+        for i in range(len(twt_surf)):
             s_idx = (np.abs(np.array(twt) - np.array(twt_surf)[i])).argmin()
             surf_idx = np.append(surf_idx, s_idx)
             #print(surf_idx)
 
         self.Surface_idx = surf_idx
 
-        del twt, twt_surf, traces, surf_idx
+        del twt, twt_surf, surf_idx
 
 
     ########## END of get_surf_idx() ###########
@@ -173,6 +173,11 @@ class Cradar:
         from radar_toolbox import correct4attenuation
         import copy
 
+        if raw_object.dB == False:
+            pass
+        else:
+            print('==> Data should not be in dB on input.')
+
         mode        = mode
         loss_factor = loss_factor
 
@@ -187,6 +192,7 @@ class Cradar:
         data_new = correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=mode, loss_factor=loss_factor)
 
         geom_obj.Data = data_new
+        geom_obj.dB   = True
 
         return geom_obj
 
@@ -545,6 +551,28 @@ class Cradar:
         
     ########## END of rename() ###########
 
+
+
+
+    ##################
+    # Method: to_dB
+    ##################
+    
+
+    def to_dB(self):
+    
+        import numpy as np
+
+        if self.dB == False:
+            self.Data = 20 * np.log10(self.Data)
+            self.dB   = True
+            print('==> Converted to dB (20*log10).')
+
+        elif self.dB == True:
+            print('... already in dB.')
+        
+        
+    ########## END of rename() ###########
 
 
     
