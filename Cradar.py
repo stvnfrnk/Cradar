@@ -155,7 +155,7 @@ class Cradar:
             #print(surf_idx)
 
         self.Surface_idx = surf_idx
-
+        print('==> Added pixel index of surface reflection')
         del twt, twt_surf, surf_idx
 
 
@@ -223,6 +223,7 @@ class Cradar:
         self.Distance = Distance
 
         del X, Y, Spacing, Distance
+        print('==> Added Spacing and Distance.')
 
 
     ########## END of add_distance() ###########
@@ -478,7 +479,7 @@ class Cradar:
         Elevation = []
         GPS_time  = []
         Surface   = []
-        Bottom    = []
+        #Bottom    = []
         Heading   = []
         Roll      = []
         Pitch     = []
@@ -499,7 +500,7 @@ class Cradar:
             Elevation.append(obj.Elevation)
             GPS_time.append(obj.GPS_time)
             Surface.append(obj.Surface)
-            Bottom.append(obj.Bottom)
+            #Bottom.append(obj.Bottom)
             Heading.append(obj.Heading)
             Roll.append(obj.Roll)
             Pitch.append(obj.Pitch)
@@ -519,20 +520,26 @@ class Cradar:
                 new_obj.Z = new_obj.Data.index
         elif added_objects[0].Domain == 'twt':
                 new_obj.Time = new_obj.Data.index
+
+        # delete Z or Time from index
+        new_obj.Data.reset_index(inplace=True, drop=True)
                 
         new_obj.Longitude = np.concatenate(Longitude)
         new_obj.Latitude  = np.concatenate(Latitude)
         new_obj.Elevation = np.concatenate(Elevation)
         new_obj.GPS_time  = np.concatenate(GPS_time)
         new_obj.Surface   = np.concatenate(Surface)
-        new_obj.Bottom    = np.concatenate(Bottom)
+        #new_obj.Bottom    = np.concatenate(Bottom)
         new_obj.Heading   = np.concatenate(Heading)
         new_obj.Roll      = np.concatenate(Roll)
         new_obj.Pitch     = np.concatenate(Pitch)
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
         
+        print('==> Concatenated {}'.format(added_objects))
+
         return new_obj
+
     
     
     ########## END of concat_frames() ###########
