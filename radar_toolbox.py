@@ -128,8 +128,28 @@ def twt2elevation(data='',
         df = df.loc[~df.index.duplicated(keep='first')]
         df = df.iloc[::-1]
 
+    # get the index value of surface reflection
     surface_m = np.array(surface_m)
-    #bottom_m  = np.array(bottom_m)
+    surfm_idx = np.array([])
+
+    for i in range(len(surface_m)):
+        s_idx = (np.abs(np.array(df.index) - np.array(surface_m)[i])).argmin()
+        surfm_idx = np.append(surfm_idx, s_idx)
+
+    surfm_idx = surfm_idx.astype(int)
+
+    # delete crappy traces above surface reflection
+    data     = np.array(df.T)
+    new_data = []
+
+    for i in range(len(surfm_idx)):
+        trace         = data[i]
+        index         = surfm_idx[i]
+        trace[:index] = np.nan
+        new_data.append(trace)
+
+    new_data = np.array(new_data).T
+    df = pd.DataFrame(new_data)
 
     if overlap == True:
         df.drop(df.columns[-65:], axis=1, inplace=True)
@@ -137,7 +157,7 @@ def twt2elevation(data='',
 
     print('==> Done ...')
     
-    return df
+    return df, surfm_idx
 
     
 

@@ -87,8 +87,10 @@ class Cradar:
 
         # Delete the HDF5 file
         del self.File
-        
+        print('==> Loaded {}'.format(self.Frame))
         return self
+
+        
 
     
     ########## END of load() ###########
@@ -305,24 +307,25 @@ class Cradar:
         setting   = setting 
         overlap   = overlap 
 
-        df = twt2elevation(data=data,
-                           twt=twt,
-                           twt_surface=twt_surface,
-                           aircraft_elevation=aircraft_elevation,
-                           speed_of_ice=1.689e8,
-                           reference=reference,
-                           DEM_surface=DEM_surface,
-                           setting=setting,
-                           overlap=overlap,
-                           overlap_traces=0,
-                           decimate=[True, 2]
-                           )
+        df, surfm_idx =  twt2elevation(data=data,
+                                       twt=twt,
+                                       twt_surface=twt_surface,
+                                       aircraft_elevation=aircraft_elevation,
+                                       speed_of_ice=1.689e8,
+                                       reference=reference,
+                                       DEM_surface=DEM_surface,
+                                       setting=setting,
+                                       overlap=overlap,
+                                       overlap_traces=0,
+                                       decimate=[True, 2]
+                                       )
         
 
         # re-define instance atributes
-        elev_obj.Z        = df.index.values
-        elev_obj.Data     = pd.DataFrame(np.array(df))
-        elev_obj.Domain   = 'Z'
+        elev_obj.Z             = df.index.values
+        elev_obj.Data          = pd.DataFrame(np.array(df))
+        elev_obj.Surface_m_idx = surfm_idx
+        elev_obj.Domain        = 'Z'
         
         # define range resolution depending on the setting
         if setting == 'narrowband':
