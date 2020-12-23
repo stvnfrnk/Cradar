@@ -272,18 +272,18 @@ class Cradar:
         elev_obj = copy.deepcopy(twt_object)
         
         
-        print('==> twt2elevation...')
+        print('==> Now: twt2elevation...')
         
         if reference == 'GPS':
-            print('==> Using Aircraft GPS and radar surf. reflection to derive elevation')
+            print('... Using Aircraft GPS and radar surface reflection to derive elevation')
             
         elif reference == 'DEM':
-            print('==> Using a Ice surf. DEM to derive elevation')
+            print('... Using a Ice surface DEM to derive elevation')
         
         elif reference == '':
             reference = 'GPS'
-            print("==> !! You didn't define a reference, it is now automatically set to 'GPS'")
-        
+            print("... !! You didn't define a reference, it is now automatically set to 'GPS'")
+            print('... Using Aircraft GPS and radar surface reflection to derive elevation')
         
         # Get ice surface elevation values from DEM
         if reference == 'DEM': 
@@ -307,7 +307,7 @@ class Cradar:
         setting   = setting 
         overlap   = overlap 
 
-        df, surfm_idx =  twt2elevation(data=data,
+        df, Z, surfm_idx =  twt2elevation(data=data,
                                        twt=twt,
                                        twt_surface=twt_surface,
                                        aircraft_elevation=aircraft_elevation,
@@ -322,7 +322,7 @@ class Cradar:
         
 
         # re-define instance atributes
-        elev_obj.Z             = df.index.values
+        elev_obj.Z             = Z
         elev_obj.Data          = pd.DataFrame(np.array(df))
         elev_obj.Surface_m_idx = surfm_idx
         elev_obj.Domain        = 'Z'
@@ -474,7 +474,8 @@ class Cradar:
         import copy
         
         # makes a copy of the first object (serves as a blue print)
-        new_obj = copy.deepcopy(added_objects[0])
+        new_obj  = copy.deepcopy(added_objects[0])
+        namelist = []
         
         Data      = []
         Longitude = []
@@ -491,6 +492,8 @@ class Cradar:
         
         
         for obj in added_objects:
+
+            namelist.append(obj.Frame)
             
             if obj.Domain == 'Z':
                 obj.Data.index = obj.Z
@@ -539,7 +542,7 @@ class Cradar:
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
         
-        print('==> Concatenated {}'.format(added_objects))
+        print('==> Concatenated {}'.format(namelist))
 
         return new_obj
 

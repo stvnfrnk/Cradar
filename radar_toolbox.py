@@ -128,6 +128,9 @@ def twt2elevation(data='',
         df = df.loc[~df.index.duplicated(keep='first')]
         df = df.iloc[::-1]
 
+    # get Elevation (Z) array
+    Z = df.index.values
+
     # get the index value of surface reflection
     surface_m = np.array(surface_m)
     surfm_idx = np.array([])
@@ -157,7 +160,7 @@ def twt2elevation(data='',
 
     print('==> Done ...')
     
-    return df, surfm_idx
+    return df, Z, surfm_idx
 
     
 
