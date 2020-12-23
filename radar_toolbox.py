@@ -69,7 +69,7 @@ def twt2elevation(data='',
             surface   = Airplane_Elevation - Air_Column
             Elevation = Airplane_Elevation - Air_Column - Depth
         elif reference == 'DEM':
-            surface   = DEM_surface  # DEM_surface[i]
+            surface   = DEM_surface
             Elevation = surface[i] - Depth
 
         surface_m.append(surface)
@@ -131,12 +131,15 @@ def twt2elevation(data='',
     # get Elevation (Z) array
     Z = df.index.values
 
+    if reference == 'DEM':
+        surface_m = DEM_surface
+
     # get the index value of surface reflection
-    surface_m = np.array(surface_m)
+    surface_m = np.array(surface_m).flatten()
     surfm_idx = np.array([])
 
     for i in range(len(surface_m)):
-        s_idx = (np.abs(np.array(df.index) - np.array(surface_m)[i])).argmin()
+        s_idx = (np.abs(df.index.values - np.array(surface_m)[i])).argmin()
         surfm_idx = np.append(surfm_idx, s_idx)
 
     surfm_idx = surfm_idx.astype(int)
