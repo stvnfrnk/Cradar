@@ -31,6 +31,8 @@ class Cradar:
             # Iterate over almost all items in HDF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
+                    
+
                     try:
                         setattr(self, k, np.array(v)[0])
                     except:
@@ -65,13 +67,10 @@ class Cradar:
             # Iterate over almost all items in HEF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
-                    try:
-                        setattr(self, k, np.array(v).T[0])
-                    except:
-                        setattr(self, k, v)
-                    
+                    setattr(self, k, np.array(v).flatten())
+
                 if 'Time' in k:
-                    self.Time = np.array(self.File['Time'])[0]
+                    self.Time = np.array(self.File['Time']).flatten()
 
                 if 'Time' in k and 'Z' not in k:
                     self.Domain    = 'twt'
