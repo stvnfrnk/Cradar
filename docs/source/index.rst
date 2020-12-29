@@ -3,12 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to RETINA's documentation!
-==================================
+Radar Signatures of Ice Streams in Polar Regions
+================================================
+
+
+.. image:: img/flow.png
+  :width: 900px
+  :align: center
+  :alt: 'Missing Figure'
+
+____
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
+
+   _Cradar/Cradar.rst
 
 
 
