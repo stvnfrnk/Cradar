@@ -11,7 +11,7 @@ class Cradar:
         #self._allObjects.append(self)
         pass
     
-    def load_mat(self, filename, dB=False):
+    def load_cresis_mat(self, filename, dB=False):
         
         import h5py
         import scipy.io
@@ -92,7 +92,69 @@ class Cradar:
         
 
     
+    ########## END of load_cresis_mat() ###########
+
+
+
+
+    #############################
+    # Method: load_awi_segy
+    #############################
+
+    def load_awi_segy(self, segy_file='', coordinate_file='', dB=False):
+
+        '''
+
+
+        '''
+
+
+        from obspy.io.segy.segy import _read_segy
+        import numpy as np
+        import pandas as pd
+
+        segy_file       = segy_file
+        coordinate_file = coordinate_file
+
+        stream  = _read_segy(segy_file, headonly=True)
+        data    = pd.DataFrame(np.array([t.data for t in list(stream.traces)]))
+
+
+        header            = stream.binary_file_header.__dict__
+        frame             = header['line_number']
+        sample_interval   = header['sample_interval_in_microseconds']
+        sample_interval   = sample_interval * 10e-12
+        number_of_samples = header['number_of_samples_per_data_trace']
+
+        # build time array
+        time    = np.repeat(sample_interval, number_of_samples)
+        time[0] = 0
+        time    = np.cumsum(time)
+
+
+
+
+
+        self.Data  = data
+        self.Time  = time
+        self.Frame = str(frame)
+
+
+
+        if dB == False:
+                self.dB = False
+        elif dB == True:
+            self.dB = True
+        else:
+            print('==> dB True or False? Is set to False.')
+
+
+        return self
+
+
+
     ########## END of load() ###########
+
 
 
 
