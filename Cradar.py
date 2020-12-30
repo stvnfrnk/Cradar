@@ -135,9 +135,10 @@ class Cradar:
 
 
 
-        self.Data  = data
-        self.Time  = time
-        self.Frame = str(frame)
+        self.Data   = data
+        self.Stream = stream
+        self.Time   = time
+        self.Frame  = str(frame)
 
 
 
