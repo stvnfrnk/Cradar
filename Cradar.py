@@ -651,7 +651,25 @@ class Cradar:
 
 
     
+    ##################
+    # Method: to_dB
+    ##################
+    
 
+    def inverse_dB(self):
+    
+        import numpy as np
+
+        if self.dB == True:
+            self.Data = 10**(self.Data/20)
+            self.dB   = False
+            print('==> Converted to 10**(Data/20).')
+
+        elif self.dB == False:
+            print('... already NOT in dB.')
+        
+        
+    ########## END of rename() ###########
 
 
     #############################
@@ -727,6 +745,11 @@ class Cradar:
         import copy
 
         out_object = copy.deepcopy(self)
+
+        try:
+            del out_object.Stream
+        except:
+            pass
                         
         out_object.Data    = out_object.Data.values
         full_dict          = out_object.__dict__
@@ -947,7 +970,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False, show=True):
+    def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False, show=True, domain='twt'):
 
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
@@ -990,8 +1013,18 @@ class Cradar:
         xticks  = np.array(range(0, len(self.Distance)))[0::334]
         xlabels = (self.Distance[0::334]/1000).astype(int)
 
-        yticks  = np.array(range(0, len(self.Time)))[0::152]
-        ylabels = (self.Time[0::152]*1000000).astype(int)
+        if domain == 'twt':
+            yticks      = np.array(range(0, len(self.Time)))[0::152]
+            ylabels     = (self.Time[0::152]*1000000).astype(int)
+            yaxis_label = 'TWT (µs)'
+
+        elif domain == 'elevation':
+            arr         = self.Z[::500]
+            arr         = arr[arr > 0]
+            idx         = arr[np.abs(arr).argmin()]
+            yticks      = np.array(range(0, len(self.Z)))[idx::500]
+            ylabels     = (self.Z[idx::500]).astype(int)
+            yaxis_label = 'elevation (m)'
 
 
         # Plotting
@@ -1025,7 +1058,7 @@ class Cradar:
         plt.xticks(xticks, xlabels, fontsize=16)
         plt.yticks(yticks, ylabels, fontsize=16)
         plt.xlabel('along-track distance (m)', fontsize=16)
-        plt.ylabel('TWT (µs)', fontsize=16)
+        plt.ylabel(yaxis_label, fontsize=16)
         plt.title(self.Frame, fontsize=16)
 
         cbr = plt.colorbar(img)
