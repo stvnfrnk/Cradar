@@ -261,7 +261,33 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
 
 
 
+def gridtrack(Lon, Lat, geotif='', geotif_name=''):
 
+    import pygmt
+    import rioxarray
+    import pandas as pd
+
+    geotif      = geotif
+    geotif_name = geotif_name
+    Longitude   = Lon
+    Latitude    = Lat
+
+    df             = pd.DataFrame(Longitude)
+    df['Latitude'] = pd.DataFrame(Latitude)
+    df.columns     = ['Longitude', 'Latitude']
+
+    rds = rioxarray.open_rasterio(geotif)
+    rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+    rds = rds.squeeze('band')
+    rds = rds.astype(float)
+    df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
+    
+    raster_vals = df[geotif_name].values
+    return raster_vals
+    #setattr(self, geotif_name, raster_vals)
+    print('==> Added {} to the data'.format(geotif_name))
+
+    
 
 
 
