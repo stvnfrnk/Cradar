@@ -31,8 +31,6 @@ class Cradar:
             # Iterate over almost all items in HDF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
-                    
-
                     try:
                         setattr(self, k, np.array(v)[0])
                     except:
@@ -86,6 +84,7 @@ class Cradar:
 
         # Delete the HDF5 file
         del self.File
+        print('')
         print('==> Loaded {}'.format(self.Frame))
         return self
 
@@ -812,7 +811,6 @@ class Cradar:
         #import time
         #import sys
 
-        print('')
         print('==> Processing Frame: {} located in {}'.format(self.Frame, region))
         print('... This file is in >> {} << domain'.format(self.Domain))
 
