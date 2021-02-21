@@ -122,7 +122,7 @@ class Cradar:
         header            = stream.binary_file_header.__dict__
         frame             = header['line_number']
         sample_interval   = header['sample_interval_in_microseconds']
-        sample_interval   = sample_interval * 10e-12
+        sample_interval   = sample_interval * 10e-13
         number_of_samples = header['number_of_samples_per_data_trace']
 
         # build time array
@@ -131,14 +131,17 @@ class Cradar:
         time    = np.cumsum(time)
 
 
-
-
-
-        self.Data   = data
+        self.Data   = data.T
         self.Stream = stream
         self.Time   = time
         self.Frame  = str(frame)
+        self.Domain = 'twt'
 
+        coords         = pd.read_csv(coordinate_file, delim_whitespace=True)
+        self.Longitude = coords['GPSLon'].values
+        self.Latitude  = coords['GPSLat'].values
+        self.Elevation = coords['GPSAlt'].values
+        self.GPS_time  = coords['Time'].values
 
 
         if dB == False:
@@ -148,15 +151,60 @@ class Cradar:
         else:
             print('==> dB True or False? Is set to False.')
 
-
+        print('')
+        print('==> Loaded {}'.format(self.Frame))
         return self
+
+        del stream, data, header, time, coords
 
 
 
     ########## END of load() ###########
 
 
+    def emr_preprocess(self):
 
+        '''
+
+        '''
+
+        import numpy as np
+        import pandas as pd
+
+        stream = self.Stream
+        data   = self.Data
+
+        sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
+        sample_interval = float(int(sample_interval) / 1000)
+
+        ### Find Surface Reflection id's 
+        factor = 10
+
+        # filter to avoid large jumps
+        data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
+        surf_idx       = ( data_filtered[100::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
+
+        # get surface values
+        srf = []
+        for i in range(len(surf_idx)):
+            index = surf_idx[i]
+            val   = self.Time[index]
+            srf.append(val)
+        self.Surface = np.array(srf)
+
+
+        # construct time (twt) array
+
+        #twt_ns = np.ones(data.shape[0]) * sample_interval # in nanoseconds
+        #twt_   = twt_ns / 10e8 # in seconds
+        #twt_s  = np.cumsum(twt_)
+
+        #self.Time2        = twt_s
+        self.Surface_idx = np.array(surf_idx)
+
+
+
+        del stream, data, data_filtered, surf_idx#, twt_ns, twt_
 
 
     #############################
@@ -330,8 +378,10 @@ class Cradar:
         import copy 
 
         # makes a copy of the first object (serves as a blue print)
-        elev_obj = copy.deepcopy(twt_object)
-        
+        try:
+            elev_obj = copy.deepcopy(twt_object)
+        except:
+            elev_obj = copy.copy(twt_object)
         
         print('==> Now: twt2elevation...')
         
@@ -468,11 +518,18 @@ class Cradar:
 
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
-        self.GPS_time  = self.GPS_time[start:end]
         self.Surface   = self.Surface[start:end]
         self.Elevation = self.Elevation[start:end]
         
         # optional
+        try:
+            self.GPS_time  = self.GPS_time[start:end]
+        except:
+            pass
+        try:
+            self.Surface_idx = self.Surface_idx[start:end]
+        except:
+            pass
         try:
             self.Heading = self.Heading[start:end]
         except:
@@ -860,6 +917,9 @@ class Cradar:
 
         # get sample interval | doesn't matter if twt or Z
         sample_interval = np.abs(diff_domain.mean()) * 1000000
+
+        if self.Domain == 'Z':
+            sample_interval = 0.01
         
         # apply radar2segy method
         stream = radar2segy(data=data, 
