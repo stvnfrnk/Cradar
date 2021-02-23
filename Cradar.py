@@ -292,7 +292,10 @@ class Cradar:
         mode        = mode
         loss_factor = loss_factor
 
-        geom_obj = copy.deepcopy(raw_object)
+        try:
+            geom_obj = copy.deepcopy(raw_object)
+        except:
+            geom_obj = copy.copy(raw_object)
 
         geom_obj.get_surf_idx()
 
