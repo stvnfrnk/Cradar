@@ -803,7 +803,10 @@ class Cradar:
         import numpy as np
         import copy
 
-        out_object = copy.deepcopy(self)
+        try:
+            out_object = copy.deepcopy(self)
+        except:
+            out_object = copy.copy(self)
 
         try:
             del out_object.Stream
@@ -819,7 +822,25 @@ class Cradar:
         else: 
             mat_filename = out_filename
         
-        scipy.io.savemat(mat_filename, full_dict)
+        try:
+            scipy.io.savemat(mat_filename, full_dict)
+        except:
+            try:
+                del out_object.__header__, out_object.__version__, out_object.__globals__ 
+            except:
+                pass
+            try:
+                del out_object.array_param, out_object.param_combine_wf_chan, out_object.param_records
+            except:
+                pass
+            try:
+                del out_object.param_csarp, out_object.param_radar
+            except:
+                pass
+                
+            full_dict          = out_object.__dict__
+            scipy.io.savemat(mat_filename, full_dict)
+
         print('==> Written: {}'.format(mat_filename))
 
         del out_object
