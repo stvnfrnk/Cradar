@@ -100,7 +100,7 @@ class Cradar:
     # Method: load_awi_segy
     #############################
 
-    def load_awi_segy(self, segy_file='', coordinate_file='', dB=False):
+    def load_awi_segy(self, segy_file='', coordinate_file='', dB=False, correct_gps=True):
 
         '''
 
@@ -143,6 +143,12 @@ class Cradar:
         self.Elevation = coords['GPSAlt'].values
         self.GPS_time  = coords['Time'].values
 
+        if correct_gps == True:
+        	try:
+	        	self.Latitude  = np.array( pd.DataFrame(self.Latitude).mask(pd.DataFrame(self.Latitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+				self.Longitude = np.array( pd.DataFrame(self.Longitude).mask(pd.DataFrame(self.Longitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+			except:
+				print('... could not correct gps positions.')
 
         if dB == False:
                 self.dB = False
