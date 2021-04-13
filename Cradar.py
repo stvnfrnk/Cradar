@@ -217,7 +217,7 @@ class Cradar:
     # Method: add_raster_values
     #############################
 
-    def gridtrack(self, geotif='', geotif_name=''):
+    def gridtrack(self, geotif='', geotif_name='DEM_surface'):
 
         import pygmt
         import rioxarray
