@@ -168,7 +168,7 @@ class Cradar:
     ########## END of load() ###########
 
 
-    def emr_preprocess(self):
+    def emr_preprocess(self, skip=100, gauss_factor=1):
 
         '''
 
@@ -176,6 +176,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
+        from scipy.ndimage import gaussian_filter
 
         stream = self.Stream
         data   = self.Data
@@ -187,8 +188,11 @@ class Cradar:
         factor = 10
 
         # filter to avoid large jumps
+
+
+        data = pd.DataFrame(gaussian_filter(data.values, sigma=gauss_factor))
         data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
-        surf_idx       = ( data_filtered[100::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
+        surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
 
         # get surface values
         srf = []
@@ -233,7 +237,7 @@ class Cradar:
         df.columns     = ['Longitude', 'Latitude']
 
         rds = rioxarray.open_rasterio(geotif)
-        rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+        #rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
         rds = rds.squeeze('band')
         rds = rds.astype(float)
         df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
@@ -449,10 +453,10 @@ class Cradar:
         
         # define range resolution depending on the setting
         if setting == 'narrowband':
-            elev_obj.Range_Resolution = '0.1 m'
+            elev_obj.Range_Resolution = '1 m'
             
         if setting == 'wideband':
-            elev_obj.Range_Resolution = '1 m'
+            elev_obj.Range_Resolution = '0.1 m'
             
         if setting == 'snow':
             elev_obj.Range_Resolution = '0.001 m'
@@ -551,6 +555,8 @@ class Cradar:
             self.Roll    = self.Roll[start:end]
         except:
             pass
+
+        print('Clipped along-track: {} -- {}'.format(start, end))
         
 
     ########## END of clip_along() ###########
@@ -578,6 +584,8 @@ class Cradar:
     
         if domain == 'Z':
             self.Z = self.Z[start:end]
+
+        print('Clipped in range: {} -- {}'.format(start, end))
         
         
     ########## END of clip_range() ###########
