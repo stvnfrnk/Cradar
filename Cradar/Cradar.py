@@ -26,6 +26,11 @@ class Cradar:
         try:
             self.File      = scipy.io.loadmat(filename)
             self.Frame     = filename.split('.mat')[0]
+            try:
+                self.Frame = self.Frame.split('/')[-1]
+            except:
+                pass
+
             self.Reader    = 'scipy'
             
             # Iterate over almost all items in HDF5 File
@@ -221,38 +226,40 @@ class Cradar:
     # Method: add_raster_values
     #############################
 
-    def gridtrack(self, geotif='', geotif_name='DEM_surface'):
+    def grdtrack(self, geotif='', geotif_name='DEM_surface', geotif_epsg=3413):
 
-        import pygmt
-        import rioxarray
-        import pandas as pd
 
         geotif      = geotif
         geotif_name = geotif_name
         Longitude   = self.Longitude
         Latitude    = self.Latitude
-
-        df             = pd.DataFrame(Longitude)
-        df['Latitude'] = pd.DataFrame(Latitude)
-        df.columns     = ['Longitude', 'Latitude']
-
-        rds = rioxarray.open_rasterio(geotif)
-        #rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-        rds = rds.squeeze('band')
-        rds = rds.astype(float)
-        df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
+           
+        try:
+            print('==> Applying gridtrack method 1 ...')
+            from Cradar.geo_toolbox import gridtrack
+            raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
         
-        raster_vals = df[geotif_name].values
+        except:
+            print('==> Failed, trying gridtrack method 2 ...')
+            from Cradar.geo_toolbox import gridtrack2
+            raster_vals = gridtrack2(geotif, Latitude, Longitude, EPSG_xy=4326, EPSG_raster=geotif_epsg)
 
         setattr(self, geotif_name, raster_vals)
         print('==> Added {} to the data'.format(geotif_name))
 
-        del df
-        del rds
-        del raster_vals
+        del raster_vals, Longitude, Latitude
+
+
 
 
     ########## END of rename() ###########
+
+
+
+
+
+
+    
 
 
 
@@ -291,7 +298,7 @@ class Cradar:
 
     def correct4attenuation(raw_object, mode=0, loss_factor=0):
 
-        from radar_toolbox import correct4attenuation
+        from Cradar.radar_toolbox import correct4attenuation
         import copy
 
         if raw_object.dB == False:
@@ -336,7 +343,7 @@ class Cradar:
 
     def add_distance(self):
 
-        from geo_toolbox import coords2distance
+        from Cradar.geo_toolbox import coords2distance
 
         X = self.Longitude
         Y = self.Latitude
@@ -387,7 +394,7 @@ class Cradar:
         
         import numpy as np
         import pandas as pd
-        from radar_toolbox import twt2elevation
+        from Cradar.radar_toolbox import twt2elevation
         import copy 
 
         # makes a copy of the first object (serves as a blue print)
@@ -399,15 +406,15 @@ class Cradar:
         print('==> Now: twt2elevation...')
         
         if reference == 'GPS':
-            print('... Using Aircraft GPS and radar surface reflection to derive elevation')
+            print('... Using aircraft GPS and radar surface reflection to derive elevation')
             
         elif reference == 'DEM':
-            print('... Using a Ice surface DEM to derive elevation')
+            print('... Using a ice surface DEM to derive elevation')
         
         elif reference == '':
             reference = 'GPS'
             print("... !! You didn't define a reference, it is now automatically set to 'GPS'")
-            print('... Using Aircraft GPS and radar surface reflection to derive elevation')
+            print('... Using aircraft GPS and radar surface reflection to derive elevation')
         
         # Get ice surface elevation values from DEM
         if reference == 'DEM': 
@@ -642,11 +649,16 @@ class Cradar:
             GPS_time.append(obj.GPS_time)
             Surface.append(obj.Surface)
             #Bottom.append(obj.Bottom)
-            Heading.append(obj.Heading)
-            Roll.append(obj.Roll)
-            Pitch.append(obj.Pitch)
-            Frames.append(obj.Frame)
-            
+            try:
+                Heading.append(obj.Heading)
+                Roll.append(obj.Roll)
+                Pitch.append(obj.Pitch)
+            except:
+                pass
+            try:
+                Frames.append(obj.Frame)
+            except:
+                pass
             try:
                 Spacing.append()
             except:
@@ -671,9 +683,12 @@ class Cradar:
         new_obj.GPS_time  = np.concatenate(GPS_time)
         new_obj.Surface   = np.concatenate(Surface)
         #new_obj.Bottom    = np.concatenate(Bottom)
-        new_obj.Heading   = np.concatenate(Heading)
-        new_obj.Roll      = np.concatenate(Roll)
-        new_obj.Pitch     = np.concatenate(Pitch)
+        try:
+            new_obj.Heading   = np.concatenate(Heading)
+            new_obj.Roll      = np.concatenate(Roll)
+            new_obj.Pitch     = np.concatenate(Pitch)
+        except:
+            pass
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
         
@@ -753,7 +768,7 @@ class Cradar:
         
         import numpy as np
         import geopandas
-        from geo_toolbox import coords2shape
+        from Cradar.geo_toolbox import coords2shape
         import copy
         import os
 
@@ -895,7 +910,7 @@ class Cradar:
         ''' 
 
         import numpy as np
-        from segy_toolbox import radar2segy
+        from Cradar.segy_toolbox import radar2segy
         
         from obspy import Trace, Stream
         #from obspy.core import AttribDict

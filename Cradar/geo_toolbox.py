@@ -114,11 +114,133 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
 
 
 
+def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=''):
+
+    import pygmt
+    import rioxarray
+    import pandas as pd
+
+    Longitude   = Longitude
+    Latitude    = Latitude
+    geotif      = geotif
+    geotif_name = geotif_name
+    geotif_epsg = geotif_epsg
+
+    df             = pd.DataFrame(Longitude)
+    df['Latitude'] = pd.DataFrame(Latitude)
+    df.columns     = ['Longitude', 'Latitude']
+
+    rds = rioxarray.open_rasterio(geotif)
+    rds.rio.set_crs(geotif_epsg)
+    rds = rds.rio.reproject("epsg:4326")
+    rds = rds.squeeze('band')
+    rds = rds.astype(float)
+    df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
+    
+    raster_vals = df[geotif_name].values
+    return raster_vals
+    
+    del df, Latitude, Longitude
+    del rds
 
 
 
 
 
+
+#################################
+# Function extract_geotif_values
+#################################
+
+def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
+    
+    '''
+    Required Libraries:
+            
+        - numpy
+        - pandas
+        - osgeo / gdal
+        - pyproj
+        
+    
+    Import as:
+        
+        import extract_geotif_values
+        
+        Usage: df['New Column'] = eextract_geotif_values(geotif, data_frame, EPSG)
+        
+    
+    Valid geotif file and pandas DataFrame with either X and Y as EPSG3413 coordinates
+    or lon, lat (lowercase)
+    
+    '''
+
+
+    import numpy as np
+    import pandas as pd
+    from osgeo import gdal
+    from pyproj import Transformer
+
+    
+    
+    geotif      = geotif
+    X_in        = X
+    Y_in        = Y
+    EPSG_xy     = EPSG_xy
+    EPSG_raster = EPSG_raster
+
+    # convert coordinates from EPSG_in to EPSG_out
+    transformer = Transformer.from_crs(EPSG_xy, EPSG_raster)
+    X, Y        = transformer.transform(X_in, Y_in)
+    
+    
+    #driver = gdal.GetDriverByName('GTiff')
+    filename = geotif
+    dataset = gdal.Open(filename)
+    #band = dataset.GetRasterBand(1)
+    
+    cols = dataset.RasterXSize
+    rows = dataset.RasterYSize
+    
+    transform = dataset.GetGeoTransform()
+    
+    xOrigin = transform[0]
+    yOrigin = transform[3]
+    pixelWidth = transform[1]
+    pixelHeight = -transform[5]
+    
+    #data = band.ReadAsArray(0, 0, cols, rows)
+    data = dataset.ReadAsArray(0, 0, cols, rows)
+    
+    #position = df[['X', 'Y']]
+    points_list = list(tuple(zip(X,Y))) #list of X,Y coordinates
+    
+    lst = []
+    
+    for point in points_list:
+        #col = int((point[0] - xOrigin) / pixelWidth)
+        #row = int((yOrigin - point[1] ) / pixelHeight)              
+        #lst.append(data[row][col])
+
+        try:
+            col = int((point[0] - xOrigin) / pixelWidth)
+            row = int((yOrigin - point[1] ) / pixelHeight)
+
+            try:
+                lst.append(data[row][col])
+            except:
+                print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
+                try:
+                    lst.append(lst[-1])
+                except:
+                    lst.append(np.nan)
+                    
+        except: #OverflowError:
+            lst.append(np.nan)
+
+    raster_vals = np.array(lst)
+    
+    return raster_vals
 
 
 
@@ -261,134 +383,7 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
 
 
 
-def gridtrack(Lon, Lat, geotif='', geotif_name=''):
 
-    import pygmt
-    import rioxarray
-    import pandas as pd
-
-    geotif      = geotif
-    geotif_name = geotif_name
-    Longitude   = Lon
-    Latitude    = Lat
-
-    df             = pd.DataFrame(Longitude)
-    df['Latitude'] = pd.DataFrame(Latitude)
-    df.columns     = ['Longitude', 'Latitude']
-
-    rds = rioxarray.open_rasterio(geotif)
-    rds = rds.rio.reproject("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-    rds = rds.squeeze('band')
-    rds = rds.astype(float)
-    df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
-    
-    raster_vals = df[geotif_name].values
-    return raster_vals
-    #setattr(self, geotif_name, raster_vals)
-    print('==> Added {} to the data'.format(geotif_name))
-
-    
-
-
-
-
-
-
-
-#################################
-# Function extract_geotif_values
-#################################
-
-def gridtrack2(geotif, X, Y, EPSG_xy=0, EPSG_raster=0):
-    
-    '''
-    Required Libraries:
-            
-        - numpy
-        - pandas
-        - osgeo / gdal
-        - pyproj
-        
-    
-    Import as:
-        
-        import extract_geotif_values
-        
-        Usage: df['New Column'] = eextract_geotif_values(geotif, data_frame, EPSG)
-        
-    
-    Valid geotif file and pandas DataFrame with either X and Y as EPSG3413 coordinates
-    or lon, lat (lowercase)
-    
-    '''
-
-
-    import numpy as np
-    import pandas as pd
-    from osgeo import gdal
-    from pyproj import Transformer
-    
-    geotif      = geotif
-    X_in        = X
-    Y_in        = Y
-    EPSG_xy     = EPSG_xy
-    EPSG_raster = EPSG_raster
-
-    # convert coordinates from EPSG_in to EPSG_out
-    transformer = Transformer.from_crs(EPSG_xy, EPSG_raster)
-    X, Y        = transformer.transform(X_in, Y_in)
-    
-    
-    #driver = gdal.GetDriverByName('GTiff')
-    filename = geotif
-    dataset = gdal.Open(filename)
-    #band = dataset.GetRasterBand(1)
-    
-    cols = dataset.RasterXSize
-    rows = dataset.RasterYSize
-    
-    transform = dataset.GetGeoTransform()
-    
-    xOrigin = transform[0]
-    yOrigin = transform[3]
-    pixelWidth = transform[1]
-    pixelHeight = -transform[5]
-    
-    #data = band.ReadAsArray(0, 0, cols, rows)
-    data = dataset.ReadAsArray(0, 0, cols, rows)
-    
-    #position = df[['X', 'Y']]
-    points_list = list(tuple(zip(X,Y))) #list of X,Y coordinates
-    
-    lst = []
-    
-    for point in points_list:
-        col = int((point[0] - xOrigin) / pixelWidth)
-        row = int((yOrigin - point[1] ) / pixelHeight)
-                        
-        lst.append(data[row][col])
-
-
-
-        '''try:
-                                    col = int((point[0] - xOrigin) / pixelWidth)
-                                    row = int((yOrigin - point[1] ) / pixelHeight)
-                        
-                                    try:
-                                        lst.append(data[row][col])
-                                    except:
-                                        print('problem at point: {} ==> appending last value: {}'.format(point, lst[-1]))
-                                        try:
-                                            lst.append(lst[-1])
-                                        except:
-                                            lst.append(np.nan)
-                                            
-                                except: #OverflowError:
-                                    lst.append(np.nan)'''
-        
-    out_column = np.array(lst)
-    
-    return out_column
 
 
 
