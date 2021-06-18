@@ -764,7 +764,7 @@ class Cradar:
     # Method: write shape
     #############################
     
-    def write_shape(self, out_filename='', out_folder='', out_format='shapefile'):
+    def write_shape(self, geometry='Linestring', out_filename='', out_folder='', out_format='shapefile'):
         
         import numpy as np
         import geopandas
@@ -777,6 +777,7 @@ class Cradar:
         X = out_object.Longitude
         Y = out_object.Latitude
 
+        geometry     = geometry
         out_filename = out_filename
         out_format   = out_format
 
@@ -787,7 +788,7 @@ class Cradar:
             out_format = 'shapefile'
 
 
-        out = coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes='')
+        out = coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry=geometry, attributes='', Frame=self.Frame)
 
         if out_folder == '':
             if out_format == 'shapefile':

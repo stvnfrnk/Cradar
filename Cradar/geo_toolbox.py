@@ -48,7 +48,7 @@ def coords2distance(X, Y, EPSG=4326):
 # from a cresis radar .mat file
 #############################################
 
-def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes=[]):
+def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes=[], Frame=''):
 
     '''
         Usage ==>> coords2shape(x, y, EPSG, attributes=[])
@@ -92,9 +92,10 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
         X, Y        = transformer.transform(X_in, Y_in)
 
     # create the data frame with the coordinates as well as the attributes
-    df         = pd.DataFrame(X)
-    df['Y']    = pd.DataFrame(Y)
-    df.columns = ['X', 'Y']
+    df          = pd.DataFrame(X)
+    df['Y']     = pd.DataFrame(Y)
+    df['Frame'] = Frame
+    df.columns  = ['X', 'Y', 'Frame']
 
     if attributes:
         for key, value in attributes.items():
@@ -102,10 +103,20 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
     else:
         pass
 
-    # create geopandas data frame with geometry
-    gdf = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
 
-    return gdf
+    
+    gdf_point = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
+
+    if geometry == 'Linestring':
+
+        gdf_line = gdf_point.groupby(['Frame'])['geometry'].apply(lambda x: LineString(x.tolist()))
+        gdf_line = gpd.GeoDataFrame(gdf_line, geometry='geometry')
+
+    if geometry == 'Point':
+        return gdf_point
+    
+    elif geometry == 'Linestring':
+        return gdf_line
 
 
 
