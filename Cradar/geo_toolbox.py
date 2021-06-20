@@ -103,13 +103,12 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
     else:
         pass
 
-
     
     gdf_point = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
 
     if geometry == 'Linestring':
 
-        gdf_line = gdf_point.groupby(['Frame'])['geometry'].apply(lambda x: LineString(x.tolist()))
+        gdf_line = gdf_point.groupby(['Frame', 'Season'])['geometry'].apply(lambda x: LineString(x.tolist()))
         gdf_line = gpd.GeoDataFrame(gdf_line, geometry='geometry')
 
     if geometry == 'Point':

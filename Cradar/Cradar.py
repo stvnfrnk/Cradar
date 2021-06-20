@@ -764,7 +764,12 @@ class Cradar:
     # Method: write shape
     #############################
     
-    def write_shape(self, geometry='Linestring', out_filename='', out_folder='', out_format='shapefile'):
+    def write_shape(self, 
+                    geometry='Point', 
+                    out_filename='', 
+                    out_folder='', 
+                    out_format='shapefile',
+                    attributes=''):
         
         import numpy as np
         import geopandas
@@ -784,11 +789,20 @@ class Cradar:
         if out_filename == '':
             shape_filename = out_object.Frame# + '_' + out_object.Domain
 
+        else:
+            shape_filename = out_filename
+
         if out_format == '':
             out_format = 'shapefile'
 
 
-        out = coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry=geometry, attributes='', Frame=self.Frame)
+        out = coords2shape(X, 
+                           Y, 
+                           EPSG_in=4326, 
+                           EPSG_out=4326, 
+                           geometry=geometry, 
+                           attributes=attributes, 
+                           Frame=self.Frame)
 
         if out_folder == '':
             if out_format == 'shapefile':
@@ -805,6 +819,17 @@ class Cradar:
                 out.to_file('geojson/' + shape_filename + '.geojson', driver='GeoJSON')
                 print('==> Written: geojson/{}.geojson'.format(shape_filename))
 
+            if out_format == 'kml':
+                import fiona
+                fiona.supported_drivers['KML'] = 'rw'
+                fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
+
+                if not os.path.exists('geojson'):
+                    os.makedirs('geojson')
+
+                out.to_file('kml/' + shape_filename + '.kml', driver='KML')
+                print('==> Written: kml/{}.kml'.format(shape_filename))
+
         else:
             if out_format == 'shapefile':
                 out.to_file(out_folder + '/' + shape_filename + '.shp')
@@ -813,6 +838,15 @@ class Cradar:
             if out_format == 'geojson':
                 out.to_file(out_folder + '/' + shape_filename + '.geojson', driver='GeoJSON')
                 print('==> Written: {}/{}.geojson'.format(out_folder, shape_filename))
+
+
+            if out_format == 'kml':
+                import fiona
+                fiona.supported_drivers['KML'] = 'rw'
+                fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
+
+                out.to_file(out_folder + '/' + shape_filename + '.kml', driver='KML')
+                print('==> Written: {}/{}.kml'.format(out_folder, shape_filename))
         
         del X, Y, out
         
