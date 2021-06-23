@@ -766,6 +766,7 @@ class Cradar:
     
     def write_shape(self, 
                     geometry='Point', 
+                    step=1,
                     out_filename='', 
                     out_folder='', 
                     out_format='shapefile',
@@ -783,6 +784,7 @@ class Cradar:
         Y = out_object.Latitude
 
         geometry     = geometry
+        step         = step
         out_filename = out_filename
         out_format   = out_format
 
@@ -800,7 +802,8 @@ class Cradar:
                            Y, 
                            EPSG_in=4326, 
                            EPSG_out=4326, 
-                           geometry=geometry, 
+                           geometry=geometry,
+                           step=step, 
                            attributes=attributes, 
                            Frame=self.Frame)
 

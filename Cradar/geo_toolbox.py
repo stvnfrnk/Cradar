@@ -48,7 +48,7 @@ def coords2distance(X, Y, EPSG=4326):
 # from a cresis radar .mat file
 #############################################
 
-def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes=[], Frame=''):
+def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, attributes=[], Frame=''):
 
     '''
         Usage ==>> coords2shape(x, y, EPSG, attributes=[])
@@ -78,6 +78,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
     Y          = Y
     EPSG_in    = EPSG_in
     EPSG_out   = EPSG_out
+    step       = step
     attributes = attributes
 
 
@@ -103,6 +104,13 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', attributes
     else:
         pass
 
+    # reduce by given value ()
+    if step != 1:
+        df = df.iloc[::step, :]
+        df.reset_index()
+        del df['index']
+    else:
+        pass
     
     gdf_point = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
 
