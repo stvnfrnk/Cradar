@@ -106,9 +106,10 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
 
     # reduce by given value ()
     if step != 1:
-        df = df.iloc[::step, :]
-        df = df.reset_index()
-        del df['index']
+        if len(df) > 21:
+            df = df.iloc[::step, :]
+            df = df.reset_index()
+            del df['index']
     else:
         pass
     
