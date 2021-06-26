@@ -48,7 +48,7 @@ def coords2distance(X, Y, EPSG=4326):
 # from a cresis radar .mat file
 #############################################
 
-def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, attributes=[], Frame=''):
+def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, attributes=[]):
 
     '''
         Usage ==>> coords2shape(x, y, EPSG, attributes=[])
@@ -95,8 +95,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
     # create the data frame with the coordinates as well as the attributes
     df          = pd.DataFrame(X)
     df['Y']     = pd.DataFrame(Y)
-    df['Frame'] = Frame
-    df.columns  = ['X', 'Y', 'Frame']
+    df.columns  = ['X', 'Y']
 
     if attributes:
         for key, value in attributes.items():

@@ -482,7 +482,7 @@ class Cradar:
         
         
     #############################
-    # Method: write matfile
+    # Method: flip left-right
     #############################
     
     def flip_lr(self):
@@ -770,7 +770,7 @@ class Cradar:
                     out_filename='', 
                     out_folder='', 
                     out_format='shapefile',
-                    attributes=''):
+                    attributes=[]):
         
         import numpy as np
         import geopandas
@@ -804,8 +804,7 @@ class Cradar:
                            EPSG_out=4326, 
                            geometry=geometry,
                            step=step, 
-                           attributes=attributes, 
-                           Frame=self.Frame)
+                           attributes=attributes)
 
         if out_folder == '':
             if out_format == 'shapefile':
