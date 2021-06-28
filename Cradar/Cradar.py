@@ -42,7 +42,7 @@ class Cradar:
                         setattr(self, k, v)
 
                 if 'Time' in k:
-                    self.Time = np.array(self.File['Time'])[0]
+                    self.Time = np.array(self.File['Time']).flatten()
 
                 if 'Time' in k and 'Z' not in k:
                     self.Domain = 'twt'
