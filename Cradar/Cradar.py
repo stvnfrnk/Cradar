@@ -37,7 +37,7 @@ class Cradar:
             for k, v in self.File.items():
                 if 'Time' not in k:
                     try:
-                        setattr(self, k, np.array(v)[0])
+                        setattr(self, k, np.array(v).flatten())
                     except:
                         setattr(self, k, v)
 
