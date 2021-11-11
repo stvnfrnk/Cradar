@@ -725,8 +725,15 @@ class Cradar:
     def to_dB(self):
     
         import numpy as np
+        import pandas as pd
 
         if self.dB == False:
+            # check if 0 in data because log10 will then return -inf
+            # replacing 0 with 1 and log10 will return 0.0
+            if 0 in self.Data:
+                self.Data = pd.DataFrame(np.where(self.Data==0, 1, self.Data))
+                print('... zeroes [0] in self.Data --> replacing with ones [1] before log10.')
+
             self.Data = 20 * np.log10(self.Data)
             self.dB   = True
             print('==> Converted to dB (20*log10).')
