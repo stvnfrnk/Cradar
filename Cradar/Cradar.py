@@ -563,7 +563,7 @@ class Cradar:
         except:
             pass
 
-        print('Clipped along-track: {} -- {}'.format(start, end))
+        print('==> Clipped along-track: traces {}--{}'.format(start, end))
         
 
     ########## END of clip_along() ###########
@@ -592,7 +592,7 @@ class Cradar:
         if domain == 'Z':
             self.Z = self.Z[start:end]
 
-        print('Clipped in range: {} -- {}'.format(start, end))
+        print('==> Clipped in range: bins {}--{}'.format(start, end))
         
         
     ########## END of clip_range() ###########
@@ -716,12 +716,10 @@ class Cradar:
 
 
 
-
     ##################
     # Method: to_dB
     ##################
     
-
     def to_dB(self):
     
         import numpy as np
@@ -742,14 +740,13 @@ class Cradar:
             print('... already in dB.')
         
         
-    ########## END of rename() ###########
+    ########## END of to_dB() ###########
 
 
     
-    ##################
-    # Method: to_dB
-    ##################
-    
+    #####################
+    # Method: inverse_dB
+    #####################
 
     def inverse_dB(self):
     
@@ -764,7 +761,72 @@ class Cradar:
             print('... already NOT in dB.')
         
         
-    ########## END of rename() ###########
+    ########## END of inverse_db() ###########
+
+
+
+
+    #############################
+    # Method: range gain
+    #############################
+
+    '''
+    Adds a linear or exponential gain to the radar data
+    The function should be uses >!not< in db
+
+    b = base
+    n = exponent
+    f = (linear) factor
+
+    gain_type = 'linear' (f) or 'exponential' (b) and (n)
+
+    self.Data will be overwritten
+
+    '''
+
+    def range_gain(self, gain_type='', b=2, n=2, f=2):
+
+        from Cradar.radar_toolbox import add_range_gain
+
+        #if self.dB == True:
+        #    self.inverse_dB()
+        #    self.dB == False
+        #else:
+        #    pass
+        print('==> adding range gain ({})'.format(gain_type))
+        new_data  = add_range_gain(self.Data, gain_type=gain_type, b=b, n=n, f=f)
+        self.Data = new_data
+
+        del new_data
+
+
+    ########## END of range_gain() ###########
+
+
+
+    #############################
+    # Method: magic gain
+    #############################
+
+    '''
+
+    '''
+
+    def magic_gain(self, window=50):
+
+        from Cradar.radar_toolbox import magic_gain
+
+        window = window
+
+        print('==> applying magic gain for layer sharpening')
+        new_data  = magic_gain(self.Data, window=window)
+        self.Data = new_data
+
+        del new_data
+
+
+    ########## END of magic_gain() ###########
+
 
 
     #############################

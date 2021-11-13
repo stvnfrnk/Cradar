@@ -44,7 +44,7 @@ def twt2elevation(data='',
 
     for i in np.arange(0, elev.size):
         if (i % LOG_EVERY_N) == 0:
-            print('... Processed  {}  of  {}  Traces'.format(i + 1, elev.size))
+            print('... processed  {}  of  {}  traces'.format(i + 1, elev.size))
 
         # get index where surface reflection is located
         if setting == 'emr':
@@ -166,6 +166,172 @@ def twt2elevation(data='',
     return df, Z, surfm_idx
 
     
+
+
+
+def add_range_gain(data='', gain_type='', b=2, n=2, f=2):
+
+    import numpy as np
+    import pandas as pd
+
+    data         = data
+    gain_type    = gain_type
+    b            = b
+    n            = n
+    f            = f
+    xlen         = len(data.T)
+    ylen         = len(data)
+    
+    data_gain_matrix = []
+
+    if gain_type == 'linear':
+        slope = np.linspace(1, f, ylen)
+        
+    elif gain_type == 'exponential':
+        slope = np.geomspace(1, b**n, ylen)
+
+    for i in np.arange(0, xlen):
+        trace_gain  = np.array(data[i]) * slope
+        data_gain_matrix.append(trace_gain)
+        
+    new_data = pd.DataFrame(np.array(data_gain_matrix)).T
+        
+    return new_data
+
+
+
+
+
+
+def magic_gain(data, window=''):
+
+    '''
+
+    '''
+
+    import numpy as np
+    import pandas as pd
+
+    window = window
+    data   = data
+
+    new_matrix = []
+    nans       = np.repeat(np.nan, window*2)
+
+    LOG_EVERY_N = 1000
+
+    for i in np.arange(0, len(data.T)):
+        if (i % LOG_EVERY_N) == 0:
+            print('... processed  {}  of  {}  traces'.format(i + 1, len(data.T)))
+        
+        trace     = np.array(data[i])
+        new_trace = []
+        for i in range(len(data) - (2*window)):
+            i = i+window
+            section     = trace[i-window:i+window]
+            vmin        = section.min()
+            vmax        = section.max()
+            diff        = vmax - vmin
+            value       = vmax - trace[i+window]
+            new_value   = (value * 100/diff)*-1
+
+            new_trace.append(new_value)
+        new_trace = np.array(new_trace)
+        new_trace = np.concatenate([nans, new_trace])
+        new_matrix.append(new_trace)  
+        
+    new_data = pd.DataFrame(new_matrix).T
+    print('... magig done.')
+    
+    return new_data
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################
+########################
+
+def rangegain(self, slope):
+    """Apply a range gain.
+    Parameters
+    ----------
+    slope: float
+        The slope of the linear range gain to be applied. Maybe try 1.0e-2?
+    """
+    if isinstance(self.trig, (float, int, np.float, np.int64)):
+        gain = self.travel_time[int(self.trig) + 1:] * slope
+        self.data[int(self.trig + 1):, :] *= np.atleast_2d(gain).transpose()
+    else:
+        for i, trig in enumerate(self.trig):
+            gain = self.travel_time[int(trig) + 1:] * slope
+            self.data[int(trig) + 1:, i] *= gain
+    self.flags.rgain = True
+
+
+def agc(self, window=50, scaling_factor=50):
+    """Try to do some automatic gain control
+    This is from StoDeep--I'm not sure it is useful but it was easy to roll over so
+    I'm going to keep it. I think you should have most of this gone with a bandpass,
+    but whatever.
+    Parameters
+    ----------
+    window: int, optional
+        The size of window we use in number of samples (default 50)
+    scaling_factor: int, optional
+        The scaling factor. This gets divided by the max amplitude when we rescale the input.
+        Default 50.
+    """
+    maxamp = np.zeros((self.snum,))
+    # In the for loop, old code indexed used range(window // 2). This did not make sense to me.
+    for i in range(self.snum):
+        maxamp[i] = np.max(np.abs(self.data[max(0, i - window // 2):
+                                            min(i + window // 2, self.snum), :]))
+    maxamp[maxamp == 0] = 1.0e-6
+    self.data *= (scaling_factor / np.atleast_2d(maxamp).transpose()).astype(self.data.dtype)
+    self.flags.agc = True
+
+
+#########################
+#########################
 
 
 def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_factor=0):

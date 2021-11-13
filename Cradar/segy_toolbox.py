@@ -147,16 +147,6 @@ def radar2segy(data='',
         else:
             pass
 
-
-        #print(i)
-        #print(X[i].astype(int))
-        #print(Y[i].astype(int))
-        #print(trace)
-        #print(np.array(20*np.log10(data[i])))
-        #print(np.array(20*np.log10(data[i])).shape)
-        #print()
-
-
         #trace.stats.delta = 0.01
         trace.stats.sampling_rate = 1/sample_interval
         # SEGY does not support microsecond precision! Any microseconds will
