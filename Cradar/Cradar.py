@@ -581,8 +581,7 @@ class Cradar:
         '''
         '''
         
-        self.Data      = self.Data[start:end]
-
+        self.Data  = self.Data[start:end]
         domain     = self.Domain
         
         if domain == 'twt':
@@ -596,7 +595,6 @@ class Cradar:
         
         
     ########## END of clip_range() ###########
-    
     
     
     
@@ -812,14 +810,14 @@ class Cradar:
 
     '''
 
-    def magic_gain(self, window=50):
+    def agc(self, window=50):
 
-        from Cradar.radar_toolbox import magic_gain
+        from Cradar.radar_toolbox import automatic_gain_control
 
         window = window
 
-        print('==> applying magic gain for layer sharpening')
-        new_data  = magic_gain(self.Data, window=window)
+        print('==> applying automatic gain control for layer sharpening')
+        new_data  = automatic_gain_control(self.Data, window=window)
         self.Data = new_data
 
         del new_data

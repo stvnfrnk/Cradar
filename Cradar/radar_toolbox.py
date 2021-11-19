@@ -203,7 +203,7 @@ def add_range_gain(data='', gain_type='', b=2, n=2, f=2):
 
 
 
-def magic_gain(data, window=''):
+def automatic_gain_control(data, window=''):
 
     '''
 
