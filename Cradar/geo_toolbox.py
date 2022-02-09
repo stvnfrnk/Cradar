@@ -133,10 +133,16 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
     import rioxarray as rx
     import numpy as np
     import pandas as pd
-    from pyproj import Transformer
+    #from pyproj import Transformer
 
-    transformer = Transformer.from_crs(4326, geotif_epsg)
-    x, y        = transformer.transform(Longitude, Latitude)
+    #transformer = Transformer.from_crs(4326, geotif_epsg)
+    #x, y        = transformer.transform(Longitude, Latitude)
+
+    from pyproj import Proj, transform
+
+    inProj  = Proj(init='epsg:4326')
+    outProj = Proj(init='epsg:{}'.format(geotif_epsg))
+    x, y    = transform(inProj,outProj,Longitude,Latitude)
 
     rds = rx.open_rasterio(geotif)
     rds.rio.set_crs(geotif_epsg)
