@@ -23,7 +23,7 @@ def coords2distance(X, Y, EPSG=4326):
         transformer = Transformer.from_crs(EPSG, 4326)
         X, Y        = transformer.transform(X, Y)
 
-    ## Get real distance for traces 
+    ## Get real distance for traces
     spacing = np.array([])
     for i in range(1, len(X)-1):
         coord_1    = (Y[i], X[i])
@@ -56,15 +56,15 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
                         - Point
                         - LineString
                         - Both
-                        
+
         EPSG (CRS):     Set the output EPSG.
                         - 4326 (standard, uses Lat/Lon)
                         - 3413 (for Greenland  - NSIDC Sea Ice Polar Stereographic North)
                         - 3031 (for Antarctica - Antarctic Polar Stereographic)
-                        
+
         Attributes:     List of Attributes to hand over to shape files
-                        - Example:                    
-                        - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation'] 
+                        - Example:
+                        - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation']
     '''
 
 
@@ -99,7 +99,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
 
     if attributes:
         for key, value in attributes.items():
-            df[key] = value 
+            df[key] = value
     else:
         pass
 
@@ -111,7 +111,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
             del df['index']
     else:
         pass
-    
+
     gdf_point = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
 
     if geometry == 'Linestring':
@@ -121,18 +121,50 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
 
     if geometry == 'Point':
         return gdf_point
-    
+
     elif geometry == 'Linestring':
         return gdf_line
 
 
 
 
-
-
-
-
 def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=''):
+
+    import rioxarray as rx
+    import numpy as np
+    import pandas as pd
+    from pyproj import Transformer
+
+    transformer = Transformer.from_crs(4326, geotif_epsg)
+    x, y        = transformer.transform(Longitude, Latitude)
+
+    rds = rx.open_rasterio(geotif)
+    rds.rio.set_crs(geotif_epsg)
+    #rds = rds.rio.reproject("epsg:4326")
+
+    def find_nearest(array, value):
+        idx = (np.abs(array - value)).argmin()
+        return idx
+
+
+    # define variables from xarray
+    data    = np.array(rds[:])
+    array_x = np.array(rds.coords['x'])
+    array_y = np.array(rds.coords['y'])
+    NaN     = rds.attrs['_FillValue']
+
+    values = []
+
+    for i in range(len(Longitude)):
+        coord_x = int(find_nearest(array_x, x[i]))
+        coord_y = int(find_nearest(array_y, y[i]))
+        value   = [data[0][coord_y][coord_x]]
+        values.append(value)
+
+    return np.array(values)
+
+
+def gridtrack1(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=''):
 
     import pygmt
     import rioxarray
@@ -154,10 +186,10 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
     rds = rds.squeeze('band')
     rds = rds.astype(float)
     df  = pygmt.grdtrack(df, rds, newcolname=geotif_name)
-    
+
     raster_vals = df[geotif_name].values
     return raster_vals
-    
+
     del df, Latitude, Longitude
     del rds
 
@@ -170,27 +202,27 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
 # Function extract_geotif_values
 #################################
 
-def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
-    
+def gridtrack3(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
+
     '''
     Required Libraries:
-            
+
         - numpy
         - pandas
         - osgeo / gdal
         - pyproj
-        
-    
+
+
     Import as:
-        
+
         import extract_geotif_values
-        
+
         Usage: df['New Column'] = eextract_geotif_values(geotif, data_frame, EPSG)
-        
-    
+
+
     Valid geotif file and pandas DataFrame with either X and Y as EPSG3413 coordinates
     or lon, lat (lowercase)
-    
+
     '''
 
 
@@ -199,8 +231,8 @@ def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
     from osgeo import gdal
     from pyproj import Transformer
 
-    
-    
+
+
     geotif      = geotif
     X_in        = X
     Y_in        = Y
@@ -210,34 +242,34 @@ def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
     # convert coordinates from EPSG_in to EPSG_out
     transformer = Transformer.from_crs(EPSG_xy, EPSG_raster)
     X, Y        = transformer.transform(X_in, Y_in)
-    
-    
+
+
     #driver = gdal.GetDriverByName('GTiff')
     filename = geotif
     dataset = gdal.Open(filename)
     #band = dataset.GetRasterBand(1)
-    
+
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
-    
+
     transform = dataset.GetGeoTransform()
-    
+
     xOrigin = transform[0]
     yOrigin = transform[3]
     pixelWidth = transform[1]
     pixelHeight = -transform[5]
-    
+
     #data = band.ReadAsArray(0, 0, cols, rows)
     data = dataset.ReadAsArray(0, 0, cols, rows)
-    
+
     #position = df[['X', 'Y']]
     points_list = list(tuple(zip(X,Y))) #list of X,Y coordinates
-    
+
     lst = []
-    
+
     for point in points_list:
         #col = int((point[0] - xOrigin) / pixelWidth)
-        #row = int((yOrigin - point[1] ) / pixelHeight)              
+        #row = int((yOrigin - point[1] ) / pixelHeight)
         #lst.append(data[row][col])
 
         try:
@@ -252,12 +284,12 @@ def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
                     lst.append(lst[-1])
                 except:
                     lst.append(np.nan)
-                    
+
         except: #OverflowError:
             lst.append(np.nan)
 
     raster_vals = np.array(lst)
-    
+
     return raster_vals
 
 
@@ -303,27 +335,27 @@ def gridtrack2(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
 #################################
 
 def extract_geotif_values(geotif, data_frame, EPSG=''):
-    
+
     '''
-     
+
     Required Libraries:
-            
+
         - numpy
         - pandas
         - osgeo / gdal
         - pyproj
-        
-    
+
+
     Import as:
-        
+
         import extract_geotif_values
-        
+
         Usage: df['New Column'] = eextract_geotif_values(geotif, data_frame, EPSG)
-        
-    
+
+
     Valid geotif file and pandas DataFrame with either X and Y as EPSG3413 coordinates
     or lon, lat (lowercase)
-    
+
     '''
 
 
@@ -331,19 +363,19 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
     import pandas as pd
     from osgeo import gdal
     import pyproj
-    
-    
+
+
     df = data_frame
-    
-    
+
+
     if 'X' and 'Y' in df.columns:
         pass
-    
+
     else:
         if EPSG == 3413:
             EPSG3413=pyproj.Proj("EPSG:3413")
             df['X'], df['Y'] = EPSG3413(np.array(df['Longitude']), np.array(df['Latitude']))
-        
+
         elif EPSG == 3031:
             EPSG3031=pyproj.Proj("EPSG:3031")
             df['X'], df['Y'] = EPSG3031(np.array(df['Longitude']), np.array(df['Latitude']))
@@ -351,31 +383,31 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
         else:
             print('No valid X and Y files or EPSG specified:')
             pass
-    
-    
+
+
     #driver = gdal.GetDriverByName('GTiff')
     filename = geotif
     dataset = gdal.Open(filename)
     #band = dataset.GetRasterBand(1)
-    
+
     cols = dataset.RasterXSize
     rows = dataset.RasterYSize
-    
+
     transform = dataset.GetGeoTransform()
-    
+
     xOrigin = transform[0]
     yOrigin = transform[3]
     pixelWidth = transform[1]
     pixelHeight = -transform[5]
-    
+
     #data = band.ReadAsArray(0, 0, cols, rows)
     data = dataset.ReadAsArray(0, 0, cols, rows)
-    
+
     position = df[['X', 'Y']]
     points_list = [tuple(x) for x in position.values] #list of X,Y coordinates
-    
+
     lst = []
-    
+
     for point in points_list:
         try:
             col = int((point[0] - xOrigin) / pixelWidth)
@@ -389,12 +421,12 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
                     lst.append(lst[-1])
                 except:
                     lst.append(np.nan)
-                    
+
         except: #OverflowError:
             lst.append(np.nan)
-        
+
     out_column = pd.DataFrame(lst)
-    
+
     return out_column
 
 
@@ -409,31 +441,31 @@ def extract_geotif_values(geotif, data_frame, EPSG=''):
 
 
 
-    
+
 def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=[]):
-    
+
     '''
-        Usage ==>> radartrack2shape(file, geometry='Point' or 'LineString', 
-                                    EPSG=4326/3413/3031, 
+        Usage ==>> radartrack2shape(file, geometry='Point' or 'LineString',
+                                    EPSG=4326/3413/3031,
                                     Attributes=[] or List with Attributes in matfile):
-        
+
         geometry types:
                         - Point
                         - LineString
                         - Both
-                        
+
         EPSG (CRS):
                         - 4326 (standard, uses Lat/Lon)
                         - 3413 (for Greenland  - NSIDC Sea Ice Polar Stereographic North)
                         - 3031 (for Antarctica - Antarctic Polar Stereographic)
-                        
+
         Attributes:     List of Attributes to hand over to shape files
-        
-                            - Example:                    
-                            - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation'] 
+
+                            - Example:
+                            - ['X', 'Y', 'GPS_Time', 'Aircraft_Elevation']
     '''
-        
-    
+
+
     # Importing Libraries
     import scipy.io
     import h5py
@@ -444,26 +476,26 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
     from shapely.geometry import Point, LineString, mapping
     from fiona import collection
     from fiona.crs import from_epsg
-    
+
 
     if radar == 'uwb':
         print('===> Dealing with UWB radar data...')
 
         # depending on the .mat file version
         # either scipy.io (older versions) or h5py (newer versions)
-        # will be used to load the file        
+        # will be used to load the file
         try:
             mat     = scipy.io.loadmat(file)
             reader  = 'scipy'
         except NotImplementedError:
             mat     = h5py.File(file, mode='r')
             reader  = 'h5py'
-            
+
 
         # loading with scipy.io
-        if reader == 'scipy':   
+        if reader == 'scipy':
             print('Using scipy.io to load matfile')
-            
+
             # Lat and Lon Required
             Latitude  = np.array(mat['Latitude'])[0]
             Longitude = np.array(mat['Longitude'])[0]
@@ -488,40 +520,40 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
 
     else:
         print("Pleas provide a radar type ('uwb' or 'emr')")
-    
+
     shape_name  = file.split('.')[0]
     CRS         = from_epsg(EPSG)
 
-    
+
     # Define X and Y according to EPSG
     if EPSG == 4326:
-        
+
         X_  = 'Longitude'
         Y_  = 'Latitude'
         X   = Longitude
         Y   = Latitude
-        
-    # Greenland - NSIDC Sea Ice Polar Stereographic North  
+
+    # Greenland - NSIDC Sea Ice Polar Stereographic North
     if EPSG == 3413:
-        
+
         import pyproj
-        
+
         Projection  = "EPSG:3413"
         EPSG_       = pyproj.Proj(Projection)
         X, Y        = EPSG_(Longitude, Latitude)
         X_, Y_      = 'X', 'Y'
-        
-    # Antarctica - Antarctic Polar Stereographic 
+
+    # Antarctica - Antarctic Polar Stereographic
     if EPSG == 3031:
-        
+
         import pyproj
-        
+
         Projection  = "EPSG:3031"
         EPSG_       = pyproj.Proj(Projection)
         X, Y        = EPSG_(Longitude, Latitude)
         X_, Y_      = 'X', 'Y'
-        
-        
+
+
     ###################
     # Create Folder
     ###################
@@ -533,12 +565,12 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
     ###################
     # Shapefile POINT
     ###################
-    
+
     if geometry == 'Point':
-        
+
         shape_name = shape_name + '_points.shp'
-        
-        schema = {'geometry'    : geometry, 
+
+        schema = {'geometry'    : geometry,
                   'properties'  : OrderedDict([
                                              ('file_name', 'str'),
                                              (X_, 'float'),
@@ -546,10 +578,10 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
                                              ('Trace', 'int')
                                              ])
                                              }
-        
+
         with collection('shapes/' + shape_name, mode='w', driver='ESRI Shapefile',crs=CRS, schema=schema) as output:
             for i in range(len(Longitude) - 1):
-                
+
                 point = Point(Longitude[i], Latitude[i])
                 output.write({
                     'properties': OrderedDict([
@@ -559,34 +591,32 @@ def radartrack2shape(file, geometry='Point', EPSG=4326, radar='uwb', Attributes=
                                              ('Trace', i)
                                              ]),
                     'geometry': mapping(point)})
-    
+
             print('')
             print('===>> Converted {} to Point Shapefile'.format(shape_name))
-    
-    
+
+
     #################
     # Shapefile LINE
     #################
-    
+
     if geometry == 'LineString':
-        
+
         shape_name = shape_name + '_line.shp'
-        
-        schema = {'geometry'    : geometry, 
+
+        schema = {'geometry'    : geometry,
                   'properties'  : OrderedDict([
                                              ('file_name', 'str')
                                              ])
                                              }
-        
+
         line = LineString(list(zip(X, Y)))
-        
+
         with collection('shapes/' + shape_name, mode='w', driver='ESRI Shapefile',crs=CRS, schema=schema) as output:
             output.write({
                 'geometry': mapping(line),
                 'properties': {'file_name': file},
             })
-            
+
         print('')
         print('===>> Converted {} to LineString Shapefile'.format(shape_name))
-
-

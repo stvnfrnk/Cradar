@@ -2,22 +2,22 @@
 
 
 class Cradar:
-    
+
     #_allObjects = []
-    
-    # initiate an instance and read all important parameters 
+
+    # initiate an instance and read all important parameters
     # from a CReSIS mcords matfile
     def __init__(self):
         #self._allObjects.append(self)
         pass
-    
+
     def load_cresis_mat(self, filename, dB=False):
-        
+
         import h5py
         import scipy.io
         import numpy as np
         import pandas as pd
-        
+
         #self._allObjects.append(self)
 
 
@@ -32,7 +32,7 @@ class Cradar:
                 pass
 
             self.Reader    = 'scipy'
-            
+
             # Iterate over almost all items in HDF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
@@ -46,7 +46,7 @@ class Cradar:
 
                 if 'Time' in k and 'Z' not in k:
                     self.Domain = 'twt'
-                
+
                 if 'Z' in k:
                     self.Domain = 'Z'
 
@@ -58,15 +58,15 @@ class Cradar:
                 self.dB = True
             else:
                 print('==> dB True or False? Is set to False.')
-          
+
 
         ######################
-        # Try with h5py.File()  
+        # Try with h5py.File()
         except:
             self.File      = h5py.File(filename, 'r')
             self.Frame     = filename.split('.mat')[0]
             self.Reader    = 'h5py'
-            
+
             # Iterate over almost all items in HEF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
@@ -93,9 +93,9 @@ class Cradar:
         print('==> Loaded {}'.format(self.Frame))
         return self
 
-        
 
-    
+
+
     ########## END of load_cresis_mat() ###########
 
 
@@ -189,7 +189,7 @@ class Cradar:
         sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
         sample_interval = float(int(sample_interval) / 1000)
 
-        ### Find Surface Reflection id's 
+        ### Find Surface Reflection id's
         factor = 10
 
         # filter to avoid large jumps
@@ -233,16 +233,17 @@ class Cradar:
         geotif_name = geotif_name
         Longitude   = self.Longitude
         Latitude    = self.Latitude
-           
-        try:
-            print('==> Applying gridtrack method 1 ...')
-            from Cradar.geo_toolbox import gridtrack
-            raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
-        
-        except:
-            print('==> Failed, trying gridtrack method 2 ...')
-            from Cradar.geo_toolbox import gridtrack2
-            raster_vals = gridtrack2(geotif, Latitude, Longitude, EPSG_xy=4326, EPSG_raster=geotif_epsg)
+
+        print(geotif_epsg)
+
+
+        print('==> Applying gridtrack method 1 ...')
+        from Cradar.geo_toolbox import gridtrack
+        raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
+
+        #print('==> Failed, trying gridtrack method 2 ...')
+        #from Cradar.geo_toolbox import gridtrack2
+        #raster_vals = gridtrack(geotif, Latitude, Longitude, EPSG_xy=4326, EPSG_raster=geotif_epsg)
 
         setattr(self, geotif_name, raster_vals)
         print('==> Added {} to the data'.format(geotif_name))
@@ -259,7 +260,7 @@ class Cradar:
 
 
 
-    
+
 
 
 
@@ -293,7 +294,7 @@ class Cradar:
 
 
     #############################
-    # Method: correct_geom_spreading 
+    # Method: correct_geom_spreading
     #############################
 
     def correct4attenuation(raw_object, mode=0, loss_factor=0):
@@ -337,7 +338,7 @@ class Cradar:
 
 
     #############################
-    # Method: add_distance 
+    # Method: add_distance
     #############################
 
 
@@ -363,25 +364,25 @@ class Cradar:
 
 
     #############################
-    # Method: calc_elevation 
+    # Method: calc_elevation
     #############################
-    
-    def twt2elevation(twt_object, 
-                       reference='', 
-                       setting='', 
-                       speed_of_ice=1.689e8, 
-                       overlap=False, 
+
+    def twt2elevation(twt_object,
+                       reference='',
+                       setting='',
+                       speed_of_ice=1.689e8,
+                       overlap=False,
                        number_of_gaps=100,
                        decimate=[True, 2]):
-        
+
         '''
-        ==> Takes a Cradar object and transforms from twt domain 
+        ==> Takes a Cradar object and transforms from twt domain
             to the elvation domain.
-        
+
         ==> The air-ice interface can either be set by the twt from the
             aircraft to the surface reflection or by a ice surface DEM
-        
-        reference       = 'reflection' or 'DEM'
+
+        reference       = 'GPS' or 'DEM'
         speed_of_ice    = Usually 1.689 for e=3.15, but it can be changed
         setting         = 'narrowband', 'wideband' for rds or 'snow' for uwbm-snowradar
         overlap         = some older CReSIS .mat files used to be processed with an overlap
@@ -390,41 +391,41 @@ class Cradar:
         number_of_gaps  = refers to the (by the user) defined number of allowed gaps in a DEM
                           for the twt to elevation conversion. If the number is exceeded, it will
                           switch automatically to reference='reflection'
-        ''' 
-        
+        '''
+
         import numpy as np
         import pandas as pd
         from Cradar.radar_toolbox import twt2elevation
-        import copy 
+        import copy
 
         # makes a copy of the first object (serves as a blue print)
         try:
             elev_obj = copy.deepcopy(twt_object)
         except:
             elev_obj = copy.copy(twt_object)
-        
+
         print('==> Now: twt2elevation...')
-        
+
         if reference == 'GPS':
             print('... Using aircraft GPS and radar surface reflection to derive elevation')
-            
+
         elif reference == 'DEM':
             print('... Using a ice surface DEM to derive elevation')
-        
+
         elif reference == '':
             reference = 'GPS'
             print("... !! You didn't define a reference, it is now automatically set to 'GPS'")
             print('... Using aircraft GPS and radar surface reflection to derive elevation')
-        
+
         # Get ice surface elevation values from DEM
-        if reference == 'DEM': 
+        if reference == 'DEM':
             twt_surface = elev_obj.Surface
             DEM_surface = elev_obj.DEM_surface
 
         elif reference == 'GPS':
             twt_surface = elev_obj.Surface
             DEM_surface = ''
-        
+
         # imput variables from instance
         data               = elev_obj.Data
         twt                = elev_obj.Time
@@ -434,9 +435,9 @@ class Cradar:
         twt_surface   = twt_surface
 
         # input variables from input of method above
-        reference = reference 
-        setting   = setting 
-        overlap   = overlap 
+        reference = reference
+        setting   = setting
+        overlap   = overlap
 
         df, Z, surfm_idx =  twt2elevation(data=data,
                                        twt=twt,
@@ -450,43 +451,43 @@ class Cradar:
                                        overlap_traces=0,
                                        decimate=[True, 2]
                                        )
-        
+
 
         # re-define instance atributes
         elev_obj.Z             = Z
         elev_obj.Data          = pd.DataFrame(np.array(df))
         elev_obj.Surface_m_idx = surfm_idx
         elev_obj.Domain        = 'Z'
-        
+
         # define range resolution depending on the setting
         if setting == 'narrowband':
             elev_obj.Range_Resolution = '1 m'
-            
+
         if setting == 'wideband':
             elev_obj.Range_Resolution = '0.1 m'
-            
+
         if setting == 'snow':
             elev_obj.Range_Resolution = '0.001 m'
-            
-    
+
+
         return elev_obj
 
         del df
-    
-    
+
+
     ########## END of twt2elevation() ###########
-    
-    
-        
-        
-        
-        
+
+
+
+
+
+
     #############################
     # Method: flip left-right
     #############################
-    
+
     def flip_lr(self):
-        
+
         '''
         Flips the whole radar matrix and all its along-track attributes
         '''
@@ -497,7 +498,7 @@ class Cradar:
         self.GPS_time  = self.GPS_time[::-1]
         self.Surface   = self.Surface[::-1]
         self.Elevation = self.Elevation[::-1]
-        
+
         # optional
         try:
             self.Heading = self.Heading[::-1]
@@ -505,23 +506,23 @@ class Cradar:
             pass
         try:
             self.Pitch   = self.Pitch[::-1]
-        except: 
+        except:
             pass
         try:
             self.Roll    = self.Roll[::-1]
         except:
             pass
-        
+
 
     ########## END of flip_lr() ###########
-        
-        
-        
-        
+
+
+
+
     ##################################
     # Method: clip data along-track
-    ##################################  
-        
+    ##################################
+
     def clip_along(self, start=0, end=-1):
 
         '''
@@ -529,7 +530,7 @@ class Cradar:
 
         import pandas as pd
         import numpy as np
-    
+
         self.Data      = self.Data.T[start:end].T
 
         # tweak to make col. names start with zero
@@ -540,7 +541,7 @@ class Cradar:
         self.Latitude  = self.Latitude[start:end]
         self.Surface   = self.Surface[start:end]
         self.Elevation = self.Elevation[start:end]
-        
+
         # optional
         try:
             self.GPS_time  = self.GPS_time[start:end]
@@ -556,7 +557,7 @@ class Cradar:
             pass
         try:
             self.Pitch   = self.Pitch[start:end]
-        except: 
+        except:
             pass
         try:
             self.Roll    = self.Roll[start:end]
@@ -564,59 +565,59 @@ class Cradar:
             pass
 
         print('==> Clipped along-track: traces {}--{}'.format(start, end))
-        
+
 
     ########## END of clip_along() ###########
 
-    
-    
-    
-    
+
+
+
+
     ##################################
     # Method: clip data in range
-    ##################################  
-        
+    ##################################
+
     def clip_range(self, start, end):
 
         '''
         '''
-        
+
         self.Data  = self.Data[start:end]
         domain     = self.Domain
-        
+
         if domain == 'twt':
             self.Time = self.Time[start:end]
             # if not starting at 0, ggf. noch was tun?
-    
+
         if domain == 'Z':
             self.Z = self.Z[start:end]
 
         print('==> Clipped in range: bins {}--{}'.format(start, end))
-        
-        
+
+
     ########## END of clip_range() ###########
-    
-    
-    
-    
+
+
+
+
     ##################################
     # Method: concatenate frames
-    ##################################  
-    
+    ##################################
+
     def concat_frames(added_objects):
-        
+
         '''
-        
+
         '''
-        
+
         import pandas as pd
         import numpy as np
         import copy
-        
+
         # makes a copy of the first object (serves as a blue print)
         new_obj  = copy.deepcopy(added_objects[0])
         namelist = []
-        
+
         Data      = []
         Longitude = []
         Latitude  = []
@@ -629,17 +630,17 @@ class Cradar:
         Pitch     = []
         Spacing   = []
         Frames    = []
-        
-        
+
+
         for obj in added_objects:
 
             namelist.append(obj.Frame)
-            
+
             if obj.Domain == 'Z':
                 obj.Data.index = obj.Z
             elif obj.Domain == 'twt':
                 obj.Data.index = obj.Time
-            
+
             Data.append(obj.Data)
             Longitude.append(obj.Longitude)
             Latitude.append(obj.Latitude)
@@ -661,12 +662,12 @@ class Cradar:
                 Spacing.append()
             except:
                 pass
-            
+
         new_obj.Reader    = added_objects[0].Reader
-            
+
         # concatenate object attributes
         new_obj.Data      = pd.concat(Data, axis=1, ignore_index=True)
-        
+
         if added_objects[0].Domain == 'Z':
                 new_obj.Z = new_obj.Data.index
         elif added_objects[0].Domain == 'twt':
@@ -674,7 +675,7 @@ class Cradar:
 
         # delete Z or Time from index
         new_obj.Data.reset_index(inplace=True, drop=True)
-                
+
         new_obj.Longitude = np.concatenate(Longitude)
         new_obj.Latitude  = np.concatenate(Latitude)
         new_obj.Elevation = np.concatenate(Elevation)
@@ -689,27 +690,27 @@ class Cradar:
             pass
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
-        
+
         print('==> Concatenated {}'.format(namelist))
 
         return new_obj
 
-    
-    
+
+
     ########## END of concat_frames() ###########
-    
-    
-    
-    
-    
+
+
+
+
+
     ##################
     # Method: rename
     ##################
-    
+
     def rename_frame(self, new_framename):
         self.Frame = new_framename
-        
-        
+
+
     ########## END of rename() ###########
 
 
@@ -717,9 +718,9 @@ class Cradar:
     ##################
     # Method: to_dB
     ##################
-    
+
     def to_dB(self):
-    
+
         import numpy as np
         import pandas as pd
 
@@ -736,18 +737,18 @@ class Cradar:
 
         elif self.dB == True:
             print('... already in dB.')
-        
-        
+
+
     ########## END of to_dB() ###########
 
 
-    
+
     #####################
     # Method: inverse_dB
     #####################
 
     def inverse_dB(self):
-    
+
         import numpy as np
 
         if self.dB == True:
@@ -757,8 +758,8 @@ class Cradar:
 
         elif self.dB == False:
             print('... already NOT in dB.')
-        
-        
+
+
     ########## END of inverse_db() ###########
 
 
@@ -830,15 +831,15 @@ class Cradar:
     #############################
     # Method: write shape
     #############################
-    
-    def write_shape(self, 
-                    geometry='Point', 
+
+    def write_shape(self,
+                    geometry='Point',
                     step=1,
-                    out_filename='', 
-                    out_folder='', 
+                    out_filename='',
+                    out_folder='',
                     out_format='shapefile',
                     attributes=[]):
-        
+
         import numpy as np
         import geopandas
         from Cradar.geo_toolbox import coords2shape
@@ -865,12 +866,12 @@ class Cradar:
             out_format = 'shapefile'
 
 
-        out = coords2shape(X, 
-                           Y, 
-                           EPSG_in=4326, 
-                           EPSG_out=4326, 
+        out = coords2shape(X,
+                           Y,
+                           EPSG_in=4326,
+                           EPSG_out=4326,
                            geometry=geometry,
-                           step=step, 
+                           step=step,
                            attributes=attributes)
 
         if out_folder == '':
@@ -916,9 +917,9 @@ class Cradar:
 
                 out.to_file(out_folder + '/' + shape_filename + '.kml', driver='KML')
                 print('==> Written: {}/{}.kml'.format(out_folder, shape_filename))
-        
+
         del X, Y, out
-        
+
     ########## END of write_mat() ###########
 
 
@@ -928,9 +929,9 @@ class Cradar:
     #############################
     # Method: write matfile
     #############################
-    
+
     def write_mat(self, out_filename=''):
-        
+
         import scipy.io
         import pandas as pd
         import numpy as np
@@ -945,21 +946,21 @@ class Cradar:
             del out_object.Stream
         except:
             pass
-                        
+
         out_object.Data    = out_object.Data.values
         full_dict          = out_object.__dict__
         mat_filename       = out_object.Frame + '_' + out_object.Domain + '.mat'
 
         if out_filename=='':
             pass
-        else: 
+        else:
             mat_filename = out_filename
-        
+
         try:
             scipy.io.savemat(mat_filename, full_dict)
         except:
             try:
-                del out_object.__header__, out_object.__version__, out_object.__globals__ 
+                del out_object.__header__, out_object.__version__, out_object.__globals__
             except:
                 pass
             try:
@@ -970,7 +971,7 @@ class Cradar:
                 del out_object.param_csarp, out_object.param_radar
             except:
                 pass
-                
+
             full_dict          = out_object.__dict__
             scipy.io.savemat(mat_filename, full_dict)
 
@@ -979,13 +980,13 @@ class Cradar:
         del out_object
         del full_dict
         del mat_filename
-        
-        
+
+
     ########## END of write_mat() ###########
-    
-    
-    
-    
+
+
+
+
     #####################################
     # Converts CReSIS format .mat files
     # to SEGY format
@@ -993,7 +994,7 @@ class Cradar:
 
     def to_segy(self, region='', out_filename='', differenciate=False, step=1, save_segy=True, to_dB=False):
 
-        '''  
+        '''
         ==>    Writes Cradar Object as SEGY-Format File.
         Usage: write_segy(self, region='', differenciate=False, step=1)
 
@@ -1011,11 +1012,11 @@ class Cradar:
                 3) choose weather to take the data as it is or to differenciate
                    --> set differenciate=True (default is differenciate=False)
                 4) step=N, every N'th trace will be considered (to reduce data size if needed)
-        ''' 
+        '''
 
         import numpy as np
         from Cradar.segy_toolbox import radar2segy
-        
+
         from obspy import Trace, Stream
         #from obspy.core import AttribDict
         #from obspy.io.segy.segy import SEGYTraceHeader, SEGYBinaryFileHeader
@@ -1032,7 +1033,7 @@ class Cradar:
         if self.dB and to_dB == True:
             print('... to_dB is set True, but the data is already in dB!')
 
-        
+
         # Check on TWT or Elevation Data
         if self.Domain == 'twt':
             domain              = self.Time
@@ -1044,13 +1045,13 @@ class Cradar:
             receiver_elevation  = self.Z.max()
             num_of_samples      = len(self.Z)
             segy_filename       = self.Frame + '_Z.segy'
-            
+
         # the data
         data = self.Data
-        
+
         # the time
         gps_time = self.GPS_time
-        
+
         # re-project lon, lat to X, Y depending on EPSG
         if region == 'Greenland':
             EPSG = 3413
@@ -1062,7 +1063,7 @@ class Cradar:
         transformer = Transformer.from_crs(4326, EPSG)
         Lon, Lat    = self.Longitude, self.Latitude
         # ==> BEWARE I think here is a bug, Lon and Lat switched in the function!!
-        X, Y        = transformer.transform(Lat, Lon) 
+        X, Y        = transformer.transform(Lat, Lon)
 
 
 
@@ -1077,13 +1078,13 @@ class Cradar:
 
         if self.Domain == 'Z':
             sample_interval = 0.01
-        
+
         # apply radar2segy method
-        stream = radar2segy(data=data, 
-                            receiver_elevation=receiver_elevation, 
-                            num_of_samples=num_of_samples, 
+        stream = radar2segy(data=data,
+                            receiver_elevation=receiver_elevation,
+                            num_of_samples=num_of_samples,
                             sample_interval=sample_interval,
-                            X=X, 
+                            X=X,
                             Y=Y,
                             step=1,
                             time_mode='gmtime',
@@ -1094,7 +1095,7 @@ class Cradar:
 
         if out_filename=='':
             pass
-        else: 
+        else:
             segy_filename = out_filename
 
         self.Stream = stream
@@ -1107,7 +1108,7 @@ class Cradar:
             print('==> Written: {}'.format(segy_filename))
 
         elif save_segy == False:
-            print('==> Returning: SEGY Stream Object')            
+            print('==> Returning: SEGY Stream Object')
 
         del Lon, Lat, X, Y
         del sample_interval, gps_time
@@ -1116,11 +1117,11 @@ class Cradar:
 
 
     ########## END of write_mat() ###########
-    
-    
+
+
     #####################################
     # Filter
-    # 
+    #
     #####################################
 
     def filter(raw_object, filter_type='', freq='', freq_min='', freq_max='', corners=2, zerophase=False):
@@ -1153,7 +1154,7 @@ class Cradar:
         stream = filtered_object.Stream
 
         if filter_type == 'highpass':
-            print('==> Applying a highpass filter at {} MHz'.format(freq))  
+            print('==> Applying a highpass filter at {} MHz'.format(freq))
             stream_filtered = stream.filter('highpass', freq=freq, corners=corners, zerophase=zerophase)
 
         elif filter_type == 'lowpass':
@@ -1178,8 +1179,8 @@ class Cradar:
 
 
 
-        
-    
+
+
     #####################################
     # Converts CReSIS format .mat files
     # to SEGY format
@@ -1211,11 +1212,11 @@ class Cradar:
         df['Lat']   = pd.DataFrame(Lat)
         df.columns  = ['Lon', 'Lat']
         df_first    = df[0:1]
-        
+
         # create geopandas data frames
         frame  = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.Lon, df.Lat))
         first  = gpd.GeoDataFrame(df_first, geometry=gpd.points_from_xy(df_first.Lon, df_first.Lat))
-        
+
         # set crs to EPSG:4326
         frame        = frame.set_crs(epsg=4326)
         first        = first.set_crs(epsg=4326)
@@ -1284,13 +1285,13 @@ class Cradar:
                 if not os.path.exists('figures'):
                     os.makedirs('figures')
 
-                figname = str(self.Frame) + '.png' 
+                figname = str(self.Frame) + '.png'
 
                 plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: figures/{}'.format(figname))
             else:
 
-                figname = str(self.Frame) + '.png' 
+                figname = str(self.Frame) + '.png'
 
                 plt.savefig(out_folder + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
@@ -1304,9 +1305,3 @@ class Cradar:
         del xticks, xlabels, yticks, ylabels
         del frame, first, survey_lines
         del df, flight_lines, Lon, Lat
-
-
-
-
-
-
