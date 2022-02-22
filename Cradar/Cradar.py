@@ -1182,9 +1182,193 @@ class Cradar:
 
 
     #####################################
-    # Converts CReSIS format .mat files
-    # to SEGY format
+    # Plotting Echograms
     #####################################
+
+
+    def plot_echogram(self, 
+                      figsize_x=10,
+                      figsize_y=6,
+                      range_mode='twt',
+                      every_km_dist=10,
+                      every_m_elev=1000,
+                      every_twt_ms=10,
+                      plot_surface=True,
+                      xlabels_as_int=True,
+                      ylabels_as_int=True,
+                      show_figure=True, 
+                      show_cbar=False,
+                      cmap='binary', 
+                      save_png=True, 
+                      suffix='',
+                      out_folder='',
+                      dpi=200):
+
+        '''
+        
+            range_mode     : 'twt' or 'elevation'
+            xlabels_as_int : 
+            ylabels_as_int : 
+            every_km_dist  :
+            every_m_elev   : 
+            every_twt_ms   : 
+
+
+        '''
+
+        import matplotlib.pyplot as plt
+        import numpy as np 
+        import os
+
+        # before plotting run these
+        try:
+            self.get_surf_idx()
+        except:
+            pass
+
+        self.to_dB()
+        self.add_distance()
+
+
+        # Build xticks every n kilometers
+        distance_km = self.Distance / 1000
+        num_xticks  = int(distance_km[-1]/every_km_dist)
+
+        xticks_km     = np.linspace(0, num_xticks*every_km_dist, num_xticks + 1)
+        xticks_km_idx = []
+
+        for i in range(len(xticks_km)):
+            idx = np.abs(distance_km - xticks_km[i]).argmin()
+            xticks_km_idx.append(idx)
+            
+        xticks_km_idx = np.array(xticks_km_idx)
+
+        xticks        = xticks_km_idx
+        xtick_labels  = xticks_km
+
+        if xlabels_as_int == True:
+            xtick_labels  = xticks_km.astype(int)
+            
+        xaxis_label   = 'Distance (km)'
+
+
+        # Build yticks every n µs
+        if range_mode == 'twt':
+            
+            twt_ms     = self.Time * 10e5
+            num_yticks = int(twt_ms[-1]/every_twt_ms)
+
+            yticks_ms     = np.linspace(0, num_yticks*every_twt_ms, num_yticks + 1)
+            yticks_ms_idx = []
+
+            for i in range(len(yticks_ms)):
+                idx = np.abs(twt_ms - yticks_ms[i]).argmin()
+                yticks_ms_idx.append(idx)
+
+            yticks_ms_idx = np.array(yticks_ms_idx)
+
+            yticks        = yticks_ms_idx
+            ytick_labels  = yticks_ms
+            
+            if ylabels_as_int == True:
+                ytick_labels  = yticks_ms.astype(int)
+                
+            yaxis_label   = 'TWT (µs)'
+            
+
+        # Build yticks every n meters
+        if range_mode == 'elevation':
+            
+            elevation_m = self.Z
+            below_zero  = int(elevation_m.min() / every_m_elev)
+            above_zero  = int(elevation_m.max() / every_m_elev)
+
+            below_zero_steps = np.linspace(below_zero*every_m_elev, 0, np.abs(below_zero) + 1)
+            above_zero_steps = np.linspace(every_m_elev, above_zero*every_m_elev, np.abs(above_zero))
+
+            yticks_m     = np.concatenate((below_zero_steps, above_zero_steps))
+            yticks_m_idx = []
+
+            for i in range(len(yticks_m)):
+                idx = np.abs(elevation_m - yticks_m[i]).argmin()
+                yticks_m_idx.append(idx)
+
+            yticks_m_idx = np.array(yticks_m_idx)
+
+            yticks        = yticks_m_idx
+            ytick_labels  = yticks_m
+            
+            if ylabels_as_int == True:
+                ytick_labels  = yticks_m.astype(int)
+                
+            yaxis_label   = 'Elevation (m)'
+            
+            
+
+        plt.subplots(figsize=(figsize_x,figsize_y))
+        
+        # plot echogram
+        img = plt.imshow(self.Data, aspect='auto', cmap=cmap)
+
+        # plot surface ?
+        if plot_surface == True:
+            if range_mode == 'twt':
+                plt.plot(self.Surface_idx)
+            if range_mode == 'elevation':
+                plt.plot(self.Surface_m_idx)
+
+        plt.xticks(xticks, xtick_labels)
+        plt.xlabel(xaxis_label)
+        plt.yticks(yticks, ytick_labels)
+        plt.ylabel(yaxis_label)
+        plt.title(self.Frame)
+
+        if show_cbar == True:
+            cbr = plt.colorbar(img)
+            cbr.set_label('dB')
+
+        if save_png == True:
+            if out_folder == '':
+                if not os.path.exists('figures'):
+                    os.makedirs('figures')
+
+                figname = str(self.Frame) + suffix + '.png'
+                plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
+                print('==> Written: figures/{}'.format(figname))
+            
+            else:
+                if not os.path.exists(out_folder):
+                    os.makedirs(out_folder)
+
+                figname = str(self.Frame) + suffix + '.png'
+                plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
+                print('==> Written: {}/{}'.format(out_folder, figname))
+
+        if show_figure == True:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close('all')
+
+        #del xticks, xlabels, yticks, ylabels
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def plot_overview(self, flight_lines, save_png=True, dpi=100, out_folder='', cmap='binary', divergent=False, show=True, domain='twt'):
 
