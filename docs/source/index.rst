@@ -1,7 +1,7 @@
 Welcome to Lumache's documentation!
 ===================================
 
-**Cradar** (/lu'make/) is a little Python toolbox 
+**Cradar** is a little Python toolbox 
 to perform simple ....
 
 
