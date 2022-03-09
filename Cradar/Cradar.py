@@ -238,11 +238,11 @@ class Cradar:
 
 
         print('==> Applying gridtrack method 1 ...')
-        from Cradar.geo_toolbox import gridtrack
+        from geo_toolbox import gridtrack
         raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
 
         #print('==> Failed, trying gridtrack method 2 ...')
-        #from Cradar.geo_toolbox import gridtrack2
+        #from geo_toolbox import gridtrack2
         #raster_vals = gridtrack(geotif, Latitude, Longitude, EPSG_xy=4326, EPSG_raster=geotif_epsg)
 
         setattr(self, geotif_name, raster_vals)
@@ -299,7 +299,7 @@ class Cradar:
 
     def correct4attenuation(raw_object, mode=0, loss_factor=0):
 
-        from Cradar.radar_toolbox import correct4attenuation
+        from radar_toolbox import correct4attenuation
         import copy
 
         if raw_object.dB == False:
@@ -344,7 +344,7 @@ class Cradar:
 
     def add_distance(self):
 
-        from Cradar.geo_toolbox import coords2distance
+        from geo_toolbox import coords2distance
 
         X = self.Longitude
         Y = self.Latitude
@@ -395,7 +395,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from Cradar.radar_toolbox import twt2elevation
+        from radar_toolbox import twt2elevation
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -785,7 +785,7 @@ class Cradar:
 
     def range_gain(self, gain_type='', b=2, n=2, f=2):
 
-        from Cradar.radar_toolbox import add_range_gain
+        from radar_toolbox import add_range_gain
 
         #if self.dB == True:
         #    self.inverse_dB()
@@ -813,7 +813,7 @@ class Cradar:
 
     def agc(self, window=50):
 
-        from Cradar.radar_toolbox import automatic_gain_control
+        from radar_toolbox import automatic_gain_control
 
         window = window
 
@@ -842,7 +842,7 @@ class Cradar:
 
         import numpy as np
         import geopandas
-        from Cradar.geo_toolbox import coords2shape
+        from geo_toolbox import coords2shape
         import copy
         import os
 
@@ -1015,7 +1015,7 @@ class Cradar:
         '''
 
         import numpy as np
-        from Cradar.segy_toolbox import radar2segy
+        from segy_toolbox import radar2segy
 
         from obspy import Trace, Stream
         #from obspy.core import AttribDict
@@ -1226,7 +1226,7 @@ class Cradar:
         except:
             pass
 
-        self.to_dB()
+        #self.to_dB()
         self.add_distance()
 
 
