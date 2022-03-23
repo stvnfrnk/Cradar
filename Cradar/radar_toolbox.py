@@ -69,7 +69,7 @@ def twt2elevation(data='',
             surface   = Airplane_Elevation - Air_Column
             Elevation = Airplane_Elevation - Air_Column - Depth
         elif reference == 'DEM':
-            surface   = DEM_surface
+            surface   = DEM_surface.flatten()
             Elevation = surface[i] - Depth
 
         surface_m.append(surface)
