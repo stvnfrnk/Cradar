@@ -395,7 +395,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from radar_toolbox import twt2elevation
+        from radar_toolbox import twt2elevation_2
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -439,7 +439,7 @@ class Cradar:
         setting   = setting
         overlap   = overlap
 
-        df, Z, surfm_idx =  twt2elevation(data=data,
+        df, Z, surfm_idx =  twt2elevation_2(data=data,
                                        twt=twt,
                                        twt_surface=twt_surface,
                                        aircraft_elevation=aircraft_elevation,
