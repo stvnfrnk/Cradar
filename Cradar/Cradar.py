@@ -99,6 +99,42 @@ class Cradar:
     ########## END of load_cresis_mat() ###########
 
 
+    def load_h5(self, filename, dB=False):
+
+        import h5py
+        import numpy as np
+        import pandas as pd
+
+        self.File      = h5py.File(filename, 'r')
+
+        # Iterate over almost all items in HEF5 File
+        for k, v in self.File.items():
+            if 'Time' not in k:
+                setattr(self, k, np.array(v).flatten())
+
+            if 'Time' in k:
+                self.Time = np.array(self.File['Time']).flatten()
+
+            if 'Time' in k and 'Z' not in k:
+                self.Domain    = 'twt'
+
+        self.Data = pd.DataFrame(np.array(self.File['Data']))
+        self.Frame     = filename.split('.h5')[0]
+        self.Reader    = 'h5py'
+
+        if dB == False:
+            self.dB = False
+        elif dB == True:
+            self.dB = True
+        else:
+            print('==> dB True or False? Is set to False.')
+
+        # Delete the HDF5 file
+        del self.File
+        print('')
+        print('==> Loaded {}'.format(self.Frame))
+
+        return self
 
 
     #############################
@@ -294,6 +330,33 @@ class Cradar:
 
 
     #############################
+    # Method: get_surf_m_idx()
+    #############################
+
+    def get_surf_m_idx(self):
+
+        import numpy as np
+
+        Z          = self.Z
+        Z_surf     = self.Surface_m
+        surf_m_idx = np.array([])
+
+        for i in range(len(Z_surf)):
+            idx        = len(Z) - ( (np.abs(np.array(Z) - np.array(Z_surf)[i])).argmin() )
+            surf_m_idx = np.append(surf_m_idx, idx)
+
+        self.Surface_m_idx = surf_m_idx
+        print('==> Added pixel index of surface elevation')
+        del Z, Z_surf, surf_m_idx
+
+
+    ########## END of get_surf_idx() ###########
+
+
+
+
+
+    #############################
     # Method: correct_geom_spreading
     #############################
 
@@ -439,7 +502,7 @@ class Cradar:
         setting   = setting
         overlap   = overlap
 
-        df, Z, surfm_idx =  twt2elevation_2(data=data,
+        df, Z, surf_m, surf_m_idx =  twt2elevation_2(data=data,
                                        twt=twt,
                                        twt_surface=twt_surface,
                                        aircraft_elevation=aircraft_elevation,
@@ -456,7 +519,8 @@ class Cradar:
         # re-define instance atributes
         elev_obj.Z             = Z
         elev_obj.Data          = pd.DataFrame(np.array(df))
-        elev_obj.Surface_m_idx = surfm_idx
+        elev_obj.Surface_m     = surf_m
+        elev_obj.Surface_m_idx = surf_m_idx
         elev_obj.Domain        = 'Z'
 
         # define range resolution depending on the setting
@@ -496,8 +560,22 @@ class Cradar:
         self.Longitude = self.Longitude[::-1]
         self.Latitude  = self.Latitude[::-1]
         self.GPS_time  = self.GPS_time[::-1]
-        self.Surface   = self.Surface[::-1]
         self.Elevation = self.Elevation[::-1]
+
+        if self.Domain == 'twt':
+            self.Surface     = self.Surface[::-1]
+            try:
+                self.Surface_idx = self.Surface_idx[::-1]
+            except:
+                pass
+
+        elif self.Domain == 'Z':
+            self.Surface_m     = self.Surface_m[::-1]
+            try:
+                self.Surface_m_idx = self.Surface_m_idx[::-1]
+            except:
+                pass
+
 
         # optional
         try:
@@ -618,18 +696,23 @@ class Cradar:
         new_obj  = copy.deepcopy(added_objects[0])
         namelist = []
 
+        # default attributes
         Data      = []
         Longitude = []
         Latitude  = []
         Elevation = []
         GPS_time  = []
-        Surface   = []
-        #Bottom    = []
         Heading   = []
         Roll      = []
         Pitch     = []
         Spacing   = []
         Frames    = []
+
+        # additional important attributes
+        if added_objects[0].Domain == 'twt':
+            Surface        = [] 
+        elif added_objects[0].Domain == 'Z':
+            Surface_m      = []
 
 
         for obj in added_objects:
@@ -638,15 +721,17 @@ class Cradar:
 
             if obj.Domain == 'Z':
                 obj.Data.index = obj.Z
+                Surface_m.append(obj.Surface_m)
             elif obj.Domain == 'twt':
                 obj.Data.index = obj.Time
+                Surface.append(obj.Surface)
 
             Data.append(obj.Data)
             Longitude.append(obj.Longitude)
             Latitude.append(obj.Latitude)
             Elevation.append(obj.Elevation)
             GPS_time.append(obj.GPS_time)
-            Surface.append(obj.Surface)
+            
             #Bottom.append(obj.Bottom)
             try:
                 Heading.append(obj.Heading)
@@ -669,9 +754,9 @@ class Cradar:
         new_obj.Data      = pd.concat(Data, axis=1, ignore_index=True)
 
         if added_objects[0].Domain == 'Z':
-                new_obj.Z = new_obj.Data.index
+            new_obj.Z = new_obj.Data.index
         elif added_objects[0].Domain == 'twt':
-                new_obj.Time = new_obj.Data.index
+            new_obj.Time = new_obj.Data.index
 
         # delete Z or Time from index
         new_obj.Data.reset_index(inplace=True, drop=True)
@@ -680,14 +765,28 @@ class Cradar:
         new_obj.Latitude  = np.concatenate(Latitude)
         new_obj.Elevation = np.concatenate(Elevation)
         new_obj.GPS_time  = np.concatenate(GPS_time)
-        new_obj.Surface   = np.concatenate(Surface)
-        #new_obj.Bottom    = np.concatenate(Bottom)
+
+        if obj.Domain == 'twt':
+            new_obj.Surface   = np.concatenate(Surface)
+            new_obj.get_surf_idx()
+
+        if obj.Domain == 'Z':
+            new_obj.Surface_m = np.concatenate(Surface_m)
+            new_obj.Data      = new_obj.Data[::-1]
+            new_obj.get_surf_m_idx()
+            new_obj.Z         = new_obj.Z[::-1]
+            
+
+
+        
         try:
             new_obj.Heading   = np.concatenate(Heading)
             new_obj.Roll      = np.concatenate(Roll)
             new_obj.Pitch     = np.concatenate(Pitch)
         except:
             pass
+
+        
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
 
@@ -927,10 +1026,10 @@ class Cradar:
 
 
     #############################
-    # Method: write matfile
+    # Method: save matfile
     #############################
 
-    def write_mat(self, out_filename=''):
+    def save_mat(self, out_filename=''):
 
         import scipy.io
         import pandas as pd
@@ -984,6 +1083,55 @@ class Cradar:
 
     ########## END of write_mat() ###########
 
+
+
+    #############################
+    # Method: save h5
+    #############################
+
+
+    def save_h5(self, out_filename=''):
+
+        import h5py
+        import copy
+
+        try:
+            out_object = copy.deepcopy(self)
+        except:
+            out_object = copy.copy(self)
+
+        try:
+            del out_object.Stream
+        except:
+            pass
+
+        out_object.Data  = out_object.Data.values
+        full_dict        = out_object.__dict__
+        h5_filename      = out_object.Frame + '_' + out_object.Domain + '.h5'
+
+        if out_filename=='':
+            pass
+        else:
+            h5_filename = out_filename
+
+        
+        hf = h5py.File(h5_filename, 'w')
+
+
+        for key, value in full_dict.items():
+                
+            try:
+                hf.create_dataset(key, data=value)
+            except:
+                pass
+
+        print('==> Written: {}'.format(h5_filename))
+        hf.close()
+
+
+        del out_object, hf, full_dict, h5_filename
+
+    
 
 
 

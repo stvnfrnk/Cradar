@@ -136,21 +136,21 @@ def twt2elevation(data='',
 
     # get the index value of surface reflection
     surface_m = np.array(surface_m).flatten()
-    surfm_idx = np.array([])
+    surf_m_idx = np.array([])
 
     for i in range(len(surface_m)):
         s_idx = (np.abs(df.index.values - np.array(surface_m)[i])).argmin()
-        surfm_idx = np.append(surfm_idx, s_idx)
+        surf_m_idx = np.append(surf_m_idx, s_idx)
 
-    surfm_idx = surfm_idx.astype(int)
+    surf_m_idx = surf_m_idx.astype(int)
 
     # delete crappy traces above surface reflection
     data     = np.array(df.T)
     new_data = []
 
-    for i in range(len(surfm_idx)):
+    for i in range(len(surf_m_idx)):
         trace         = data[i]
-        index         = surfm_idx[i]
+        index         = surf_m_idx[i]
         trace[:index] = np.nan
         new_data.append(trace)
 
@@ -163,7 +163,7 @@ def twt2elevation(data='',
 
     print('==> Done ...')
     
-    return df, Z, surfm_idx
+    return df, Z, surface_m, surf_m_idx
 
 
 
@@ -322,21 +322,21 @@ def twt2elevation_2(data='',
 
     # get the index value of surface reflection
     surface_m = np.array(surface_m).flatten()
-    surfm_idx = np.array([])
+    surf_m_idx = np.array([])
 
     for i in range(len(surface_m)):
         s_idx = (np.abs(df.index.values - np.array(surface_m)[i])).argmin()
-        surfm_idx = np.append(surfm_idx, s_idx)
+        surf_m_idx = np.append(surf_m_idx, s_idx)
 
-    surfm_idx = surfm_idx.astype(int)
+    surf_m_idx = surf_m_idx.astype(int)
 
     # delete crappy traces above surface reflection
     data     = np.array(df.T)
     new_data = []
 
-    for i in range(len(surfm_idx)):
+    for i in range(len(surf_m_idx)):
         trace         = data[i]
-        index         = surfm_idx[i]
+        index         = surf_m_idx[i]
         trace[:index] = np.nan
         new_data.append(trace)
 
@@ -349,7 +349,7 @@ def twt2elevation_2(data='',
 
     print('==> Done ...')
     
-    return df, Z, surfm_idx
+    return df, Z, surface_m, surf_m_idx
 
 
 
