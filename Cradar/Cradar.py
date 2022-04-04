@@ -482,7 +482,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from radar_toolbox import twt2elevation_2
+        from radar_toolbox import twt2elevation
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -526,18 +526,18 @@ class Cradar:
         setting   = setting
         overlap   = overlap
 
-        df, Z, surf_m, surf_m_idx =  twt2elevation_2(data=data,
-                                       twt=twt,
-                                       twt_surface=twt_surface,
-                                       aircraft_elevation=aircraft_elevation,
-                                       speed_of_ice=1.689e8,
-                                       reference=reference,
-                                       DEM_surface=DEM_surface,
-                                       setting=setting,
-                                       overlap=overlap,
-                                       overlap_traces=0,
-                                       decimate=[True, 2]
-                                       )
+        df, Z, surf_m, surf_m_idx =  twt2elevation(data=data,
+                                                   twt=twt,
+                                                   twt_surface=twt_surface,
+                                                   aircraft_elevation=aircraft_elevation,
+                                                   speed_of_ice=1.689e8,
+                                                   reference=reference,
+                                                   DEM_surface=DEM_surface,
+                                                   setting=setting,
+                                                   overlap=overlap,
+                                                   overlap_traces=0,
+                                                   decimate=[True, 2]
+                                                   )
 
 
         # re-define instance atributes
@@ -567,6 +567,119 @@ class Cradar:
 
 
 
+
+
+
+
+#############################
+    # Method: pull2surface
+#############################
+
+    def pull2surface(twt_object, setting=''):
+
+        '''
+        
+        '''
+
+        import numpy as np
+        import pandas as pd
+        from radar_toolbox import radar_pull2surface
+        import copy
+
+        # makes a copy of the first object (serves as a blue print)
+        try:
+            p2s_obj = copy.deepcopy(twt_object)
+        except:
+            p2s_obj = copy.copy(twt_object)
+
+        print('==> Now: pull2elevation...')
+
+        # imput variables from instance
+        data        = p2s_obj.Data
+        twt         = p2s_obj.Time
+        twt_surface = p2s_obj.Surface
+
+        # input variables defined in prior steps
+        twt_surface   = twt_surface
+
+        df, new_time_array =  radar_pull2surface(data=data,
+                                                 twt=twt,
+                                                 twt_surface=twt_surface,
+                                                 setting=setting
+                                                 )
+
+
+        # re-define instance atributes
+        p2s_obj.Time   = new_time_array
+        p2s_obj.Data   = pd.DataFrame(np.array(df))
+        p2s_obj.Domain = 'twt'
+
+        return p2s_obj
+
+        del df
+
+
+    ########## END of pull2surface() ###########
+
+
+
+
+    #############################
+    # Method: pull2bed
+    #############################
+
+    def pull2bed(Z_object):
+
+        '''
+        
+        '''
+
+        import numpy as np
+        import pandas as pd
+        from radar_toolbox import radar_pull2bed
+        import copy
+
+        # makes a copy of the first object (serves as a blue print)
+        try:
+            p2b_obj = copy.deepcopy(Z_object)
+        except:
+            p2b_obj = copy.copy(Z_object)
+
+        print('==> Now: pull2bed...')
+
+        # imput variables from instance
+        data             = p2b_obj.Data
+        elevation_array  = p2b_obj.Z
+        bed_elevation    = p2b_obj.Bed_m
+
+        # define range resolution depending on the setting
+        if p2b_obj.Range_Resolution == '1 m':
+            range_resolution_m = 1
+
+        if p2b_obj.Range_Resolution == '0.1 m':
+            range_resolution_m = 0.1
+
+        if p2b_obj.Range_Resolution == '0.0001 m':
+            range_resolution_m = 0.001
+
+
+        df, depth_array = radar_pull2bed(data=data, 
+                                         elevation_array=elevation_array, 
+                                         bed_elevation=bed_elevation, 
+                                         range_resolution_m=range_resolution_m
+                                         )
+
+        # re-define instance atributes
+        p2b_obj.Depth  = depth_array
+        p2b_obj.Data   = pd.DataFrame(np.array(df))
+        p2b_obj.Domain = 'depth'
+
+        return p2b_obj
+
+        del df
+
+
+    ########## END of pull2surface() ###########
 
 
 
@@ -1475,6 +1588,30 @@ class Cradar:
                 ytick_labels  = yticks_m.astype(int)
                 
             yaxis_label   = 'Elevation (m)'
+
+
+        # Build yticks every n meters
+        if range_mode == 'depth':
+            
+            depth_m     = self.Depth
+            num_yticks = int(depth_m[-1]/every_m_elev)
+
+            yticks_m     = np.linspace(0, num_yticks*every_m_elev, num_yticks + 1)
+            yticks_m_idx = []
+
+            for i in range(len(yticks_m)):
+                idx = np.abs(depth_m - yticks_m[i]).argmin()
+                yticks_m_idx.append(idx)
+
+            yticks_m_idx = np.array(yticks_m_idx)
+
+            yticks        = yticks_m_idx
+            ytick_labels  = yticks_m
+            
+            if ylabels_as_int == True:
+                ytick_labels  = yticks_m.astype(int)
+                
+            yaxis_label   = 'Depth (m)'
             
             
 
@@ -1495,7 +1632,7 @@ class Cradar:
             if range_mode == 'twt':
                 plt.plot(self.Bed_idx)
             if range_mode == 'elevation':
-                plt.plot(self.Bed_m_idx, color='red', linewidth=0.3, alpha=0.3)
+                plt.plot(self.Bed_m_idx, color='red', linewidth=0.2)
 
         plt.xticks(xticks, xtick_labels)
         plt.xlabel(xaxis_label)
