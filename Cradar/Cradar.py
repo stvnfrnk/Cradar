@@ -353,6 +353,30 @@ class Cradar:
     ########## END of get_surf_idx() ###########
 
 
+    #############################
+    # Method: get_bed_m_idx()
+    #############################
+
+    def get_bed_m_idx(self):
+
+        import numpy as np
+
+        Z         = self.Z
+        Z_bed     = self.Bed_m
+        bed_m_idx = np.array([])
+
+        for i in range(len(Z_bed)):
+            idx        = ( (np.abs(np.array(Z) - np.array(Z_bed)[i])).argmin() )
+            bed_m_idx  = np.append(bed_m_idx, idx)
+
+        self.Bed_m_idx = bed_m_idx
+        print('==> Added pixel index of bed elevation')
+        del Z, Z_bed, bed_m_idx
+
+
+    ########## END of get_bed_idx() ###########
+
+
 
 
 
@@ -902,9 +926,9 @@ class Cradar:
 
 
 
-    #############################
-    # Method: magic gain
-    #############################
+    #################################
+    # Method: automatic gain control
+    #################################
 
     '''
 
@@ -1208,10 +1232,9 @@ class Cradar:
         else:
             print('define region....')
 
-        transformer = Transformer.from_crs(4326, EPSG)
+        transformer = Transformer.from_crs(4326, EPSG, always_xy=True)
         Lon, Lat    = self.Longitude, self.Latitude
-        # ==> BEWARE I think here is a bug, Lon and Lat switched in the function!!
-        X, Y        = transformer.transform(Lat, Lon)
+        X, Y        = transformer.transform(Lon, Lat)
 
 
 
@@ -1342,6 +1365,8 @@ class Cradar:
                       every_m_elev=1000,
                       every_twt_ms=10,
                       plot_surface=True,
+                      plot_bed=False,
+                      plot_layer=[''],
                       xlabels_as_int=True,
                       ylabels_as_int=True,
                       show_figure=True, 
@@ -1464,6 +1489,13 @@ class Cradar:
                 plt.plot(self.Surface_idx)
             if range_mode == 'elevation':
                 plt.plot(self.Surface_m_idx)
+
+        # plot surface ?
+        if plot_bed == True:
+            if range_mode == 'twt':
+                plt.plot(self.Bed_idx)
+            if range_mode == 'elevation':
+                plt.plot(self.Bed_m_idx, color='red', linewidth=0.3, alpha=0.3)
 
         plt.xticks(xticks, xtick_labels)
         plt.xlabel(xaxis_label)
