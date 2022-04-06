@@ -298,25 +298,30 @@ def radar_pull2bed(data='', elevation_array='', bed_elevation='', range_resoluti
     start = time.time()
 
     for i in np.arange(0, len(bed_elevation)):
-        if (i % LOG_EVERY_N) == 0:
-            end = time.time()
-            print('... processed  {}  of  {}  traces in {:.2f} s'.format(i + 1, len(bed_elevation), end - start))
+
+        try:
+            if (i % LOG_EVERY_N) == 0:
+                end = time.time()
+                print('... processed  {}  of  {}  traces in {:.2f} s'.format(i + 1, len(bed_elevation), end - start))
 
 
-        bed_idx             = (np.abs(np.array(elevation_array) - np.array(bed_elevation)[i])).argmin()
-        difference_idx      = bed_first_idx - bed_idx
-        new_elevation_array = elevation_array - difference_idx
+            bed_idx             = (np.abs(np.array(elevation_array) - np.array(bed_elevation)[i])).argmin()
+            difference_idx      = bed_first_idx - bed_idx
+            new_elevation_array = elevation_array - difference_idx
 
-        # get single trace of radargram
-        single_trace = data[i]
+            # get single trace of radargram
+            single_trace = data[i]
 
-        trace_elev = new_elevation_array
-        trace_dB   = single_trace
-        trace_num  = np.ones(int(single_trace.size)) * i
+            trace_elev = new_elevation_array
+            trace_dB   = single_trace
+            trace_num  = np.ones(int(single_trace.size)) * i
 
-        all_elevation = np.append(all_elevation, trace_elev, axis=0)
-        all_dB        = np.append(all_dB, trace_dB, axis=0)
-        all_tracenum  = np.append(all_tracenum, trace_num, axis=0)
+            all_elevation = np.append(all_elevation, trace_elev, axis=0)
+            all_dB        = np.append(all_dB, trace_dB, axis=0)
+            all_tracenum  = np.append(all_tracenum, trace_num, axis=0)
+            
+        except:
+            break
 
         # del single_trace, surf_idx, trace_twt, trace_dB, trace_num, T, T_new
 
