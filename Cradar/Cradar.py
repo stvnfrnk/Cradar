@@ -11,14 +11,18 @@ class Cradar:
         #self._allObjects.append(self)
         pass
 
+
+
+    #############################
+    # Method: load_cresis_mat
+    #############################
+
     def load_cresis_mat(self, filename, dB=False):
 
         import h5py
         import scipy.io
         import numpy as np
         import pandas as pd
-
-        #self._allObjects.append(self)
 
 
         ##############################
@@ -60,6 +64,8 @@ class Cradar:
                 print('==> dB True or False? Is set to False.')
 
 
+
+
         ######################
         # Try with h5py.File()
         except:
@@ -93,11 +99,14 @@ class Cradar:
         print('==> Loaded {}'.format(self.Frame))
         return self
 
-
-
-
     ########## END of load_cresis_mat() ###########
 
+
+
+
+    #############################
+    # Method: load_h5
+    #############################
 
     def load_h5(self, filename, dB=False):
 
@@ -135,6 +144,10 @@ class Cradar:
         print('==> Loaded {}'.format(self.Frame))
 
         return self
+
+    ########## END of load_h5() ###########
+
+
 
 
     #############################
@@ -200,13 +213,54 @@ class Cradar:
 
         print('')
         print('==> Loaded {}'.format(self.Frame))
-        return self
 
         del stream, data, header, time, coords
 
+        return self
+
+    ########## END of load_awi_segy() ###########
 
 
-    ########## END of load() ###########
+
+
+
+    #############################
+    # Method: load_bas_nc
+    #############################
+
+    def load_bas_nc(self, filename):
+
+        import xarray as xr
+        import numpy as np
+        import os
+
+        ds = xr.open_dataset(filename, decode_times=False)
+
+        self.Frame       = os.path.split(filename)[1].split('.nc')[0]
+        self.Time        = ds['fast_time'].values.astype(float) * 10e-7
+        self.Data        = ds.variables['pulse_data'].values
+        self.Domain      = 'twt'
+        self.dB          = False
+
+        self.Longitude   = ds.variables['longitude_layerData'].values
+        self.Latitude    = ds.variables['latitude_layerData'].values
+        self.Elevation   = ds.variables['aircraft_altitude_layerData'].values
+
+        self.Surface_idx = ds.variables['surface_pick_layerData']
+        self.Surface_m   = ds.variables['surface_altitude_layerData'].values
+        self.Bed_idx     = ds.variables['bed_pick_layerData']
+        self.Bed_m       = ds.variables['bed_altitude_layerData'].values
+
+        print('')
+        print('==> Loaded {}'.format(self.Frame))
+
+        del ds
+
+        return self
+
+    ########## END of load_bas_nc() ###########
+        
+
 
 
     def emr_preprocess(self, skip=100, gauss_factor=1):
@@ -754,16 +808,28 @@ class Cradar:
 
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
-        self.Surface   = self.Surface[start:end]
         self.Elevation = self.Elevation[start:end]
 
         # optional
+        
         try:
             self.GPS_time  = self.GPS_time[start:end]
         except:
             pass
         try:
+            self.Surface   = self.Surface[start:end]
+        except:
+            pass
+        try:
             self.Surface_idx = self.Surface_idx[start:end]
+        except:
+            pass
+        try:
+            self.Bed   = self.Bed[start:end]
+        except:
+            pass
+        try:
+            self.Bed_idx = self.Bed_idx[start:end]
         except:
             pass
         try:
@@ -1482,10 +1548,12 @@ class Cradar:
                       plot_layer=[''],
                       xlabels_as_int=True,
                       ylabels_as_int=True,
+                      fontsize=12,
                       show_figure=True, 
                       show_cbar=False,
-                      cmap='binary', 
-                      save_png=True, 
+                      cmap='binary',
+                      save_svg=False, 
+                      save_png=False, 
                       suffix='',
                       out_folder='',
                       dpi=200):
@@ -1506,9 +1574,12 @@ class Cradar:
         import numpy as np 
         import os
 
-        # before plotting run these
+        # before plotting check and run these
         try:
-            self.get_surf_idx()
+            if hasattr(self, 'Surface_idx'):
+                pass
+            else:
+                self.get_surf_idx()
         except:
             pass
 
@@ -1630,15 +1701,15 @@ class Cradar:
         # plot surface ?
         if plot_bed == True:
             if range_mode == 'twt':
-                plt.plot(self.Bed_idx)
+                plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed')
             if range_mode == 'elevation':
-                plt.plot(self.Bed_m_idx, color='red', linewidth=0.2)
+                plt.plot(self.Bed_m_idx, color='red', linewidth=0.5, linestyle='dashed')
 
-        plt.xticks(xticks, xtick_labels)
-        plt.xlabel(xaxis_label)
-        plt.yticks(yticks, ytick_labels)
-        plt.ylabel(yaxis_label)
-        plt.title(self.Frame)
+        plt.xticks(xticks, xtick_labels, fontsize=fontsize)
+        plt.xlabel(xaxis_label, fontsize=fontsize)
+        plt.yticks(yticks, ytick_labels, fontsize=fontsize)
+        plt.ylabel(yaxis_label, fontsize=fontsize)
+        plt.title(self.Frame, fontsize=fontsize)
 
         if show_cbar == True:
             cbr = plt.colorbar(img)
@@ -1660,6 +1731,25 @@ class Cradar:
                 figname = str(self.Frame) + suffix + '.png'
                 plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
+
+
+        if save_svg == True:
+            if out_folder == '':
+                if not os.path.exists('figures'):
+                    os.makedirs('figures')
+
+                figname = str(self.Frame) + suffix + '.svg'
+                plt.savefig('figures/' + figname)
+                print('==> Written: figures/{}'.format(figname))
+            
+            else:
+                if not os.path.exists(out_folder):
+                    os.makedirs(out_folder)
+
+                figname = str(self.Frame) + suffix + '.svg'
+                plt.savefig(out_folder + '/' + figname)
+                print('==> Written: {}/{}'.format(out_folder, figname))
+
 
         if show_figure == True:
             plt.show()
