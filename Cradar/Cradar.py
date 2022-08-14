@@ -11,7 +11,12 @@ class Cradar:
         #self._allObjects.append(self)
         pass
 
+    
+    # def create_traces(self):
+    #     import numpy as np
 
+    #     traces = np.array(range(len(self.Longitude))).astype(int)
+    #     return traces
 
     #############################
     # Method: load_cresis_mat
@@ -93,13 +98,85 @@ class Cradar:
             else:
                 print('==> dB True or False? Is set to False.')
 
+        # Create Traces
+        self.Trace = np.array(range(len(self.Longitude))).astype(int) + 1
+
+        self.Layer = {}
+
         # Delete the HDF5 file
         del self.File
-        print('')
+        # print('')
         print('==> Loaded {}'.format(self.Frame))
         return self
 
     ########## END of load_cresis_mat() ###########
+
+
+
+
+    def add_layer_by_coords(self, layer_name, layer_lon, layer_lat, layer_val):
+
+        import numpy as np
+        from scipy import spatial
+
+        crd_locs    = list(zip(self.Longitude, self.Latitude))
+        tree        = spatial.KDTree(crd_locs)
+        npt_traces  = []
+        npt_values  = []
+
+        for i in range(len(layer_lon)):
+            pick_loc  = (layer_lon[i], layer_lat[i])
+            val       = layer_val[i]
+            npt_trace = tree.query([pick_loc])[1][0]
+
+            npt_traces.append(npt_trace)
+            npt_values.append(val)
+
+        traces = np.array(npt_traces)
+        values = np.array(npt_values)
+
+        # delete duplicates
+        idx    = np.unique(traces, return_index=True)[1]
+        traces = traces[idx]
+        values = values[idx]
+
+        layer = {'trace'      : traces,
+                 'value_twt'  : values}
+
+        self.Layer[layer_name] = layer
+
+
+    def get_layer_idx(self):
+
+        import numpy as np
+
+        layer_list = list(self.Layer.keys())
+        time        = self.Time
+
+        for lr in layer_list:
+            values_idx = np.array([])
+            v_twt      = self.Layer[lr]['value_twt']
+
+            for i in range(len(v_twt)):
+                v_idx      = (np.abs(np.array(time) - np.array(v_twt)[i])).argmin()
+                values_idx = np.append(values_idx, v_idx)
+                #print(surf_idx)
+            
+            values_idx[values_idx == 0] = np.nan
+
+            self.Layer[lr]['value_twt_idx'] = values_idx
+            print('... getting layer idx for {}'.format(lr))
+
+
+
+        
+
+
+
+
+
+
+
 
 
 
@@ -140,7 +217,7 @@ class Cradar:
 
         # Delete the HDF5 file
         del self.File
-        print('')
+        # print('')
         print('==> Loaded {}'.format(self.Frame))
 
         return self
@@ -211,7 +288,7 @@ class Cradar:
         else:
             print('==> dB True or False? Is set to False.')
 
-        print('')
+        # print('')
         print('==> Loaded {}'.format(self.Frame))
 
         del stream, data, header, time, coords
@@ -228,35 +305,68 @@ class Cradar:
     # Method: load_bas_nc
     #############################
 
-    def load_bas_nc(self, filename):
+    def load_bas_nc(self, filename, data_type='pulse'):
 
         import xarray as xr
         import numpy as np
+        import pandas as pd
         import os
 
-        ds = xr.open_dataset(filename, decode_times=False)
+        if data_type == 'pulse':
 
-        self.Frame       = os.path.split(filename)[1].split('.nc')[0]
-        self.Time        = ds['fast_time'].values.astype(float) * 10e-7
-        self.Data        = ds.variables['pulse_data'].values
-        self.Domain      = 'twt'
-        self.dB          = False
+            ds = xr.open_dataset(filename, decode_times=False)
 
-        self.Longitude   = ds.variables['longitude_layerData'].values
-        self.Latitude    = ds.variables['latitude_layerData'].values
-        self.Elevation   = ds.variables['aircraft_altitude_layerData'].values
+            self.Frame       = os.path.split(filename)[1].split('.nc')[0]
+            self.Time        = ds['fast_time'].values.astype(float) * 10e-7
+            self.Data        = pd.DataFrame(ds.variables['pulse_data'].values)
+            self.Domain      = 'twt'
+            self.dB          = False
 
-        self.Surface_idx = ds.variables['surface_pick_layerData']
-        self.Surface_m   = ds.variables['surface_altitude_layerData'].values
-        self.Bed_idx     = ds.variables['bed_pick_layerData']
-        self.Bed_m       = ds.variables['bed_altitude_layerData'].values
+            self.Longitude   = ds.variables['longitude_layerData'].values
+            self.Latitude    = ds.variables['latitude_layerData'].values
+            self.Elevation   = ds.variables['aircraft_altitude_layerData'].values
+            self.GPS_time    = ds.variables['UTC_time_layerData'].values
 
-        print('')
-        print('==> Loaded {}'.format(self.Frame))
+            self.Surface_idx = ds.variables['surface_pick_layerData']
+            self.Surface_m   = ds.variables['surface_altitude_layerData'].values
+            self.Bed_idx     = ds.variables['bed_pick_layerData']
+            self.Bed_m       = ds.variables['bed_altitude_layerData'].values
 
-        del ds
+            print('')
+            print('==> Loaded {} >> pulse data <<'.format(self.Frame))
 
-        return self
+            del ds
+
+            return self
+
+        if data_type == 'chirp':
+
+            from bas_io import correct_chirp_data
+
+            data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m = correct_chirp_data(filename)
+
+            self.Frame       = os.path.split(filename)[1].split('.nc')[0]
+            self.Time        = time
+            self.Data        = data_chirp
+            self.Domain      = 'twt'
+            self.dB          = False
+
+            self.Longitude   = longitude
+            self.Latitude    = latitude
+            self.Elevation   = elevation
+            self.GPS_time    = gps_time
+
+            self.Surface_idx = surface_idx
+            self.Surface_m   = surface_m
+            self.Bed_idx     = bed_idx
+            self.Bed_m       = bed_m
+
+            print('')
+            print('==> Loaded {} >> chirp data <<'.format(self.Frame))
+
+            del data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m
+
+            return self
 
     ########## END of load_bas_nc() ###########
         
@@ -668,9 +778,11 @@ class Cradar:
         p2s_obj.Data   = pd.DataFrame(np.array(df))
         p2s_obj.Domain = 'twt'
 
+        del df
+
         return p2s_obj
 
-        del df
+        
 
 
     ########## END of pull2surface() ###########
@@ -1377,6 +1489,8 @@ class Cradar:
         #import time
         #import sys
 
+        step = step
+
         print('==> Processing Frame: {} located in {}'.format(self.Frame, region))
         print('... This file is in >> {} << domain'.format(self.Domain))
 
@@ -1429,6 +1543,7 @@ class Cradar:
         if self.Domain == 'Z':
             sample_interval = 0.01
 
+
         # apply radar2segy method
         stream = radar2segy(data=data,
                             receiver_elevation=receiver_elevation,
@@ -1436,7 +1551,7 @@ class Cradar:
                             sample_interval=sample_interval,
                             X=X,
                             Y=Y,
-                            step=1,
+                            step=step,
                             time_mode='gmtime',
                             gps_time=gps_time,
                             differenciate=differenciate,
@@ -1545,7 +1660,7 @@ class Cradar:
                       every_twt_ms=10,
                       plot_surface=True,
                       plot_bed=False,
-                      plot_layer=[''],
+                      plot_layers=False,
                       xlabels_as_int=True,
                       ylabels_as_int=True,
                       fontsize=12,
@@ -1573,6 +1688,8 @@ class Cradar:
         import matplotlib.pyplot as plt
         import numpy as np 
         import os
+
+        
 
         # before plotting check and run these
         try:
@@ -1704,6 +1821,20 @@ class Cradar:
                 plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed')
             if range_mode == 'elevation':
                 plt.plot(self.Bed_m_idx, color='red', linewidth=0.5, linestyle='dashed')
+
+        # plot layers ?
+
+        if plot_layers == True:
+
+            layer_list = list(self.Layer.keys())
+            n          = len(layer_list)
+            colors     = plt.cm.rainbow(np.linspace(0,1,n))
+            c          = 0
+
+            for lr in layer_list:
+                plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], color=colors[c], linewidth=0.03)
+                c = c + 1
+
 
         plt.xticks(xticks, xtick_labels, fontsize=fontsize)
         plt.xlabel(xaxis_label, fontsize=fontsize)

@@ -45,7 +45,7 @@ def radar2segy(data='',
                sample_interval=0,
                X='', 
                Y='',
-               step=1,
+               step='',
                time_mode='gmtime',
                gps_time='',
                year='',
@@ -118,20 +118,27 @@ def radar2segy(data='',
     # Create Traces and Trace Header
     for i in range(0, len(X) - 1, step)[0:-1]:
 
-        if time_mode == 'gmtime':
+        try:
+            if time_mode == 'gmtime':
+                year            = int(time.strftime("%Y", time.gmtime(gps_time[i])))
+                day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[i])))
+                hour            = int(time.strftime("%H", time.gmtime(gps_time[i])))
+                minute          = int(time.strftime("%M", time.gmtime(gps_time[i])))
+                second          = int(time.strftime("%S", time.gmtime(gps_time[i])))
 
-            year            = int(time.strftime("%Y", time.gmtime(gps_time[i])))
-            day_of_year     = int(time.strftime("%j", time.gmtime(gps_time[i])))
-            hour            = int(time.strftime("%H", time.gmtime(gps_time[i])))
-            minute          = int(time.strftime("%M", time.gmtime(gps_time[i])))
-            second          = int(time.strftime("%S", time.gmtime(gps_time[i])))
+            else:
+                year         = year[i]
+                day_of_year  = day_of_year[i]
+                hour         = hour[i]
+                minute       = minute[i]
+                second       = second[i]
+        except:
+                year         = 1
+                day_of_year  = 1
+                hour         = 1
+                minute       = 1
+                second       = 1
 
-        else:
-            year         = year[i]
-            day_of_year  = day_of_year[i]
-            hour         = hour[i]
-            minute       = minute[i]
-            second       = second[i]
 
         # Create some random data.
         if to_dB == False:
@@ -147,8 +154,9 @@ def radar2segy(data='',
         else:
             pass
 
-        #trace.stats.delta = 0.01
-        trace.stats.sampling_rate = 1/sample_interval
+        trace.stats.delta = 0.1
+        trace.stats.sampling_rate = 50#/sample_interval
+
         # SEGY does not support microsecond precision! Any microseconds will
         # be discarded.
 
