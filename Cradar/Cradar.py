@@ -113,6 +113,14 @@ class Cradar:
 
 
 
+    def add_layer_by_frame_trace(self, layer_name, frame, traces, values):
+
+        layer = {'trace'      : traces,
+                 'value_twt'  : values}
+
+        self.Layer[layer_name] = layer
+        print('==> added layer: {}'.format(layer_name))
+
 
     def add_layer_by_coords(self, layer_name, layer_lon, layer_lat, layer_val):
 
@@ -144,6 +152,7 @@ class Cradar:
                  'value_twt'  : values}
 
         self.Layer[layer_name] = layer
+        print('==> added layer: {}'.format(layer_name))
 
 
     def get_layer_idx(self):
@@ -1806,7 +1815,7 @@ class Cradar:
         plt.subplots(figsize=(figsize_x,figsize_y))
         
         # plot echogram
-        img = plt.imshow(self.Data, aspect='auto', cmap=cmap)
+        img = plt.imshow(self.Data, aspect='auto', cmap=cmap, alpha=0.8)
 
         # plot surface ?
         if plot_surface == True:
@@ -1828,12 +1837,24 @@ class Cradar:
 
             layer_list = list(self.Layer.keys())
             n          = len(layer_list)
-            colors     = plt.cm.rainbow(np.linspace(0,1,n))
+            colors     = plt.cm.gist_rainbow(np.linspace(0,1,n))
             c          = 0
 
-            for lr in layer_list:
-                plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], color=colors[c], linewidth=0.03)
-                c = c + 1
+            if range_mode == 'twt':
+                for lr in layer_list:
+                    if lr == 'surface':
+                        plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
+                            color='white', linewidth=2, linestyle='dashed')
+
+                    if lr == 'base':
+                        plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
+                            color='brown', linewidth=1, linestyle='dashed')
+
+                    if lr != 'surface':
+                        if lr != 'base':
+                            plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
+                                    color=colors[c], linewidth=1)
+                            c = c + 1
 
 
         plt.xticks(xticks, xtick_labels, fontsize=fontsize)
