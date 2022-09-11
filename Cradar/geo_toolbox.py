@@ -120,10 +120,10 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
         gdf_line = gpd.GeoDataFrame(gdf_line, geometry='geometry')
 
         if attributes:
-        for key, value in attributes.items():
-            if 'Frame' not in key:
-                if 'Season' not in key:
-                    gdf_line[key] = value
+            for key, value in attributes.items():
+                if 'Frame' not in key:
+                    if 'Season' not in key:
+                        gdf_line[key] = value
 
     if geometry == 'Point':
         return gdf_point
