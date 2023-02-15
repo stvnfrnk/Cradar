@@ -81,7 +81,8 @@ class Cradar:
             # Iterate over almost all items in HEF5 File
             for k, v in self.File.items():
                 if 'Time' not in k:
-                    setattr(self, k, np.array(v).flatten())
+                    if '#' not in k:
+                        setattr(self, k, np.array(v).flatten())
 
                 if 'Time' in k:
                     self.Time = np.array(self.File['Time']).flatten()
