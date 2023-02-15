@@ -492,7 +492,7 @@ class Cradar:
             surf_idx = np.append(surf_idx, s_idx)
             #print(surf_idx)
 
-        self.Surface_idx = surf_idx
+        self.Surface_idx = surf_idx.astype(int)
         print('==> Added pixel index of surface reflection')
         del twt, twt_surf, surf_idx
 
@@ -548,6 +548,52 @@ class Cradar:
 
 
     ########## END of get_bed_idx() ###########
+
+
+
+    #############################
+    # Method: retrack_surf()
+    #############################
+
+    def retrack_surf(self, roll_factor=10, sigma=2, gatesize=50, offset=2):
+
+        import copy
+        import numpy as np
+        import pandas as pd
+        from scipy.ndimage import gaussian_filter
+
+        roll_factor = roll_factor
+        sigma       = sigma
+        gatesize    = gatesize
+        offset      = offset
+
+        self.Surface_idx_old = copy.deepcopy(self.Surface_idx)
+        self.Surface_old     = copy.deepcopy(self.Surface)
+
+        data_filtered = pd.DataFrame(gaussian_filter(self.Data.values, sigma=2))
+        data_filtered = data_filtered.diff().rolling(roll_factor, center=True, win_type='hamming').mean()
+
+        # get surface values
+        srf      = []
+        srf_idx  = []
+
+        for i in range(len(self.Longitude)):
+            trx         = np.array(data_filtered[i])[self.Surface_idx[i] - gatesize:self.Surface_idx[i] + gatesize]
+            offset_gate = np.argmax(trx) - gatesize
+            index       = self.Surface_idx[i] + offset_gate + offset
+            val         = self.Time[index]
+            srf.append(val)
+            srf_idx.append(index)
+
+        self.Surface     = np.array(srf)
+        self.Surface_idx = np.array(srf_idx)
+
+        print('==> Retracked ice surface')
+
+        #return self.Surface_idx_old
+
+
+
 
 
 
@@ -993,6 +1039,17 @@ class Cradar:
 
         if domain == 'Z':
             self.Z = self.Z[start:end]
+        try:
+            print('adsfasdf')
+        except:
+            pass
+
+        try:
+            print(self.Surface_idx)
+            self.Surface_idx = self.Surface_idx - start
+            print(self.Surface_idx)
+        except:
+            pass
 
         print('==> Clipped in range: bins {}--{}'.format(start, end))
 
@@ -1668,6 +1725,7 @@ class Cradar:
                       every_m_elev=1000,
                       every_twt_ms=10,
                       plot_surface=True,
+                      plot_old_surface=False,
                       plot_bed=False,
                       plot_layers=False,
                       xlabels_as_int=True,
@@ -1680,6 +1738,7 @@ class Cradar:
                       save_png=False, 
                       suffix='',
                       out_folder='',
+                      interactive=False,
                       dpi=200):
 
         '''
@@ -1697,6 +1756,10 @@ class Cradar:
         import matplotlib.pyplot as plt
         import numpy as np 
         import os
+
+        if interactive == True:
+            pass
+            #%matplotlib qt
 
         
 
@@ -1824,7 +1887,14 @@ class Cradar:
             if range_mode == 'elevation':
                 plt.plot(self.Surface_m_idx)
 
-        # plot surface ?
+        # plot old surface ?
+        if plot_old_surface == True:
+            if range_mode == 'twt':
+                plt.plot(self.Surface_idx_old, color='red', alpha=0.4)
+            if range_mode == 'elevation':
+                plt.plot(self.Surface_m_idx_old)
+
+        # plot bed ?
         if plot_bed == True:
             if range_mode == 'twt':
                 plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed')

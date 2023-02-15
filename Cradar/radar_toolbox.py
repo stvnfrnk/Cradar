@@ -38,9 +38,9 @@ def twt2elevation(data='',
 
 
     # create empty numpy arrays for Elevation, dB and Trace number
-    all_elevation = np.array([])
-    all_dB        = np.array([])
-    all_tracenum  = np.array([])
+    all_elevation = []
+    all_dB        = []
+    all_tracenum  = []
 
     # define some short variables
     twt      = twt                 # Time array
@@ -94,12 +94,16 @@ def twt2elevation(data='',
         trace_dB            = single_trace
         trace_num           = np.ones(int(single_trace.size)) * i
 
-        all_elevation = np.append(all_elevation, trace_elevation, axis=0)
-        all_dB        = np.append(all_dB, trace_dB, axis=0)
-        all_tracenum  = np.append(all_tracenum, trace_num, axis=0)
+        all_elevation.append(trace_elevation)
+        all_dB.append(trace_dB)
+        all_tracenum.append(trace_num)
 
         del single_trace, surf_idx, surface, trace_elevation, trace_dB, trace_num, Elevation
 
+    all_elevation = np.concatenate(all_elevation)
+    all_dB        = np.concatenate(all_dB)
+    all_tracenum  = np.concatenate(all_tracenum)
+    
     df_comb             = pd.DataFrame(all_elevation)
     df_comb['dB']       = pd.DataFrame(all_dB)
     df_comb['Trace']    = pd.DataFrame(all_tracenum)
