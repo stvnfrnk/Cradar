@@ -276,7 +276,7 @@ def radar2segy(data='',
     # object.  If these are not set, they will be autocreated with default
     # values.
     stream.stats = AttribDict()
-    stream.stats.textual_file_header = 'Textual Header!'
+    stream.stats.textual_file_header = '23432'
     stream.stats.binary_file_header = SEGYBinaryFileHeader()
     stream.stats.binary_file_header.trace_sorting_code = 5
     stream.stats.binary_file_header.number_of_samples_per_data_trace = num_of_samples

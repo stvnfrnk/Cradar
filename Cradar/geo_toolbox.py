@@ -48,13 +48,13 @@ def coords2distance(X, Y, EPSG=4326):
 # from a cresis radar .mat file
 #############################################
 
-def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, attributes=[]):
+def coords2shape(X, Y, Frame, Season, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, attributes=[]):
 
     '''
         Usage ==>> coords2shape(x, y, EPSG, attributes=[])
         geometry types:
                         - Point
-                        - LineString
+                        - Line
                         - Both
 
         EPSG (CRS):     Set the output EPSG.
@@ -76,6 +76,8 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
 
     X          = X
     Y          = Y
+    Frame      = Frame
+    Season     = Season
     EPSG_in    = EPSG_in
     EPSG_out   = EPSG_out
     step       = step
@@ -93,9 +95,11 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
         X, Y        = transformer.transform(X_in, Y_in)
 
     # create the data frame with the coordinates as well as the attributes
-    df          = pd.DataFrame(X)
-    df['Y']     = pd.DataFrame(Y)
-    df.columns  = ['X', 'Y']
+    df           = pd.DataFrame(X)
+    df['Y']      = pd.DataFrame(Y)
+    df['Frame']  = Frame
+    df['Season'] = Season
+    df.columns  = ['X', 'Y', 'Frame', 'Season']
 
     if attributes:
         for key, value in attributes.items():
@@ -114,7 +118,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
 
     gdf_point = gpd.GeoDataFrame(df, crs=EPSG_out, geometry=gpd.points_from_xy(df['X'], df['Y']))
 
-    if geometry == 'Linestring':
+    if geometry == 'Line':
 
         gdf_line = gdf_point.groupby(['Frame', 'Season'])['geometry'].apply(lambda x: LineString(x.tolist()))
         gdf_line = gpd.GeoDataFrame(gdf_line, geometry='geometry')
@@ -128,7 +132,7 @@ def coords2shape(X, Y, EPSG_in=4326, EPSG_out=4326, geometry='Point', step=1, at
     if geometry == 'Point':
         return gdf_point
 
-    elif geometry == 'Linestring':
+    elif geometry == 'Line':
         return gdf_line
 
 

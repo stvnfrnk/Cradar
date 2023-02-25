@@ -114,81 +114,6 @@ class Cradar:
 
 
 
-    def add_layer_by_frame_trace(self, layer_name, frame, traces, values):
-
-        layer = {'trace'      : traces,
-                 'value_twt'  : values}
-
-        self.Layer[layer_name] = layer
-        print('==> added layer: {}'.format(layer_name))
-
-
-    def add_layer_by_coords(self, layer_name, layer_lon, layer_lat, layer_val):
-
-        import numpy as np
-        from scipy import spatial
-
-        crd_locs    = list(zip(self.Longitude, self.Latitude))
-        tree        = spatial.KDTree(crd_locs)
-        npt_traces  = []
-        npt_values  = []
-
-        for i in range(len(layer_lon)):
-            pick_loc  = (layer_lon[i], layer_lat[i])
-            val       = layer_val[i]
-            npt_trace = tree.query([pick_loc])[1][0]
-
-            npt_traces.append(npt_trace)
-            npt_values.append(val)
-
-        traces = np.array(npt_traces)
-        values = np.array(npt_values)
-
-        # delete duplicates
-        idx    = np.unique(traces, return_index=True)[1]
-        traces = traces[idx]
-        values = values[idx]
-
-        layer = {'trace'      : traces,
-                 'value_twt'  : values}
-
-        self.Layer[layer_name] = layer
-        print('==> added layer: {}'.format(layer_name))
-
-
-    def get_layer_idx(self):
-
-        import numpy as np
-
-        layer_list = list(self.Layer.keys())
-        time        = self.Time
-
-        for lr in layer_list:
-            values_idx = np.array([])
-            v_twt      = self.Layer[lr]['value_twt']
-
-            for i in range(len(v_twt)):
-                v_idx      = (np.abs(np.array(time) - np.array(v_twt)[i])).argmin()
-                values_idx = np.append(values_idx, v_idx)
-                #print(surf_idx)
-            
-            values_idx[values_idx == 0] = np.nan
-
-            self.Layer[lr]['value_twt_idx'] = values_idx
-            print('... getting layer idx for {}'.format(lr))
-
-
-
-        
-
-
-
-
-
-
-
-
-
 
 
     #############################
@@ -284,19 +209,19 @@ class Cradar:
         self.Elevation = coords['GPSAlt'].values
         self.GPS_time  = coords['Time'].values
 
-        if correct_gps == True:
-        	try:
-        		self.Latitude  = np.array( pd.DataFrame(self.Latitude).mask(pd.DataFrame(self.Latitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
-        		self.Longitude = np.array( pd.DataFrame(self.Longitude).mask(pd.DataFrame(self.Longitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
-        	except:
-        		print('... could not correct gps positions.')
+        # if correct_gps == True:
+        #     try:
+        # 		self.Latitude  = np.array( pd.DataFrame(self.Latitude).mask(pd.DataFrame(self.Latitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+        #         self.Longitude = np.array( pd.DataFrame(self.Longitude).mask(pd.DataFrame(self.Longitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+        # 	except:
+        # 		print('... could not correct gps positions.')
 
-        if dB == False:
-                self.dB = False
-        elif dB == True:
-            self.dB = True
-        else:
-            print('==> dB True or False? Is set to False.')
+        # if dB == False:
+        #         self.dB = False
+        # elif dB == True:
+        #     self.dB = True
+        # else:
+        #     print('==> dB True or False? Is set to False.')
 
         # print('')
         print('==> Loaded {}'.format(self.Frame))
@@ -307,6 +232,38 @@ class Cradar:
 
     ########## END of load_awi_segy() ###########
 
+
+
+
+
+    def load_awi_nc(self, nc_file='', dB=True):
+
+        '''
+
+
+        '''
+
+
+        import numpy as np
+        import pandas as pd
+        import xarray as xr
+
+        
+        dx =  xr.load_dataset(nc_file)
+
+        self.Data   = dx.variables['WAVEFORM'].values[::-1]
+        self.Time   = dx.variables['TWT'].values
+        # self.Frame  = str(frame)
+        self.Domain = 'twt'
+
+        self.Longitude = dx.variables['LONGITUDE'].values
+        self.Latitude  = dx.variables['LATITUDE'].values
+        
+        print('==> Loaded {}'.format(nc_file))
+
+        return self
+
+    ########## END of load_awi_nc() ###########
 
 
 
@@ -382,6 +339,170 @@ class Cradar:
         
 
 
+    #############################
+    # Method: load_awi_segy
+    #############################
+
+    def load_custom(self,
+                    data='',
+                    time='',
+                    frame='',
+                    domain='',
+                    longitude='',
+                    latitude='',
+                    dB=False):
+
+        '''
+
+
+        '''
+
+        import numpy as np
+
+
+        data[np.isnan(data)] = 0
+        print(data.min().min())
+        # try:
+        #     data[np.isnan(data)] = 0
+        # except:
+        #     print('error')
+
+        print(data.min().min())
+
+        self.Data      = data
+        self.Time      = time
+        self.Frame     = frame
+        self.Domain    = domain
+        self.Longitude = longitude
+        self.Latitude  = latitude
+        self.dB        = dB
+
+        return self
+
+
+    #############################
+    # Method: LAyERS
+    #############################
+
+    def add_layer_by_frame_trace(self, layer_name, traces, values):
+
+        layer = {'trace'      : traces,
+                 'value_twt'  : values}
+        
+        try:
+            self.Layer
+        except:
+            self.Layer             = {}
+        
+        self.Layer[layer_name] = layer
+        print('==> added layer: {}'.format(layer_name))
+
+
+    def add_layer_by_coords(self, layer_name, layer_lon, layer_lat, layer_val):
+
+        import numpy as np
+        from scipy import spatial
+
+        crd_locs    = list(zip(self.Longitude, self.Latitude))
+        tree        = spatial.KDTree(crd_locs)
+        npt_traces  = []
+        npt_values  = []
+
+        for i in range(len(layer_lon)):
+            pick_loc  = (layer_lon[i], layer_lat[i])
+            val       = layer_val[i]
+            npt_trace = tree.query([pick_loc])[1][0]
+
+            npt_traces.append(npt_trace)
+            npt_values.append(val)
+
+        traces = np.array(npt_traces)
+        values = np.array(npt_values)
+
+        # delete duplicates
+        idx    = np.unique(traces, return_index=True)[1]
+        traces = traces[idx]
+        values = values[idx]
+
+        layer = {'trace'      : traces,
+                 'value_twt'  : values}
+
+        self.Layer[layer_name] = layer
+        print('==> added layer: {}'.format(layer_name))
+
+
+    def get_layer_idx(self):
+
+        import numpy as np
+
+        layer_list = list(self.Layer.keys())
+        time        = self.Time
+
+        for lr in layer_list:
+            values_idx = np.array([])
+            v_twt      = self.Layer[lr]['value_twt']
+
+            for i in range(len(v_twt)):
+                v_idx      = (np.abs(np.array(time) - np.array(v_twt)[i])).argmin()
+                values_idx = np.append(values_idx, v_idx)
+                #print(surf_idx)
+            
+            values_idx[values_idx == 0] = np.nan
+
+            self.Layer[lr]['value_twt_idx'] = values_idx
+            print('... getting layer idx for {}'.format(lr))
+
+    
+    
+            
+            
+    def track_surface(self, skip=100, gauss_factor=1, use_gradient=False, offset=2):
+
+        '''
+
+        '''
+
+        import numpy as np
+        import pandas as pd
+        from scipy.ndimage import gaussian_filter
+
+        data   = self.Data
+        offset = offset
+        #sample_interval = float(int(sample_interval) / 1000)
+
+        ### Find Surface Reflection id's
+        factor = 10
+
+        # filter to avoid large jumps
+        data = pd.DataFrame(gaussian_filter(data, sigma=gauss_factor))
+        if use_gradient == False:
+            data_filtered  = data.rolling(factor, center=True, win_type='hamming').mean()
+        else:
+            data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
+        surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) ).astype(int)
+
+        # get surface values
+        srf = []
+        
+        for i in range(len(surf_idx)):
+            index = surf_idx[i]
+            val   = self.Time[index]
+            srf.append(val)
+        self.Surface = np.array(srf)
+
+
+        # construct time (twt) array
+
+        #twt_ns = np.ones(data.shape[0]) * sample_interval # in nanoseconds
+        #twt_   = twt_ns / 10e8 # in seconds
+        #twt_s  = np.cumsum(twt_)
+
+        #self.Time2        = twt_s
+        self.Surface_idx = np.array(surf_idx)
+
+
+
+        del data, data_filtered, surf_idx#, twt_ns, twt_
 
     def emr_preprocess(self, skip=100, gauss_factor=1):
 
@@ -728,15 +849,17 @@ class Cradar:
         if reference == 'DEM':
             twt_surface = elev_obj.Surface
             DEM_surface = elev_obj.DEM_surface
+            aircraft_elevation = np.ones(len(elev_obj.Longitude))
 
         elif reference == 'GPS':
             twt_surface = elev_obj.Surface
             DEM_surface = ''
+            aircraft_elevation = elev_obj.Elevation
 
         # imput variables from instance
         data               = elev_obj.Data
         twt                = elev_obj.Time
-        aircraft_elevation = elev_obj.Elevation
+        
 
         # input variables defined in prior steps
         twt_surface   = twt_surface
@@ -976,10 +1099,13 @@ class Cradar:
 
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
-        self.Elevation = self.Elevation[start:end]
+        
 
         # optional
-        
+        try:
+            self.Elevation = self.Elevation[start:end]
+        except:
+            pass
         try:
             self.GPS_time  = self.GPS_time[start:end]
         except:
@@ -1046,9 +1172,12 @@ class Cradar:
             pass
 
         try:
-            print(self.Surface_idx)
             self.Surface_idx = self.Surface_idx - start
-            print(self.Surface_idx)
+        except:
+            pass
+
+        try:
+            self.Surface_idx_old = self.Surface_idx_old - start
         except:
             pass
 
@@ -1329,8 +1458,10 @@ class Cradar:
 
         out_object = copy.deepcopy(self)
 
-        X = out_object.Longitude
-        Y = out_object.Latitude
+        X      = out_object.Longitude
+        Y      = out_object.Latitude
+        Frame  = out_object.Frame
+        Season = 'dummy'
 
         geometry     = geometry
         step         = step
@@ -1349,6 +1480,8 @@ class Cradar:
 
         out = coords2shape(X,
                            Y,
+                           Frame,
+                           Season,
                            EPSG_in=4326,
                            EPSG_out=4326,
                            geometry=geometry,
@@ -1582,7 +1715,10 @@ class Cradar:
         data = self.Data
 
         # the time
-        gps_time = self.GPS_time
+        try:
+            gps_time = self.GPS_time
+        except:
+            gps_time = np.ones(len(self.Longitude))
 
         # re-project lon, lat to X, Y depending on EPSG
         if region == 'Greenland':
@@ -1630,7 +1766,8 @@ class Cradar:
         else:
             segy_filename = out_filename
 
-        self.Stream = stream
+        self.Stream             = stream
+        self.Receiver_Elevation = receiver_elevation
 
         #if to_dB == True:
         #    self.dB = True
@@ -1729,6 +1866,7 @@ class Cradar:
                       plot_old_surface=False,
                       plot_bed=False,
                       plot_layers=False,
+                      show_legend=True,
                       xlabels_as_int=True,
                       ylabels_as_int=True,
                       fontsize=12,
@@ -1876,7 +2014,7 @@ class Cradar:
             
             
 
-        plt.subplots(figsize=(figsize_x,figsize_y))
+        plt.figure(figsize=(figsize_x,figsize_y))
         
         # plot echogram
         img = plt.imshow(self.Data, aspect='auto', cmap=cmap, alpha=0.8)
@@ -1884,23 +2022,23 @@ class Cradar:
         # plot surface ?
         if plot_surface == True:
             if range_mode == 'twt':
-                plt.plot(self.Surface_idx)
+                plt.plot(self.Surface_idx, label='surface')
             if range_mode == 'elevation':
-                plt.plot(self.Surface_m_idx)
+                plt.plot(self.Surface_m_idx, label='surface')
 
         # plot old surface ?
         if plot_old_surface == True:
             if range_mode == 'twt':
-                plt.plot(self.Surface_idx_old, color='red', alpha=0.4)
+                plt.plot(self.Surface_idx_old, color='red', alpha=0.4, label='old surface')
             if range_mode == 'elevation':
-                plt.plot(self.Surface_m_idx_old)
+                plt.plot(self.Surface_m_idx_old, label='old surface')
 
         # plot bed ?
         if plot_bed == True:
             if range_mode == 'twt':
-                plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed')
+                plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed', label='bed')
             if range_mode == 'elevation':
-                plt.plot(self.Bed_m_idx, color='red', linewidth=0.5, linestyle='dashed')
+                plt.plot(self.Bed_m_idx, color='red', linewidth=0.5, linestyle='dashed', label='bed')
 
         # plot layers ?
 
@@ -1915,16 +2053,16 @@ class Cradar:
                 for lr in layer_list:
                     if lr == 'surface':
                         plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
-                            color='white', linewidth=2, linestyle='dashed')
+                            color='white', linewidth=1, linestyle='dashed')
 
-                    if lr == 'base':
+                    if lr == 'bed':
                         plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
-                            color='brown', linewidth=1, linestyle='dashed')
+                            color='brown', linewidth=0.5, linestyle='dashed')
 
                     if lr != 'surface':
-                        if lr != 'base':
+                        if lr != 'bed':
                             plt.plot(self.Layer[lr]['trace'], self.Layer[lr]['value_twt_idx'], 
-                                    color=colors[c], linewidth=1)
+                                    color=colors[c], linewidth=0.5)
                             c = c + 1
 
 
@@ -1937,6 +2075,9 @@ class Cradar:
         if show_cbar == True:
             cbr = plt.colorbar(img)
             cbr.set_label('dB')
+
+        if show_legend == True:
+            plt.legend()
 
         if save_png == True:
             if out_folder == '':
