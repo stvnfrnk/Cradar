@@ -161,7 +161,7 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
     data    = np.array(rds[:])
     array_x = np.array(rds.coords['x'])
     array_y = np.array(rds.coords['y'])
-    NaN     = rds.attrs['_FillValue']
+    # NaN     = rds.attrs['_FillValue']
 
     values = []
 

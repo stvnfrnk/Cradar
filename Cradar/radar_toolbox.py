@@ -195,6 +195,9 @@ def twt2elevation(data='',
 
 
 
+
+
+
 def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
 
     import pandas as pd
@@ -204,9 +207,9 @@ def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
     data = np.array(data.T)
 
     # create empty numpy arrays for Elevation, dB and Trace number
-    all_twt      = np.array([])
-    all_dB       = np.array([])
-    all_tracenum = np.array([])
+    all_twt      = []
+    all_dB       = []
+    all_tracenum = []
 
     # define some short variables
     twt      = twt                 # Time array
@@ -242,11 +245,14 @@ def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
         trace_dB            = single_trace
         trace_num           = np.ones(int(single_trace.size)) * i
 
-        all_twt       = np.append(all_twt, trace_twt, axis=0)
-        all_dB        = np.append(all_dB, trace_dB, axis=0)
-        all_tracenum  = np.append(all_tracenum, trace_num, axis=0)
 
-        del single_trace, surf_idx, trace_twt, trace_dB, trace_num, T, T_new
+        all_twt.append(trace_twt)
+        all_dB.append(trace_dB)
+        all_tracenum.append(trace_num)
+
+    all_twt       = np.concatenate(all_twt)
+    all_dB        = np.concatenate(all_dB)
+    all_tracenum  = np.concatenate(all_tracenum)
 
     df_comb             = pd.DataFrame(all_twt)
     df_comb['dB']       = pd.DataFrame(all_dB)
@@ -255,6 +261,8 @@ def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
 
     # drop nan's
     df_comb = df_comb.dropna()
+
+    #df_comb         = df_comb.round({'twt': 9})
 
     ## create pivot table for heatmap
     df = df_comb.pivot('twt', 'trace', 'dB')
