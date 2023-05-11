@@ -55,9 +55,11 @@ class Cradar:
 
                 if 'Surface' in k:
                     self.Layer = {}
-                    surface    = {'trace'  : np.arange(len(np.array(self.File['Surface']))).flatten() + 1,
-                                  'value'  : np.array(self.File['Surface']).flatten()}
+                    surface    = {'trace'  : np.arange(len(np.array(self.File['Surface']).flatten())) + 1,
+                                  'value'  : np.array(self.File['Surface']).flatten(),
+                                  'color'  : 'blue'}
                     self.Layer['Surface'] = surface
+
 
             self.Data = pd.DataFrame(np.array(self.File['Data']))
 
@@ -92,8 +94,9 @@ class Cradar:
         
                 if 'Surface' in k:
                     self.Layer = {}
-                    surface    = {'trace'    : np.arange(len(np.array(self.File['Surface']))).flatten() + 1,
-                                'value'  : np.array(self.File['Surface']).flatten()}
+                    surface    = {'trace'  : np.arange(len(np.array(self.File['Surface']))).flatten() + 1,
+                                  'value'  : np.array(self.File['Surface']).flatten(),
+                                  'color'  : 'blue'}
                     self.Layer['Surface'] = surface
 
             #print(np.array(self.File['Surface']).flatten())
@@ -394,10 +397,21 @@ class Cradar:
     # Method: LAyERS
     #############################
 
-    def add_layer_by_frame_trace(self, layer_name, traces, values):
+    def add_layer_by_frame_trace(self, layer_name, traces, values, color=''):
+
+        import numpy as np
+
+        if layer_name == 'Surface':
+            color = [33, 113, 181]
+
+        if layer_name == 'Bed':
+            color = [227, 26, 28]
+
+        color = tuple(np.round(np.array( color ) / 255, 3))
 
         layer = {'trace'  : traces,
-                 'value'  : values}
+                 'value'  : values,
+                 'color'  : color}
         
         try:
             self.Layer
@@ -516,22 +530,25 @@ class Cradar:
         layer_list = list(self.Layer.keys())
 
         for lr in layer_list:
-            if 'Surface' not in lr or '_m' not in lr:
-                common_traces = np.intersect1d(self.Layer[lr]['trace'], self.Layer['Surface']['trace'])
-                new_vals = []
-                for tr in common_traces:
-                    idx_hr   = np.where(self.Layer[lr]['trace'] == tr)[0][0]
-                    idx_sf   = np.where(self.Layer['Surface']['trace'] == tr)[0][0]
-                    val_m     = self.Layer['Surface_m']['value'][idx_sf] - ( (self.Layer[lr]['value'][idx_hr] - self.Layer['Surface']['value'][idx_sf]) * 168900000.0 / 2 )
-                    new_vals.append(val_m)
+            if '_m' not in lr:
+                if 'Surface' not in lr:
+                    common_traces = np.intersect1d(self.Layer[lr]['trace'], self.Layer['Surface']['trace'])
+                    new_vals = []
+                    color = self.Layer[lr]['color']
+                    for tr in common_traces:
+                        idx_hr   = np.where(self.Layer[lr]['trace'] == tr)[0][0]
+                        idx_sf   = np.where(self.Layer['Surface']['trace'] == tr)[0][0]
+                        val_m     = self.Layer['Surface_m']['value'][idx_sf] - ( (self.Layer[lr]['value'][idx_hr] - self.Layer['Surface']['value'][idx_sf]) * 168900000.0 / 2 )
+                        new_vals.append(val_m)
 
-                new_vals     = np.array(new_vals)
-                new_lyr_name = lr + '_m' 
-                new_lyr      = layer = {'trace'  : common_traces,
-                                        'value'  : new_vals}
-                self.Layer[new_lyr_name] = new_lyr
+                    new_vals     = np.array(new_vals)
+                    new_lyr_name = lr + '_m' 
+                    new_lyr      = layer = {'trace'  : common_traces,
+                                            'value'  : new_vals,
+                                            'color'  : color}
+                    self.Layer[new_lyr_name] = new_lyr
 
-                print('... layer2elevation for {}'.format(lr))
+                    print('... layer2elevation for {}'.format(lr))
 
 
     # def get_layer_m_idx():
@@ -676,7 +693,8 @@ class Cradar:
         #raster_vals = gridtrack(geotif, Latitude, Longitude, EPSG_xy=4326, EPSG_raster=geotif_epsg)
         setattr(self, geotif_name, raster_vals)
         surface_m    = {'trace'  : np.arange(len(np.array(raster_vals))).flatten() + 1,
-                        'value'  : np.array(raster_vals).flatten()}
+                        'value'  : np.array(raster_vals).flatten(),
+                        'color'  : self.Layer['Surface']['color']}
         self.Layer['Surface_m'] = surface_m
         
         print('==> Added {} to the data'.format(geotif_name))
@@ -690,96 +708,11 @@ class Cradar:
 
 
 
-
-
-
-
-
-
-
-    '''#############################
-    # Method: get_surf_idx()
-    #############################
-
-    def get_surf_idx(self):
-
-        import numpy as np
-
-        twt      = self.Time
-        twt_surf = self.Surface
-        #traces   = self.Data.shape[1]
-
-        surf_idx = np.array([])
-
-        for i in range(len(twt_surf)):
-            s_idx = (np.abs(np.array(twt) - np.array(twt_surf)[i])).argmin()
-            surf_idx = np.append(surf_idx, s_idx)
-            #print(surf_idx)
-
-        self.Surface_idx = surf_idx.astype(int)
-        print('==> Added pixel index of surface reflection')
-        del twt, twt_surf, surf_idx
-
-
-    ########## END of get_surf_idx() ###########
-
-
-
-
-    #############################
-    # Method: get_surf_m_idx()
-    #############################
-
-    def get_surf_m_idx(self):
-
-        import numpy as np
-
-        Z          = self.Z
-        Z_surf     = self.Surface_m
-        surf_m_idx = np.array([])
-
-        for i in range(len(Z_surf)):
-            idx        = len(Z) - ( (np.abs(np.array(Z) - np.array(Z_surf)[i])).argmin() )
-            surf_m_idx = np.append(surf_m_idx, idx)
-
-        self.Surface_m_idx = surf_m_idx
-        print('==> Added pixel index of surface elevation')
-        del Z, Z_surf, surf_m_idx
-
-
-    ########## END of get_surf_idx() ###########
-
-
-    #############################
-    # Method: get_bed_m_idx()
-    #############################
-
-    def get_bed_m_idx(self):
-
-        import numpy as np
-
-        Z         = self.Z
-        Z_bed     = self.Bed_m
-        bed_m_idx = np.array([])
-
-        for i in range(len(Z_bed)):
-            idx        = ( (np.abs(np.array(Z) - np.array(Z_bed)[i])).argmin() )
-            bed_m_idx  = np.append(bed_m_idx, idx)
-
-        self.Bed_m_idx = bed_m_idx
-        print('==> Added pixel index of bed elevation')
-        del Z, Z_bed, bed_m_idx
-
-
-    ########## END of get_bed_idx() ###########'''
-
-
-
     #############################
     # Method: retrack_surf()
     #############################
 
-    def retrack_surface(self, roll_factor=10, sigma=2, gatesize=50, differenciate=False, offset=1):
+    def retrack_surface(self, roll_factor=10, sigma=2, gatesize=20, differenciate=False, offset=1):
 
         import copy
         import numpy as np
@@ -803,26 +736,29 @@ class Cradar:
         surface_trc = self.Layer['Surface']['trace']
         surface_val = self.Layer['Surface']['value']
         surface_idx = self.Layer['Surface']['value_idx']
-
-        del self.Layer['Surface']
+        surface_col = self.Layer['Surface']['color']
 
         for i in range(len(surface_idx)):
-            trx         = np.array(data_filtered[i])[int(surface_idx[i]) - int(gatesize):int(surface_idx[i]) + int(gatesize*15)]
+            trx         = np.array(data_filtered[i])[int(surface_idx[i]) - int(gatesize):int(surface_idx[i]) + int(gatesize)]
             offset_gate = np.argmax(trx) - gatesize
             index       = surface_idx[i] + offset_gate + offset
             val         = self.Time[int(index)]
             srf.append(val)
             srf_idx.append(index)
 
+        del self.Layer['Surface']
+
         self.Layer['Surface']              = {}
         self.Layer['Surface']['trace']     = surface_trc
         self.Layer['Surface']['value']     = np.array(srf)
         self.Layer['Surface']['value_idx'] = np.array(srf_idx)
+        self.Layer['Surface']['color']     = surface_col
 
         self.Layer['Surface_old']              = {}
         self.Layer['Surface_old']['trace']     = surface_trc
         self.Layer['Surface_old']['value']     = surface_val
         self.Layer['Surface_old']['value_idx'] = surface_idx
+        self.Layer['Surface_old']['color']     = (0.95, 0.95, 0.95)
  
         print('==> Retracked ice Surface')
 
@@ -999,7 +935,8 @@ class Cradar:
 
         surface_m    = {'trace'     : elev_obj.Layer['Surface']['trace'],
                         'value'     : surf_m,
-                        'value_idx' : surf_m_idx}
+                        'value_idx' : surf_m_idx,
+                        'color'     : elev_obj.Layer['Surface']['color']}
         
         elev_obj.Layer['Surface_m'] = surface_m
 
@@ -1024,32 +961,7 @@ class Cradar:
 
     ########## END of twt2elevation() ###########
 
-#################################
-    # Method: layer2elevation
-#################################
 
-
-    # def layer2elevation(self, speed_of_ice=1.689e8):
-
-    #     layer_list = list(self.Layer.keys())
-
-    #     for lr in layer_list:
-    #         if '_m' not in lr:
-    #             print(lr)
-    #             new_lyr_name  = lr + '_m'
-    #             lyr_thickness = (self.Layer['surface']['value'] - self.Layer[lr]['value']) * (speed_of_ice / 2)
-    #             new_lyr       = {'trace' : self.Layer[lr]['trace'],
-    #                              'value' : self.Layer['Surface_m']['value'] - lyr_thickness}
-
-    #             self.Layer[new_lyr_name] = new_lyr
-    #         else:
-    #             pass
-        
-    #     for lr in layer_list:
-    #         if '_m' not in lr:
-    #             del self.Layer[lr]
-
-    #     self.get_layer_m_idx()
 
 #############################
     # Method: pull2surface
@@ -1433,19 +1345,7 @@ class Cradar:
         new_obj.Elevation = np.concatenate(Elevation)
         new_obj.GPS_time  = np.concatenate(GPS_time)
 
-        if obj.Domain == 'twt':
-            new_obj.Surface   = np.concatenate(Surface)
-            new_obj.get_surf_idx()
 
-        if obj.Domain == 'Z':
-            new_obj.Surface_m = np.concatenate(Surface_m)
-            new_obj.Data      = new_obj.Data[::-1]
-            new_obj.get_surf_m_idx()
-            new_obj.Z         = new_obj.Z[::-1]
-            
-
-
-        
         try:
             new_obj.Heading   = np.concatenate(Heading)
             new_obj.Roll      = np.concatenate(Roll)
@@ -1453,7 +1353,33 @@ class Cradar:
         except:
             pass
 
-        
+        ###########################
+        # concat layer
+
+
+        crd_list = added_objects
+        layer_list = list(added_objects[0].Layer.keys())
+
+        for lr in layer_list:
+            n_traces      = [crd_list[0].Layer[lr]['trace']]
+            n_values      = [crd_list[0].Layer[lr]['value']]
+            concat_length = []
+
+            for i in np.arange(len(crd_list) - 1) + 1:
+                prev_frame_length = len(crd_list[i-1].Longitude)
+                concat_length.append(prev_frame_length)
+
+                n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
+                n_values.append(crd_list[i].Layer[lr]['value'])
+
+        new_traces = np.concatenate(n_traces)
+        new_values = np.concatenate(n_values)
+
+        new_obj.Layer[lr]['trace'] = new_traces
+        new_obj.Layer[lr]['value'] = new_values
+        new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
+
+                
         new_obj.Frames    = Frames
         new_obj.Frame     = added_objects[0].Frame + '_concat'
 
@@ -1811,7 +1737,7 @@ class Cradar:
     # to SEGY format
     #####################################
 
-    def to_segy(self, EPSG='', out_filename='', differenciate=False, step=1, save_segy=True, to_dB=False):
+    def to_segy(self, epsg='', out_filename='', differenciate=False, step=1, save_segy=True, to_dB=False):
 
         '''
         ==>    Writes Cradar Object as SEGY-Format File.
@@ -1846,9 +1772,9 @@ class Cradar:
         #import sys
 
         step = step
-        EPSG = EPSG
+        epsg = epsg
 
-        print('==> Processing Frame: {} located in EPSG{}'.format(self.Frame, EPSG))
+        print('==> Processing Frame: {} located in EPSG{}'.format(self.Frame, epsg))
         print('... This file is in >> {} << domain'.format(self.Domain))
 
         # check if to_dB is set True, but data is already in dB
@@ -1866,7 +1792,7 @@ class Cradar:
             domain              = self.Z
             receiver_elevation  = self.Z.max()
             num_of_samples      = len(self.Z)
-            segy_filename       = self.Frame + '_Z.segy'
+            segy_filename       = self.Frame + '_' + str(receiver_elevation) + '.segy'
 
         # the data
         data = self.Data
@@ -1878,7 +1804,7 @@ class Cradar:
             gps_time = np.ones(len(self.Longitude))
 
 
-        transformer = Transformer.from_crs(4326, EPSG, always_xy=True)
+        transformer = Transformer.from_crs(4326, epsg, always_xy=True)
         Lon, Lat    = self.Longitude, self.Latitude
         X, Y        = transformer.transform(Lon, Lat)
 
@@ -2216,48 +2142,47 @@ class Cradar:
         if plot_layers == True:
 
             layer_list = list(self.Layer.keys())
-            n          = len(layer_list) - 2
+            n          = len(layer_list) #- 2
             offset     = 0
             colors     = plt.cm.spring(np.linspace(0,1,n + offset))
+            c = 0
             
 
             if range_mode == 'twt':
-                c          = 0
+                
                 for lr in layer_list:
                     self.reshape_layer_values(lr)
 
                 for lr in layer_list:    
                     if lr == 'Surface':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                            color='blue', s=0.2, label=lr)
+                            color=self.Layer[lr]['color'], s=0.2, label=lr)
 
                     if lr == 'Bed':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                            color='red', s=0.2, label=lr)
+                            color=self.Layer[lr]['color'], s=0.2, label=lr)
 
                     if lr != 'Surface':
                         if lr != 'Bed':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                    color=colors[c + offset], s=0.2, label=lr)
-                            c = c + 1
+                                    color=self.Layer[lr]['color'], s=0.2, label=lr)
 
             if range_mode == 'elevation':
-                c          = 0
+                
                 for lr in layer_list:
                     if '_m' in lr:
                         if lr == 'Surface_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                color='blue', s=0.2, label=lr)
+                                color=self.Layer[lr]['color'], s=0.2, label=lr)
 
                         if lr == 'Bed_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                color='red', s=0.2, linestyle='dashed', label=lr)
+                                color=self.Layer[lr]['color'], s=0.2, linestyle='dashed', label=lr)
 
                         if lr != 'Surface_m':
                             if lr != 'Bed_m':
                                 plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                        color=colors[c + offset], s=0.2, label=lr)
-                        c = c + 1
+                                        color=self.Layer[lr]['color'], s=0.2, label=lr)
 
         if vline != '':
             print('vlines')
