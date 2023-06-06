@@ -47,8 +47,6 @@ def twt2elevation(data='',
     elev     = aircraft_elevation  # Aircraft Elevation
     twt_surf = twt_surface         # twt of surf. reflection
 
-
-    
     # Log every 500 lines.
     LOG_EVERY_N = 1000
 
@@ -398,45 +396,49 @@ def add_range_gain(data='', gain_type='', b=2, n=2, f=2):
 
 
 
-def automatic_gain_control(data, window=''):
+def automatic_gain_control(data, a=100):
 
     '''
 
     '''
 
     import numpy as np
-    import pandas as pd
+    from scipy import ndimage
 
-    window = window
-    data   = data
 
-    new_matrix = []
-    nans       = np.repeat(np.nan, window*2)
+    k        = np.array([[a,a,a],[a,a,a],[a,a,a]])
+    new_data = ndimage.convolve(data, k, mode='constant', cval=1.0)
 
-    LOG_EVERY_N = 1000
+    # window = window
+    # data   = data
 
-    for i in np.arange(0, len(data.T)):
-        if (i % LOG_EVERY_N) == 0:
-            print('... processed  {}  of  {}  traces'.format(i + 1, len(data.T)))
+    # new_matrix = []
+    # nans       = np.repeat(np.nan, window*2)
+
+    # LOG_EVERY_N = 1000
+
+    # for i in np.arange(0, len(data.T)):
+    #     if (i % LOG_EVERY_N) == 0:
+    #         print('... processed  {}  of  {}  traces'.format(i + 1, len(data.T)))
         
-        trace     = np.array(data[i])
-        new_trace = []
-        for i in range(len(data) - (2*window)):
-            i = i+window
-            section     = trace[i-window:i+window]
-            vmin        = section.min()
-            vmax        = section.max()
-            diff        = vmax - vmin
-            value       = vmax - trace[i+window]
-            new_value   = (value * 100/diff)*-1
+    #     trace     = np.array(data[i])
+    #     new_trace = []
+    #     for i in range(len(data) - (2*window)):
+    #         i = i+window
+    #         section     = trace[i-window:i+window]
+    #         vmin        = section.min()
+    #         vmax        = section.max()
+    #         diff        = vmax - vmin
+    #         value       = vmax - trace[i+window]
+    #         new_value   = (value * 100/diff)*-1
 
-            new_trace.append(new_value)
-        new_trace = np.array(new_trace)
-        new_trace = np.concatenate([nans, new_trace])
-        new_matrix.append(new_trace)  
+    #         new_trace.append(new_value)
+    #     new_trace = np.array(new_trace)
+    #     new_trace = np.concatenate([nans, new_trace])
+    #     new_matrix.append(new_trace)  
         
-    new_data = pd.DataFrame(new_matrix).T
-    print('... magig done.')
+    # new_data = pd.DataFrame(new_matrix).T
+    print('...  done.')
     
     return new_data
     
@@ -2319,6 +2321,7 @@ def twt2elevation_slow(data='',
         df_trace['Trace']   = pd.DataFrame(trace)
         df_trace.columns    = ['Elevation', 'dB', 'Trace']
         df_comb             = df_comb.append(df_trace)
+        print(df_comb)
 
     # drop nan's
     df_comb = df_comb.dropna()
@@ -2352,7 +2355,9 @@ def twt2elevation_slow(data='',
         df_comb = df_comb.round({'Elevation': 0})
 
         ## create pivot table for heatmap
+        print(df_comb)
         df = df_comb.pivot('Elevation', 'Trace', 'dB')
+        print(df)
         df = df.interpolate()
         df.index = df.index.astype(int)
         df = df.iloc[::-1]

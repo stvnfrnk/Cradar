@@ -18,111 +18,23 @@ class Cradar:
 
     def load_cresis_mat(self, filename, dB=False):
 
-        import h5py
-        import scipy.io
-        import numpy as np
-        import pandas as pd
+        from read_input import read_cresis_mat
 
+        Frame, Reader, Domain, Data, Time, Longitude, Latitude, Elevation, GPS_time, Layer = read_cresis_mat(filename)
 
-        ##############################
-        # Try with scipy.io.loadmat()
-        try:
-            self.File      = scipy.io.loadmat(filename)
-            self.Frame     = filename.split('.mat')[0]
-            try:
-                self.Frame = self.Frame.split('/')[-1]
-            except:
-                pass
+        self.Frame      = Frame
+        self.Reader     = Reader
+        self.Domain     = Domain
+        self.Data       = Data
+        self.Time       = Time
+        self.Longitude  = Longitude
+        self.Latitude   = Latitude
+        self.Elevation  = Elevation
+        self.GPS_time   = GPS_time
+        self.Layer      = Layer
+        self.dB         = dB
 
-            self.Reader    = 'scipy'
-
-            # Iterate over almost all items in HDF5 File
-            for k, v in self.File.items():
-                if 'Time' not in k:
-                    try:
-                        setattr(self, k, np.array(v).flatten())
-                    except:
-                        setattr(self, k, v)
-
-                if 'Time' in k:
-                    self.Time = np.array(self.File['Time']).flatten()
-
-                if 'Time' in k and 'Z' not in k:
-                    self.Domain = 'twt'
-
-                if 'Z' in k:
-                    self.Domain = 'Z'
-
-                if 'Surface' in k:
-                    self.Layer = {}
-                    surface    = {'trace'  : np.arange(len(np.array(self.File['Surface']).flatten())) + 1,
-                                  'value'  : np.array(self.File['Surface']).flatten(),
-                                  'color'  : 'blue'}
-                    self.Layer['Surface'] = surface
-
-
-            self.Data = pd.DataFrame(np.array(self.File['Data']))
-
-            if dB == False:
-                self.dB = False
-            elif dB == True:
-                self.dB = True
-            else:
-                print('==> dB True or False? Is set to False.')
-
-
-
-
-        ######################
-        # Try with h5py.File()
-        except:
-            self.File      = h5py.File(filename, 'r')
-            self.Frame     = filename.split('.mat')[0]
-            self.Reader    = 'h5py'
-
-            # Iterate over almost all items in HEF5 File
-            for k, v in self.File.items():
-                if 'Time' not in k:
-                    if '#' not in k:
-                        setattr(self, k, np.array(v).flatten())
-
-                if 'Time' in k:
-                    self.Time = np.array(self.File['Time']).flatten()
-
-                if 'Time' in k and 'Z' not in k:
-                    self.Domain    = 'twt'
-        
-                if 'Surface' in k:
-                    self.Layer = {}
-                    surface    = {'trace'  : np.arange(len(np.array(self.File['Surface']))).flatten() + 1,
-                                  'value'  : np.array(self.File['Surface']).flatten(),
-                                  'color'  : 'blue'}
-                    self.Layer['Surface'] = surface
-
-            #print(np.array(self.File['Surface']).flatten())
-            self.Data = pd.DataFrame(np.array(self.File['Data'])).T
-
-            if dB == False:
-                self.dB = False
-            elif dB == True:
-                self.dB = True
-            else:
-                print('==> dB True or False? Is set to False.')
-
-        # Create Traces
-        self.Trace = np.array(range(len(self.Longitude))).astype(int) + 1
-
-
-        # Delete the HDF5 file
-        del self.File
-        # print('')
-        print('==> Loaded {}'.format(self.Frame))
         return self
-
-    ########## END of load_cresis_mat() ###########
-
-
-
 
 
     #############################
@@ -176,80 +88,42 @@ class Cradar:
     ########## END of load_h5() ###########
 
 
-
-
     #############################
     # Method: load_awi_segy
     #############################
 
-    def load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
+    def load_awi_segy(self, segy_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
 
-        '''
+        from read_input import read_awi_segy
 
+        Longitude = Longitude
+        Latitude  = Latitude
+        Reader    = 'obspy'
+        Domain    = 'twt'
+        dB        = dB
 
-        '''
+        # try:
+        #     self.Latitude  = np.array( pd.DataFrame(self.Latitude).mask(pd.DataFrame(self.Latitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+        #     self.Longitude = np.array( pd.DataFrame(self.Longitude).mask(pd.DataFrame(self.Longitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
+        # except:
+        #     print('... could not correct gps positions.')
 
+        Data, Time, Frame = read_awi_segy(segy_file)
 
-        from obspy.io.segy.segy import _read_segy
-        import numpy as np
-        import pandas as pd
-
-        segy_file       = segy_file
-        coordinate_file = coordinate_file
-
-        stream  = _read_segy(segy_file, headonly=True)
-        data    = pd.DataFrame(np.array([t.data for t in list(stream.traces)]))
-
-
-        header            = stream.binary_file_header.__dict__
-        frame             = header['line_number']
-        sample_interval   = header['sample_interval_in_microseconds']
-        sample_interval   = sample_interval * 10e-13
-        number_of_samples = header['number_of_samples_per_data_trace']
-
-        # build time array
-        time    = np.repeat(sample_interval, number_of_samples)
-        time[0] = 0
-        time    = np.cumsum(time)
-
-
-        self.Data   = data.T
-        self.Stream = stream
-        self.Time   = time
-        self.Frame  = str(frame)
-        self.Domain = 'twt'
-
-        if coordinate_file != '':
-            coords         = pd.read_csv(coordinate_file, delim_whitespace=True)
-            self.Longitude = coords['GPSLon'].values
-            self.Latitude  = coords['GPSLat'].values
-            self.Elevation = coords['GPSAlt'].values
-            self.GPS_time  = coords['Time'].values
-        else:
-            coords         = 0
-            self.Longitude = Longitude
-            self.Latitude  = Latitude
-
-        # if correct_gps == True:
-        #     try:
-        # 		self.Latitude  = np.array( pd.DataFrame(self.Latitude).mask(pd.DataFrame(self.Latitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
-        #         self.Longitude = np.array( pd.DataFrame(self.Longitude).mask(pd.DataFrame(self.Longitude).duplicated(keep='first'), np.nan).interpolate() ).T[0]
-        # 	except:
-        # 		print('... could not correct gps positions.')
-
-        if dB == False:
-                self.dB = False
-        elif dB == True:
-            self.dB = True
-        # else:
-        #     print('==> dB True or False? Is set to False.')
-
-        # print('')
-        print('==> Loaded {}'.format(self.Frame))
-
-        del stream, data, header, time, coords
+        self.Frame      = Frame
+        self.Reader     = Reader
+        self.Domain     = Domain
+        self.Data       = Data
+        self.Time       = Time
+        self.Longitude  = Longitude
+        self.Latitude   = Latitude
+        # self.Elevation  = Elevation
+        # self.GPS_time   = GPS_time
+        # self.Layer      = Layer
+        self.dB         = dB
 
         return self
+
 
     ########## END of load_awi_segy() ###########
 
@@ -1298,12 +1172,12 @@ class Cradar:
 
             namelist.append(obj.Frame)
 
-            if obj.Domain == 'Z':
-                obj.Data.index = obj.Z
-                Surface_m.append(obj.Surface_m)
-            elif obj.Domain == 'twt':
-                obj.Data.index = obj.Time
-                Surface.append(obj.Surface)
+            # if obj.Domain == 'Z':
+            #     obj.Data.index = obj.Z
+            #     Surface_m.append(obj.Surface_m)
+            # elif obj.Domain == 'twt':
+            #     obj.Data.index = obj.Time
+            #     Surface.append(obj.Surface)
 
             Data.append(obj.Data)
             Longitude.append(obj.Longitude)
@@ -1335,7 +1209,7 @@ class Cradar:
         if added_objects[0].Domain == 'Z':
             new_obj.Z = new_obj.Data.index
         elif added_objects[0].Domain == 'twt':
-            new_obj.Time = new_obj.Data.index
+            new_obj.Time = new_obj.Time
 
         # delete Z or Time from index
         new_obj.Data.reset_index(inplace=True, drop=True)
@@ -1356,8 +1230,7 @@ class Cradar:
         ###########################
         # concat layer
 
-
-        crd_list = added_objects
+        crd_list   = added_objects
         layer_list = list(added_objects[0].Layer.keys())
 
         for lr in layer_list:
@@ -1372,12 +1245,12 @@ class Cradar:
                 n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
                 n_values.append(crd_list[i].Layer[lr]['value'])
 
-        new_traces = np.concatenate(n_traces)
-        new_values = np.concatenate(n_values)
+            new_traces = np.concatenate(n_traces)
+            new_values = np.concatenate(n_values)
 
-        new_obj.Layer[lr]['trace'] = new_traces
-        new_obj.Layer[lr]['value'] = new_values
-        new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
+            new_obj.Layer[lr]['trace'] = new_traces
+            new_obj.Layer[lr]['value'] = new_values
+            new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
 
                 
         new_obj.Frames    = Frames
@@ -1503,14 +1376,13 @@ class Cradar:
 
     '''
 
-    def agc(self, window=50):
+    def agc(self, a=100):
 
         from radar_toolbox import automatic_gain_control
 
-        window = window
 
         print('==> applying automatic gain control for layer sharpening')
-        new_data  = automatic_gain_control(self.Data, window=window)
+        new_data  = automatic_gain_control(self.Data, a=a)
         self.Data = new_data
 
         del new_data
@@ -1569,6 +1441,9 @@ class Cradar:
                            geometry=geometry,
                            step=step,
                            attributes=attributes)
+        
+        out['Distance_m'] = self.Distance.astype(int)
+        out['Trace']      = np.arange(len(self.Longitude)) + 1
 
         if out_folder == '':
             if out_format == 'shapefile':
@@ -2206,7 +2081,7 @@ class Cradar:
                 if not os.path.exists('figures'):
                     os.makedirs('figures')
 
-                figname = str(self.Frame) + suffix + '.png'
+                figname = str(self.Frame) + suffix + '.jpg'
                 plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: figures/{}'.format(figname))
             
@@ -2214,7 +2089,7 @@ class Cradar:
                 if not os.path.exists(out_folder):
                     os.makedirs(out_folder)
 
-                figname = str(self.Frame) + suffix + '.png'
+                figname = str(self.Frame) + suffix + '.jpg'
                 plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
 
@@ -2362,13 +2237,13 @@ class Cradar:
                 if not os.path.exists('figures'):
                     os.makedirs('figures')
 
-                figname = str(self.Frame) + '.png'
+                figname = str(self.Frame) + '.jpg'
 
                 plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: figures/{}'.format(figname))
             else:
 
-                figname = str(self.Frame) + '.png'
+                figname = str(self.Frame) + '.jpg'
 
                 plt.savefig(out_folder + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))

@@ -22,7 +22,7 @@ def coords2distance(X, Y, EPSG=4326):
         # convert coordinates from EPSG:???? to EPSG:4326
         transformer = Transformer.from_crs(EPSG, 4326)
         X, Y        = transformer.transform(X, Y)
-
+        
     ## Get real distance for traces
     spacing = np.array([])
     for i in range(1, len(X)-1):
@@ -33,7 +33,7 @@ def coords2distance(X, Y, EPSG=4326):
 
     distance       = np.cumsum(spacing)        # cumulative sum of spacing
     distance       = np.insert(distance, 0, 0) # insert zero at first location
-    #distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
+    distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
     spacing        = np.insert(spacing, 0, spacing.mean()) # insert mean spacing at first position
     spacing        = np.insert(spacing, len(spacing), spacing.mean()) # insert mean spacing at last position
 
@@ -102,8 +102,8 @@ def coords2shape(X, Y, Frame, Season, EPSG_in=4326, EPSG_out=4326, geometry='Poi
     df.columns  = ['X', 'Y', 'Frame', 'Season']
 
     if attributes:
-        for key, value in attributes.items():
-            df[key] = value
+        for name, instance in attributes:
+            df[name] = instance
     else:
         pass
 
