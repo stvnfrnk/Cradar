@@ -116,4 +116,46 @@ def read_awi_segy(segy_file):
     Time   = time
     Frame  = str(frame)
 
-    return Data, Time, Frame
+    return Data, Time, Frame, Stream
+
+
+
+
+def read_awi_nc(nc_file):
+
+    # load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
+
+    '''
+
+    '''
+
+    import xarray as xr
+    import numpy as np
+
+    dx =  xr.load_dataset(nc_file)
+
+    Data       = dx.variables['WAVEFORM'].values.T
+    Longitude  = dx.variables['LONGITUDE'].values
+    Latitude   = dx.variables['LATITUDE'].values
+
+    Aircraft_altitude      = dx.variables['ALTITUDE'].values
+    Ice_surface_elevation  = dx.variables['ELEVATION'].values
+    Range                  = dx.variables['RANGE'].values
+
+    sample_interval   = 1.3333 * 10e-9
+    number_of_samples = dx.attrs['SAMPLES']
+
+    # build time array
+    time    = np.repeat(sample_interval, number_of_samples)
+    time[0] = 0
+    Time    = np.cumsum(time)
+
+    surface_twt = ( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
+
+    Layer = {}
+    surface  = {'trace'  : np.arange(len(np.array(surface_twt).flatten())) + 1,
+                'value'  : np.array(surface_twt).flatten(),
+                'color'  : 'blue'}
+    Layer['Surface'] = surface
+
+    return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer

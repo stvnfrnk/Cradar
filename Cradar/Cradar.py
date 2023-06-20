@@ -108,7 +108,7 @@ class Cradar:
         # except:
         #     print('... could not correct gps positions.')
 
-        Data, Time, Frame = read_awi_segy(segy_file)
+        Data, Time, Frame, stream = read_awi_segy(segy_file)
 
         self.Frame      = Frame
         self.Reader     = Reader
@@ -121,6 +121,7 @@ class Cradar:
         # self.GPS_time   = GPS_time
         # self.Layer      = Layer
         self.dB         = dB
+        self.Stream     = stream
 
         return self
 
@@ -128,33 +129,35 @@ class Cradar:
     ########## END of load_awi_segy() ###########
 
 
+    #############################
+    # Method: load_awi_nc
+    #############################
 
 
-
-    def load_awi_nc(self, nc_file='', dB=True):
+    def load_awi_nc(self, nc_file='', dB=False):
 
         '''
 
 
         '''
 
-
-        import numpy as np
-        import pandas as pd
-        import xarray as xr
+        from read_input import read_awi_nc
 
         
-        dx =  xr.load_dataset(nc_file)
+        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file)
 
-        self.Data   = dx.variables['WAVEFORM'].values[::-1]
-        self.Time   = dx.variables['TWT'].values
-        # self.Frame  = str(frame)
-        self.Domain = 'twt'
+        #self.Frame      = Frame
+        self.Reader     = 'xarray'
+        self.Domain     = 'twt'
+        self.Data       = Data
+        self.Time       = Time
+        self.Longitude  = Longitude
+        self.Latitude   = Latitude
 
-        self.Longitude = dx.variables['LONGITUDE'].values
-        self.Latitude  = dx.variables['LATITUDE'].values
-        
-        print('==> Loaded {}'.format(nc_file))
+        # self.Aircraft_altitude  = Aircraft_altitude
+        # self.GPS_time   = GPS_time
+        self.Layer      = Layer
+        self.dB         = dB
 
         return self
 
@@ -663,11 +666,11 @@ class Cradar:
         except:
             geom_obj = copy.copy(raw_object)
 
-        geom_obj.get_surf_idx()
+        # geom_obj.get_surf_idx()
 
         data     = geom_obj.Data
         twt      = geom_obj.Time
-        surf_idx = geom_obj.Surface_idx
+        surf_idx = geom_obj.Layer['Surface']['value_idx']
 
         data_new = correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=mode, loss_factor=loss_factor)
 
