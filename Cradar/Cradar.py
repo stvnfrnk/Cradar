@@ -1010,13 +1010,21 @@ class Cradar:
     # Method: clip data along-track
     ##################################
 
-    def clip_along(self, start=0, end=-1):
+    def clip_along(self, start_val, end_val, mode='index'):
 
         '''
         '''
 
         import pandas as pd
         import numpy as np
+
+        if mode == 'index':
+            start = start_val 
+            end   = end_val
+
+        if mode == 'distance':
+            start = (np.abs(self.Distance - start_val)).argmin()
+            end   = (np.abs(self.Distance - end_val)).argmin()
 
         self.Data      = self.Data.T[start:end].T
 
@@ -1072,6 +1080,14 @@ class Cradar:
             self.Roll    = self.Roll[start:end]
         except:
             pass
+        try:
+            self.Spacing    = self.Spacing[start:end]
+        except:
+            pass
+        try:
+            self.Distance    = self.Distance[start:end]
+        except:
+            pass
 
         print('==> Clipped along-track: traces {}--{}'.format(start, end))
 
@@ -1086,11 +1102,46 @@ class Cradar:
     # Method: clip data in range
     ##################################
 
-    def clip_range(self, start, end):
+    def clip_range(self, start_val, end_val, mode='index'):
+
+        import numpy as np
 
         '''
+
+        mode = 'index'
+        mode = 'elevation'
+        mode = 'twt'
         '''
 
+        if mode == 'index':
+            start = start_val
+            end   = end_val
+
+        if mode == 'elevation':
+            lower_lim = np.where(self.Z == start_val)[0][0]
+            upper_lim = np.where(self.Z == end_val)[0][0]
+
+            if lower_lim > upper_lim:
+                start = upper_lim
+                end   = lower_lim
+            else:
+                start = lower_lim
+                end   = upper_lim
+
+        if mode == 'twt':
+            start_val = start_val / 10**9
+            end_val   = end_val   / 10**9
+
+            start = (np.abs(self.Time - start_val)).argmin()
+            end   = (np.abs(self.Time - end_val)).argmin()
+
+            # if lower_lim > upper_lim:
+            #     start = upper_lim
+            #     end   = lower_lim
+            # else:
+            #     start = lower_lim
+            #     end   = upper_lim
+        
         self.Data  = self.Data[start:end]
         domain     = self.Domain
 
