@@ -94,7 +94,7 @@ class Cradar:
 
     def load_awi_segy(self, segy_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
 
-        from read_input import read_awi_segy
+        from Cradar.read_input import read_awi_segy
 
         Longitude = Longitude
         Latitude  = Latitude
@@ -141,7 +141,7 @@ class Cradar:
 
         '''
 
-        from read_input import read_awi_nc
+        from Cradar.read_input import read_awi_nc
 
         
         Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file)
@@ -562,7 +562,7 @@ class Cradar:
         Latitude    = self.Latitude
 
         print('==> Applying gridtrack method 1 ...')
-        from geo_toolbox import gridtrack
+        from Cradar.geo_toolbox import gridtrack
         raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
 
         #print('==> Failed, trying gridtrack method 2 ...')
@@ -650,7 +650,7 @@ class Cradar:
 
     def correct4attenuation(raw_object, mode=0, loss_factor=0):
 
-        from radar_toolbox import correct4attenuation
+        from Cradar.radar_toolbox import correct4attenuation
         import copy
 
         if raw_object.dB == False:
@@ -695,7 +695,7 @@ class Cradar:
 
     def add_distance(self):
 
-        from geo_toolbox import coords2distance
+        from Cradar.geo_toolbox import coords2distance
 
         X = self.Longitude
         Y = self.Latitude
@@ -746,7 +746,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from radar_toolbox import twt2elevation
+        from Cradar.radar_toolbox import twt2elevation
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -852,7 +852,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from radar_toolbox import radar_pull2surface
+        from Cradar.radar_toolbox import radar_pull2surface
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -908,7 +908,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from radar_toolbox import radar_pull2bed
+        from Cradar.radar_toolbox import radar_pull2bed
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -1404,7 +1404,7 @@ class Cradar:
 
     def range_gain(self, gain_type='', b=2, n=2, f=2):
 
-        from radar_toolbox import add_range_gain
+        from Cradar.radar_toolbox import add_range_gain
 
         #if self.dB == True:
         #    self.inverse_dB()
@@ -1432,7 +1432,7 @@ class Cradar:
 
     def agc(self, a=100):
 
-        from radar_toolbox import automatic_gain_control
+        from Cradar.radar_toolbox import automatic_gain_control
 
 
         print('==> applying automatic gain control for layer sharpening')
@@ -1460,11 +1460,11 @@ class Cradar:
 
         import numpy as np
         import geopandas
-        from geo_toolbox import coords2shape
+        from Cradar.geo_toolbox import coords2shape
         import copy
         import os
 
-        out_object = copy.deepcopy(self)
+        out_object = copy.copy(self)
 
         X      = out_object.Longitude
         Y      = out_object.Latitude
@@ -1689,7 +1689,7 @@ class Cradar:
         '''
 
         import numpy as np
-        from segy_toolbox import radar2segy
+        from Cradar.segy_toolbox import radar2segy
 
         from obspy import Trace, Stream
         #from obspy.core import AttribDict
