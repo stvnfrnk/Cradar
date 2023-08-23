@@ -51,7 +51,7 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
         # idx = (np.abs(twt - bed_twt)).argmin()
 
         # get single trace of radargram
-        trace = np.array(data[trace])
+        trace = np.array(data[trace - 1])
 
         # get average value for noise based on lowest n values
         mean_noise = np.sort(trace)[0:n_noise].mean()
@@ -75,7 +75,7 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
 
         # append data
         bed_index_list.append(bed_idx)
-        bed_trace_list.append(trace)
+        bed_trace_list.append(bed_trace[i])
         bed_win_list.append(data_e1)
         mean_noise_list.append(mean_noise)
         # Bed_TWT.append(bed_twt)
@@ -86,7 +86,7 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
 
     # convert to array or dataframes
     bedrock_index = np.array(bed_index_list)
-    bedrock_trace = np.array(bed_trace_list)
+    bed_traces    = np.array(bed_trace_list)
     bedrock_win   = bed_win_list
     dB_max_before = np.array(dB_max_before)
     mean_noise_floor = np.array(mean_noise_list)
@@ -127,6 +127,8 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
                 dB_integral   = np.trapz(np.array(df[col][llim:ulim])) 
             except:
                 dB_integral   = np.nan
+
+            
 
             dB.append(dB_integral)
             x_min_.append(llim)
@@ -173,8 +175,7 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
 
             except:
                 dB_integral   = np.nan
-            
-            
+                        
             dB.append(dB_integral)
             dB_max_.append(dB_max)
             x_min_.append(llim)
@@ -199,4 +200,4 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
         # Peakiness
         peakyness   = dB_max / dB
 
-    return df, df_no_average, dB, dB_max, dB_max_before, x_min, x_max, peakyness, bed_twt, surf_twt, longitude, latitude
+    return df, df_no_average, dB, dB_max, dB_max_before, x_min, x_max, peakyness, bed_twt, surf_twt, longitude, latitude, bed_traces

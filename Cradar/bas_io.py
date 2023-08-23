@@ -15,8 +15,10 @@ def correct_chirp_data(nc_file):
 
     Time         = ds['fast_time'].values.astype(float) * 10e-7
 
-    Data_Pulse   = ds.variables['pulse_data'].values
-    Data_Chirp   = ds.variables['chirp_data'].values
+    # Data_Pulse   = ds.variables['pulse_data'].values
+    Data_Pulse   = ds.variables['polarised_pulse_SPHV_data'].values
+    # Data_Chirp   = ds.variables['chirp_data'].values
+    Data_Chirp   = ds.variables['polarised_chirp_SSHH_data'].values
 
     Traces_Chirp = ds.traces_chirp.values
     Traces_Pulse = ds.traces_pulse.values
@@ -82,13 +84,13 @@ def correct_chirp_data(nc_file):
 
     data_chirp  = pd.DataFrame(Data_Chirp)
     time        = Time
-    longitude   = df_comb['Longitude']
-    latitude    = df_comb['Latitude']
-    elevation   = df_comb['Elevation']
-    gps_time    = df_comb['GPS_time']
-    surface_idx = df_comb['Surface_idx']
-    surface_m   = df_comb['Surface_m']
-    bed_idx     = df_comb['Bed_idx']
-    bed_m       = df_comb['Bed_m']
+    longitude   = df_comb['Longitude'].values
+    latitude    = df_comb['Latitude'].values
+    elevation   = df_comb['Elevation'].values
+    gps_time    = df_comb['GPS_time'].values
+    surface_idx = df_comb['Surface_idx'].values
+    surface_m   = df_comb['Surface_m'].values
+    bed_idx     = df_comb['Bed_idx'].values
+    bed_m       = df_comb['Bed_m'].values
 
     return data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m

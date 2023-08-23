@@ -18,7 +18,7 @@ class Cradar:
 
     def load_cresis_mat(self, filename, dB=False):
 
-        from read_input import read_cresis_mat
+        from Cradar.read_input import read_cresis_mat
 
         Frame, Reader, Domain, Data, Time, Longitude, Latitude, Elevation, GPS_time, Layer = read_cresis_mat(filename)
 
@@ -183,7 +183,14 @@ class Cradar:
 
             self.Frame       = os.path.split(filename)[1].split('.nc')[0]
             self.Time        = ds['fast_time'].values.astype(float) * 10e-7
-            self.Data        = pd.DataFrame(ds.variables['pulse_data'].values)
+            try:
+                self.Data        = pd.DataFrame(ds.variables['pulse_data'].values)
+            except:
+                pass
+            try:
+                self.Data        = pd.DataFrame(ds.variables['polarised_pulse_SPHV_data'].values)
+            except:
+                pass
             self.Domain      = 'twt'
             self.dB          = False
 
@@ -206,32 +213,64 @@ class Cradar:
 
         if data_type == 'chirp':
 
-            from bas_io import correct_chirp_data
-
-            data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m = correct_chirp_data(filename)
+            ds = xr.open_dataset(filename, decode_times=False)
 
             self.Frame       = os.path.split(filename)[1].split('.nc')[0]
-            self.Time        = time
-            self.Data        = data_chirp
+            self.Time        = ds['fast_time'].values.astype(float) * 10e-7
+            try:
+                self.Data        = pd.DataFrame(ds.variables['pulse_data'].values)
+            except:
+                pass
+            try:
+                self.Data        = pd.DataFrame(ds.variables['polarised_chirp_SSHH_data'].values)
+            except:
+                pass
             self.Domain      = 'twt'
             self.dB          = False
 
-            self.Longitude   = longitude
-            self.Latitude    = latitude
-            self.Elevation   = elevation
-            self.GPS_time    = gps_time
+            self.Longitude   = ds.variables['longitude_layerData'].values
+            self.Latitude    = ds.variables['latitude_layerData'].values
+            self.Elevation   = ds.variables['aircraft_altitude_layerData'].values
+            self.GPS_time    = ds.variables['UTC_time_layerData'].values
 
-            self.Surface_idx = surface_idx
-            self.Surface_m   = surface_m
-            self.Bed_idx     = bed_idx
-            self.Bed_m       = bed_m
+            self.Surface_idx = ds.variables['surface_pick_layerData']
+            self.Surface_m   = ds.variables['surface_altitude_layerData'].values
+            self.Bed_idx     = ds.variables['bed_pick_layerData']
+            self.Bed_m       = ds.variables['bed_altitude_layerData'].values
 
             print('')
-            print('==> Loaded {} >> chirp data <<'.format(self.Frame))
+            print('==> Loaded {} >> pulse data <<'.format(self.Frame))
 
-            del data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m
+            del ds
 
             return self
+
+            # from Cradar.bas_io import correct_chirp_data
+
+            # data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m = correct_chirp_data(filename)
+
+            # self.Frame       = os.path.split(filename)[1].split('.nc')[0]
+            # self.Time        = time
+            # self.Data        = data_chirp
+            # self.Domain      = 'twt'
+            # self.dB          = False
+
+            # self.Longitude   = longitude
+            # self.Latitude    = latitude
+            # self.Elevation   = elevation
+            # self.GPS_time    = gps_time
+
+            # self.Surface_idx = surface_idx
+            # self.Surface_m   = surface_m
+            # self.Bed_idx     = bed_idx
+            # self.Bed_m       = bed_m
+
+            # print('')
+            # print('==> Loaded {} >> chirp data <<'.format(self.Frame))
+
+            # del data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m
+
+            # return self
 
     ########## END of load_bas_nc() ###########
         
@@ -827,6 +866,9 @@ class Cradar:
         if setting == 'wideband':
             elev_obj.Range_Resolution = '0.1 m'
 
+        if setting == 'accum':
+            elev_obj.Range_Resolution = '0.01 m'
+
         if setting == 'snow':
             elev_obj.Range_Resolution = '0.001 m'
 
@@ -1018,7 +1060,7 @@ class Cradar:
         import pandas as pd
         import numpy as np
 
-        if mode == 'index':
+        if mode == 'trace':
             start = start_val 
             end   = end_val
 
@@ -1430,13 +1472,13 @@ class Cradar:
 
     '''
 
-    def agc(self, a=100):
+    def agc(self, window=50):
 
         from Cradar.radar_toolbox import automatic_gain_control
 
 
         print('==> applying automatic gain control for layer sharpening')
-        new_data  = automatic_gain_control(self.Data, a=a)
+        new_data  = automatic_gain_control(self.Data, window=window)
         self.Data = new_data
 
         del new_data

@@ -143,6 +143,16 @@ def twt2elevation(data='',
         df.index = df.index.astype(int)
         df       = df.iloc[::-1]
 
+    if setting == 'accum':
+        df_comb         = df_comb.round({'Elevation': 2})
+
+        ## create pivot table for heatmap
+        df = df_comb.pivot('Elevation', 'Trace', 'dB')
+        df = df.interpolate()
+        df.index = np.around(df.index.values, decimals=2)
+        df = df.loc[~df.index.duplicated(keep='first')]
+        df = df.iloc[::-1]
+
     if setting == 'snow':
         df_comb         = df_comb.round({'Elevation': 3})
 
@@ -396,48 +406,49 @@ def add_range_gain(data='', gain_type='', b=2, n=2, f=2):
 
 
 
-def automatic_gain_control(data, a=100):
+def automatic_gain_control(data, window=50):
 
     '''
 
     '''
 
     import numpy as np
-    from scipy import ndimage
+    import pandas as pd
+    # from scipy import ndimage
 
 
-    k        = np.array([[a,a,a],[a,a,a],[a,a,a]])
-    new_data = ndimage.convolve(data, k, mode='constant', cval=1.0)
+    # k        = np.array([[a,a,a],[a,a,a],[a,a,a]])
+    # new_data = ndimage.convolve(data, k, mode='constant', cval=1.0)
 
-    # window = window
-    # data   = data
+    window = window
+    data   = data
 
-    # new_matrix = []
-    # nans       = np.repeat(np.nan, window*2)
+    new_matrix = []
+    nans       = np.repeat(np.nan, window*2)
 
-    # LOG_EVERY_N = 1000
+    LOG_EVERY_N = 1000
 
-    # for i in np.arange(0, len(data.T)):
-    #     if (i % LOG_EVERY_N) == 0:
-    #         print('... processed  {}  of  {}  traces'.format(i + 1, len(data.T)))
+    for i in np.arange(0, len(data.T)):
+        if (i % LOG_EVERY_N) == 0:
+            print('... processed  {}  of  {}  traces'.format(i + 1, len(data.T)))
         
-    #     trace     = np.array(data[i])
-    #     new_trace = []
-    #     for i in range(len(data) - (2*window)):
-    #         i = i+window
-    #         section     = trace[i-window:i+window]
-    #         vmin        = section.min()
-    #         vmax        = section.max()
-    #         diff        = vmax - vmin
-    #         value       = vmax - trace[i+window]
-    #         new_value   = (value * 100/diff)*-1
+        trace     = np.array(data[i])
+        new_trace = []
+        for i in range(len(data) - (2*window)):
+            i = i+window
+            section     = trace[i-window:i+window]
+            vmin        = section.min()
+            vmax        = section.max()
+            diff        = vmax - vmin
+            value       = vmax - trace[i+window]
+            new_value   = (value * 100/diff)*-1
 
-    #         new_trace.append(new_value)
-    #     new_trace = np.array(new_trace)
-    #     new_trace = np.concatenate([nans, new_trace])
-    #     new_matrix.append(new_trace)  
+            new_trace.append(new_value)
+        new_trace = np.array(new_trace)
+        new_trace = np.concatenate([nans, new_trace])
+        new_matrix.append(new_trace)  
         
-    # new_data = pd.DataFrame(new_matrix).T
+    new_data = pd.DataFrame(new_matrix).T
     print('...  done.')
     
     return new_data
@@ -1302,7 +1313,17 @@ def calc_elevation(in_path='', out_path='', file='', region='', speed_of_ice=1.6
                 df = df.interpolate()
                 df.index = df.index.astype(int)
                 df = df.iloc[::-1]
-    
+
+            if setting == 'accum':
+                df_comb         = df_comb.round({'Elevation': 2})
+                
+                ## create pivot table for heatmap
+                df = df_comb.pivot('Elevation', 'Trace', 'dB')
+                df = df.interpolate()
+                df.index = np.around(df.index.values, decimals=2)
+                df = df.loc[~df.index.duplicated(keep='first')]
+                df = df.iloc[::-1]
+                #df.index = (df.index * 10).astype(int)   
     
             if setting == 'snow':
                 df_comb         = df_comb.round({'Elevation': 3})
