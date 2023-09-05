@@ -1,4 +1,4 @@
-Welcome to Lumache's documentation!
+Welcome to Cradar documentation!
 ===================================
 
 **Cradar** is a little Python toolbox 
@@ -17,5 +17,6 @@ Contents
 
 .. toctree::
 
+   installation
    usage
    api
