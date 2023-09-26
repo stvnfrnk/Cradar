@@ -277,7 +277,7 @@ class Cradar:
 
 
     #############################
-    # Method: load_awi_segy
+    # Method: load_custom
     #############################
 
     def load_custom(self,
@@ -426,7 +426,6 @@ class Cradar:
             if '_m' in lr:
                 values_idx = np.array([])
                 vz         = self.Layer[lr]['value']
-
                 for i in range(len(vz)):
                     v_idx      = (np.abs(np.array(Z) - int(np.array(vz)[i]))).argmin()
                     values_idx = np.append(values_idx, v_idx)
@@ -1010,19 +1009,22 @@ class Cradar:
         self.Data      = self.Data.T[::-1].T
         self.Longitude = self.Longitude[::-1]
         self.Latitude  = self.Latitude[::-1]
-        self.GPS_time  = self.GPS_time[::-1]
-        self.Elevation = self.Elevation[::-1]
+        try:
+            self.GPS_time  = self.GPS_time[::-1]
+            self.Elevation = self.Elevation[::-1]
+        except:
+            pass
 
         if self.Domain == 'twt':
-            self.Surface     = self.Surface[::-1]
             try:
+                self.Surface     = self.Surface[::-1]
                 self.Surface_idx = self.Surface_idx[::-1]
             except:
                 pass
 
         elif self.Domain == 'Z':
-            self.Surface_m     = self.Surface_m[::-1]
             try:
+                self.Surface_m     = self.Surface_m[::-1]
                 self.Surface_m_idx = self.Surface_m_idx[::-1]
             except:
                 pass
@@ -1908,8 +1910,8 @@ class Cradar:
                       range_mode='twt',
                       every_km_dist=10,
                       every_m_elev=1000,
-                      every_twt=['ns', 100],
-                      plot_surface=True,
+                      every_twt=['ms', 10],
+                      plot_surface=False,
                       plot_old_surface=False,
                       plot_bed=False,
                       plot_layers=False,
@@ -1919,7 +1921,7 @@ class Cradar:
                       vline='',
                       fontsize=12,
                       show_figure=True, 
-                      show_cbar=False,
+                      show_cbar=True,
                       cmap='binary',
                       vmin='',
                       vmax='',
