@@ -526,8 +526,9 @@ class Cradar:
             srf.append(val)
         
         self.Layer = {}
-        surface    = {'trace'    : np.arange(len(np.array(srf))) + 1,
-                    'value'  : np.array(srf)}
+        surface    = {'trace'   : np.arange(len(np.array(srf))) + 1,
+                    'value'     : np.array(srf),
+                    'color'     : 'blue'}
         
         self.Layer['Surface'] = surface
         
@@ -1017,8 +1018,14 @@ class Cradar:
 
         if self.Domain == 'twt':
             try:
-                self.Surface     = self.Surface[::-1]
-                self.Surface_idx = self.Surface_idx[::-1]
+                layer_list = list(self.Layer.keys())
+                for lr in layer_list:
+                    # self.Layer[lr]['trace']     = self.Layer[lr]['trace'][::-1]
+                    self.Layer[lr]['value']     = self.Layer[lr]['value'][::-1]
+                    try:
+                        self.Layer[lr]['value_idx']     = self.Layer[lr]['value_idx'][::-1]
+                    except:
+                        pass
             except:
                 pass
 

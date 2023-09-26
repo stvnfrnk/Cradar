@@ -208,6 +208,7 @@ def twt2elevation(data='',
 
 def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
 
+    import matplotlib.pyplot as plt
     import pandas as pd
     import numpy  as np
     import time
@@ -248,7 +249,6 @@ def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
         #
         T                   = np.delete(twt,np.s_[0:surf_idx],axis=0) # delete traces abofe surface reflection
         T_new               = T - twt[surf_idx] # set start of new twt array to zero
-
         trace_twt           = T_new
         trace_dB            = single_trace
         trace_num           = np.ones(int(single_trace.size)) * i
@@ -270,7 +270,7 @@ def radar_pull2surface(data='', twt='', twt_surface='', setting=''):
     # drop nan's
     df_comb = df_comb.dropna()
 
-    #df_comb         = df_comb.round({'twt': 9})
+    df_comb         = df_comb.round({'twt': 9})
 
     ## create pivot table for heatmap
     df = df_comb.pivot('twt', 'trace', 'dB')
