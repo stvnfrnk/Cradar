@@ -205,7 +205,7 @@ class Cradar:
             self.Bed_m       = ds.variables['bed_altitude_layerData'].values
 
             print('')
-            print('==> Loaded {} >> pulse data <<'.format(self.Frame))
+            print('==> Loaded {} >> {} data <<'.format(self.Frame, data_type))
 
             del ds
 
@@ -218,13 +218,13 @@ class Cradar:
             self.Frame       = os.path.split(filename)[1].split('.nc')[0]
             self.Time        = ds['fast_time'].values.astype(float) * 10e-7
             try:
-                self.Data        = pd.DataFrame(ds.variables['pulse_data'].values)
+                self.Data        = pd.DataFrame(ds.variables['chirp_data'].values)
             except:
                 pass
-            try:
-                self.Data        = pd.DataFrame(ds.variables['polarised_chirp_SSHH_data'].values)
-            except:
-                pass
+            # try:
+            #     self.Data        = pd.DataFrame(ds.variables['polarised_chirp_SSHH_data'].values)
+            # except:
+            #     pass
             self.Domain      = 'twt'
             self.dB          = False
 
@@ -238,10 +238,32 @@ class Cradar:
             self.Bed_idx     = ds.variables['bed_pick_layerData']
             self.Bed_m       = ds.variables['bed_altitude_layerData'].values
 
+
+            dist            = self.Elevation - self.Surface_m
+            dist[dist == 0] = np.nan
+            dist            = np.array(pd.DataFrame(dist).interpolate(limit_direction='both'))
+            twt_s           = dist / (299792458) * 4
+
             print('')
-            print('==> Loaded {} >> pulse data <<'.format(self.Frame))
+            print('==> Loaded {} >> {} data <<'.format(self.Frame, data_type))
 
             del ds
+
+            
+
+            ### load Layers
+
+            self.Layer = {}
+            
+            surface    = {'trace'  : np.arange(len(np.array(twt_s).flatten())) + 1,
+                        'value'    : np.array(twt_s).flatten(),
+                        'color'    : [33, 113, 181]}
+            self.Layer['Surface'] = surface
+
+            # bottom    = {'trace'  : np.arange(len(np.array(self.Bed_idx).flatten())) + 1,
+            #                 'value'  : np.array(self.Time[self.Surface_idx.astype(int)]).flatten(),
+            #                 'color'  : 'red'}
+            # self.Layer['Bottom'] = bottom
 
             return self
 
@@ -491,7 +513,7 @@ class Cradar:
         # del Z, Z_surf, surf_m_idx
 
 
-    def track_surface(self, skip=100, gauss_factor=1, use_gradient=False, offset=2):
+    def track_surface(self, skip=100, llim='', gauss_factor=1, use_gradient=False, offset=2):
 
         '''
 
@@ -515,7 +537,10 @@ class Cradar:
         else:
             data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
 
-        surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) ).astype(int)
+        if llim == '':
+            surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) ).astype(int)
+        else:
+            surf_idx       = ( data_filtered[skip:llim].idxmax(axis=0, skipna=True) ).astype(int)
 
         # get surface values
         srf = []
@@ -628,7 +653,7 @@ class Cradar:
     # Method: retrack_surf()
     #############################
 
-    def retrack_surface(self, roll_factor=10, sigma=2, gatesize=20, differenciate=False, offset=1):
+    def retrack_surface(self, roll_factor=10, sigma=2, gate=[0, 0], differenciate=False, offset=1):
 
         import copy
         import numpy as np
@@ -637,7 +662,8 @@ class Cradar:
 
         roll_factor = roll_factor
         sigma       = sigma
-        gatesize    = gatesize
+        ulim        = gate[0]
+        llim        = gate[1]
         offset      = offset
 
         data_filtered = pd.DataFrame(gaussian_filter(self.Data.values, sigma=2))
@@ -655,8 +681,8 @@ class Cradar:
         surface_col = self.Layer['Surface']['color']
 
         for i in range(len(surface_idx)):
-            trx         = np.array(data_filtered[i])[int(surface_idx[i]) - int(gatesize):int(surface_idx[i]) + int(gatesize)]
-            offset_gate = np.argmax(trx) - gatesize
+            trx         = np.array(data_filtered[i])[int(surface_idx[i]) - int(ulim):int(surface_idx[i]) + int(llim)]
+            offset_gate = np.argmax(trx) - int(((llim + ulim)/2))
             index       = surface_idx[i] + offset_gate + offset
             val         = self.Time[int(index)]
             srf.append(val)
@@ -2136,7 +2162,7 @@ class Cradar:
                 for lr in layer_list:    
                     if lr == 'Surface':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                            color=self.Layer[lr]['color'], s=0.2, label=lr)
+                            s=0.2, label=lr)
 
                     if lr == 'Bed':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 

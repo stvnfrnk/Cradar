@@ -15,10 +15,10 @@ def correct_chirp_data(nc_file):
 
     Time         = ds['fast_time'].values.astype(float) * 10e-7
 
-    # Data_Pulse   = ds.variables['pulse_data'].values
-    Data_Pulse   = ds.variables['polarised_pulse_SPHV_data'].values
-    # Data_Chirp   = ds.variables['chirp_data'].values
-    Data_Chirp   = ds.variables['polarised_chirp_SSHH_data'].values
+    Data_Pulse   = ds.variables['pulse_data'].values
+    # Data_Pulse   = ds.variables['polarised_pulse_SPHV_data'].values
+    Data_Chirp   = ds.variables['chirp_data'].values
+    # Data_Chirp   = ds.variables['polarised_chirp_SSHH_data'].values
 
     Traces_Chirp = ds.traces_chirp.values
     Traces_Pulse = ds.traces_pulse.values
