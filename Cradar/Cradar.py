@@ -395,6 +395,22 @@ class Cradar:
 
 
 
+    def fix_missing_surface_picks(self):
+
+        import numpy as np
+
+        missing = len(self.Longitude) - len(self.Layer['Surface']['trace'])
+        if missing == 0:
+            pass
+        elif missing > 0:
+            for i in range(missing):
+                self.Layer['Surface']['trace'] = np.append(self.Layer['Surface']['trace'], self.Layer['Surface']['trace'][-1] + 1)
+                self.Layer['Surface']['value'] = np.append(self.Layer['Surface']['value'], self.Layer['Surface']['value'][-1])
+        elif missing < 0:
+            self.Layer['Surface']['trace'] = self.Layer['Surface']['trace'][:missing]
+            self.Layer['Surface']['value'] = self.Layer['Surface']['value'][:missing]
+
+
     def get_layer_idx(self):
 
         import numpy as np
@@ -1540,6 +1556,8 @@ class Cradar:
         from Cradar.geo_toolbox import coords2shape
         import copy
         import os
+
+        self.add_distance()
 
         out_object = copy.copy(self)
 
