@@ -221,10 +221,15 @@ class Cradar:
                 self.Data        = pd.DataFrame(ds.variables['chirp_data'].values)
             except:
                 pass
-            # try:
-            #     self.Data        = pd.DataFrame(ds.variables['polarised_chirp_SSHH_data'].values)
-            # except:
-            #     pass
+            try:
+                self.Data        = pd.DataFrame(ds.variables['polarised_chirp_SSHH_data'].values)
+            except:
+                pass
+            try:
+                self.Data        = pd.DataFrame(ds.variables['chirp_cHG_data'].values)
+            except:
+                pass
+
             self.Domain      = 'twt'
             self.dB          = False
 

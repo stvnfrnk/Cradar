@@ -597,8 +597,9 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
         for pixel in air_col:
             air_m = twt[pixel] * v_air
             geom_range.append(air_m)                    
-            if mode == 1:
+            if mode == 1 or mode == 2:
                 att_range.append(1)
+            #print(air_m)
             
         for pixel in ice_col:
             ice_m = twt[pixel] * v_ice
@@ -606,17 +607,26 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
 
             if mode == 1:
                 atrange = twt[pixel] * v_ice - twt[int(surf_idx[trace])]
+                #print(atrange)
                 att_range.append(atrange)
             
         geom_range = np.array(geom_range)
         new_power  = power * (geom_range ** 2)
+        #np.savetxt("new_power1.csv", new_power, delimiter=",")
         new_power  = 20 * np.log10(new_power)
+        #np.savetxt("geom_range.csv", geom_range, delimiter=",")
+        #np.savetxt("att_range.csv", att_range, delimiter=",")
+        #np.savetxt("new_power2.csv", new_power, delimiter=",")
         
         if mode == 1:
 
             att_range = np.array(att_range)
             the_loss  = att_range * loss_factor * 2 
             new_power = new_power + the_loss
+            #np.savetxt("the_loss.csv", the_loss, delimiter=",")
+            # print(att_range)
+            # print(the_loss)
+            # print(new_power)
         
         new_matrix.append(new_power)
     
