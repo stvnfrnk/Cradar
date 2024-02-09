@@ -1,6 +1,5 @@
 
 
-
 class Cradar:
 
     #_allObjects = []
@@ -18,9 +17,16 @@ class Cradar:
 
     def load_cresis_mat(self, filename, dB=False):
 
-        from Cradar.read_input import read_cresis_mat
+        import numpy as np
+        from lib.read_input import read_cresis_mat
 
         Frame, Reader, Domain, Data, Time, Longitude, Latitude, Elevation, GPS_time, Layer = read_cresis_mat(filename)
+
+        # check if Data is transposed
+        # if Data.shape[0] == len(Time):
+        #     pass
+        # else:
+        #     Data = np.transpose(Data)
 
         self.Frame      = Frame
         self.Reader     = Reader
@@ -80,7 +86,7 @@ class Cradar:
 
         # Delete the HDF5 file
         del self.File
-        # print('')
+        print("")
         print('==> Loaded {}'.format(self.Frame))
 
         return self
@@ -94,7 +100,7 @@ class Cradar:
 
     def load_awi_segy(self, segy_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
 
-        from Cradar.read_input import read_awi_segy
+        from lib.read_input import read_awi_segy
 
         Longitude = Longitude
         Latitude  = Latitude
@@ -141,7 +147,7 @@ class Cradar:
 
         '''
 
-        from Cradar.read_input import read_awi_nc
+        from lib.read_input import read_awi_nc
 
         
         Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file)
@@ -272,7 +278,7 @@ class Cradar:
 
             return self
 
-            # from Cradar.bas_io import correct_chirp_data
+            # from lib.bas_io import correct_chirp_data
 
             # data_chirp, time, longitude, latitude, elevation, gps_time, surface_idx, surface_m, bed_idx, bed_m = correct_chirp_data(filename)
 
@@ -436,7 +442,7 @@ class Cradar:
             
             #values_idx[values_idx == 0] = np.nan
 
-            self.Layer[lr]['value_idx'] = values_idx.astype(float)
+            self.Layer[lr]['value_idx'] = values_idx.astype(int)
             print('... getting layer idx for {}'.format(lr))
 
 
@@ -647,7 +653,7 @@ class Cradar:
         Latitude    = self.Latitude
 
         print('==> Applying gridtrack method 1 ...')
-        from Cradar.geo_toolbox import gridtrack
+        from lib.geo_toolbox import gridtrack
         raster_vals = gridtrack(Longitude=Longitude, Latitude=Latitude, geotif=geotif, geotif_name=geotif_name, geotif_epsg=geotif_epsg)
 
         #print('==> Failed, trying gridtrack method 2 ...')
@@ -736,7 +742,7 @@ class Cradar:
 
     def correct4attenuation(raw_object, mode=0, loss_factor=0):
 
-        from Cradar.radar_toolbox import correct4attenuation
+        from lib.radar_toolbox import correct4attenuation
         import copy
 
         if raw_object.dB == False:
@@ -781,7 +787,7 @@ class Cradar:
 
     def add_distance(self):
 
-        from Cradar.geo_toolbox import coords2distance
+        from lib.geo_toolbox import coords2distance
 
         X = self.Longitude
         Y = self.Latitude
@@ -806,11 +812,8 @@ class Cradar:
 
     def twt2elevation(twt_object,
                        reference='',
-                       setting='',
-                       speed_of_ice=1.689e8,
-                       overlap=False,
-                       number_of_gaps=100,
-                       decimate=[True, 2]):
+                       sample_int=1,
+                       speed_of_ice=1.689e8):
 
         '''
         ==> Takes a Cradar object and transforms from twt domain
@@ -832,7 +835,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from Cradar.radar_toolbox import twt2elevation
+        from lib.radar_toolbox import radar_twt2elevation
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -857,72 +860,56 @@ class Cradar:
         # Get ice Surface elevation values from DEM
         if reference == 'DEM':
             twt_surface = elev_obj.Layer['Surface']['value']
-            DEM_surface = elev_obj.DEM_surface
+            dem_surf = elev_obj.DEM_surface
             aircraft_elevation = np.ones(len(elev_obj.Longitude))
 
         elif reference == 'GPS':
             twt_surface = elev_obj.Surface
-            DEM_surface = ''
+            dem_surf = ''
             aircraft_elevation = elev_obj.Elevation
 
         # imput variables from instance
         data               = elev_obj.Data
         twt                = elev_obj.Time
         
-
         # input variables defined in prior steps
         twt_surface   = twt_surface
 
         # input variables from input of method above
         reference = reference
-        setting   = setting
-        overlap   = overlap
+        sample_int   = sample_int
 
-        df, Z, surf_m, surf_m_idx =  twt2elevation(data=data,
-                                                   twt=twt,
-                                                   twt_surface=twt_surface,
-                                                   aircraft_elevation=aircraft_elevation,
-                                                   speed_of_ice=1.689e8,
-                                                   reference=reference,
-                                                   DEM_surface=DEM_surface,
-                                                   setting=setting,
-                                                   overlap=overlap,
-                                                   overlap_traces=0,
-                                                   decimate=[True, 2]
-                                                   )
+        surf_idx = twt_object.Layer["Surface"]["value_idx"]
+
+        data_elev, Z, surf_m_idx =  radar_twt2elevation(data=data,
+                                                        twt=twt,
+                                                        surf_idx=surf_idx,
+                                                        speed_of_ice=speed_of_ice,
+                                                        dem_surf=dem_surf,
+                                                        sample_int=sample_int
+                                                        )
 
 
         # re-define instance atributes
         elev_obj.Z             = Z
-        elev_obj.Data          = pd.DataFrame(np.array(df))
+        elev_obj.Data          = data_elev
 
         surface_m    = {'trace'     : elev_obj.Layer['Surface']['trace'],
-                        'value'     : surf_m,
+                        'value'     : dem_surf,
                         'value_idx' : surf_m_idx,
                         'color'     : elev_obj.Layer['Surface']['color']}
         
         elev_obj.Layer['Surface_m'] = surface_m
 
 
-        elev_obj.Domain                          = 'Z'
+        elev_obj.Domain          = 'Z'
+        elev_obj.Sample_Interval = "{} m".format(sample_int)
 
-        # define range resolution depending on the setting
-        if setting == 'narrowband':
-            elev_obj.Range_Resolution = '1 m'
-
-        if setting == 'wideband':
-            elev_obj.Range_Resolution = '0.1 m'
-
-        if setting == 'accum':
-            elev_obj.Range_Resolution = '0.01 m'
-
-        if setting == 'snow':
-            elev_obj.Range_Resolution = '0.001 m'
-
-
+        del data_elev
+        
         return elev_obj
 
-        del df
+        
 
 
     ########## END of twt2elevation() ###########
@@ -930,19 +917,18 @@ class Cradar:
 
 
 #############################
-    # Method: pull2surface
+    # Method: twt2surface
 #############################
 
-    def pull2surface(twt_object, setting=''):
+    def twt2surface(twt_object):
 
         '''
         
         '''
 
         import numpy as np
-        import pandas as pd
-        from Cradar.radar_toolbox import radar_pull2surface
         import copy
+        from lib.radar_toolbox import radar_twt2surface
 
         # makes a copy of the first object (serves as a blue print)
         try:
@@ -953,27 +939,20 @@ class Cradar:
         print('==> Now: pull2elevation...')
 
         # imput variables from instance
-        data        = p2s_obj.Data
-        twt         = p2s_obj.Time
-        twt_surface = p2s_obj.Layer['Surface']['value'] #p2s_obj.Surface
+        data     = p2s_obj.Data
+        twt      = p2s_obj.Time
+        surf_idx = p2s_obj.Layer['Surface']['value_idx'] #p2s_obj.Surface
 
-        # input variables defined in prior steps
-        twt_surface   = twt_surface
-
-        df, new_time_array =  radar_pull2surface(data=data,
-                                                 twt=twt,
-                                                 twt_surface=twt_surface,
-                                                 setting=setting
-                                                 )
+        data_new, time_new =  radar_twt2surface(data=data, twt=twt, surf_idx=surf_idx)
 
 
         # re-define instance atributes
-        p2s_obj.Time   = new_time_array
-        p2s_obj.Data   = pd.DataFrame(np.array(df))
+        p2s_obj.Time   = time_new
+        p2s_obj.Data   = data_new
         p2s_obj.Domain = 'twt'
-        p2s_obj.Layer['Surface']['value'] = np.repeat(p2s_obj.Time[1], len(twt_surface))
+        p2s_obj.Layer['Surface']['value'] = np.repeat(0, len(surf_idx))
 
-        del df
+        del data, twt, surf_idx
 
         return p2s_obj
 
@@ -997,7 +976,7 @@ class Cradar:
 
         import numpy as np
         import pandas as pd
-        from Cradar.radar_toolbox import radar_pull2bed
+        from lib.radar_toolbox import radar_pull2bed
         import copy
 
         # makes a copy of the first object (serves as a blue print)
@@ -1356,7 +1335,8 @@ class Cradar:
         new_obj.Reader    = added_objects[0].Reader
 
         # concatenate object attributes
-        new_obj.Data      = pd.concat(Data, axis=1, ignore_index=True)
+        # new_obj.Data      = pd.concat(Data, axis=1, ignore_index=True)
+        new_obj.Data      = np.concatenate(Data, axis=1)
 
         if added_objects[0].Domain == 'Z':
             new_obj.Z = new_obj.Data.index
@@ -1364,7 +1344,7 @@ class Cradar:
             new_obj.Time = new_obj.Time
 
         # delete Z or Time from index
-        new_obj.Data.reset_index(inplace=True, drop=True)
+        # new_obj.Data.reset_index(inplace=True, drop=True)
 
         new_obj.Longitude = np.concatenate(Longitude)
         new_obj.Latitude  = np.concatenate(Latitude)
@@ -1445,7 +1425,7 @@ class Cradar:
             # check if 0 in data because log10 will then return -inf
             # replacing 0 with 1 and log10 will return 0.0
             if 0 in self.Data:
-                self.Data = pd.DataFrame(np.where(self.Data==0, 1, self.Data))
+                self.Data = np.where(self.Data==0, 1, self.Data)
                 print('... zeroes [0] in self.Data --> replacing with ones [1] before log10.')
 
             self.Data = 20 * np.log10(self.Data)
@@ -1502,7 +1482,7 @@ class Cradar:
 
     def range_gain(self, gain_type='', b=2, n=2, f=2):
 
-        from Cradar.radar_toolbox import add_range_gain
+        from lib.radar_toolbox import add_range_gain
 
         #if self.dB == True:
         #    self.inverse_dB()
@@ -1530,7 +1510,7 @@ class Cradar:
 
     def agc(self, window=50):
 
-        from Cradar.radar_toolbox import automatic_gain_control
+        from lib.radar_toolbox import automatic_gain_control
 
 
         print('==> applying automatic gain control for layer sharpening')
@@ -1558,7 +1538,7 @@ class Cradar:
 
         import numpy as np
         import geopandas
-        from Cradar.geo_toolbox import coords2shape
+        from lib.geo_toolbox import coords2shape
         import copy
         import os
 
@@ -1596,8 +1576,11 @@ class Cradar:
                            step=step,
                            attributes=attributes)
         
-        out['Distance_m'] = self.Distance.astype(int)
-        out['Trace']      = np.arange(len(self.Longitude)) + 1
+        if geometry == "Point":
+            out['Distance_m'] = self.Distance.astype(int)
+            out['Trace']      = np.arange(len(self.Longitude)) + 1
+        else:
+            pass
 
         if out_folder == '':
             if out_format == 'shapefile':
@@ -1672,7 +1655,7 @@ class Cradar:
         except:
             pass
 
-        out_object.Data    = out_object.Data.values
+        out_object.Data    = out_object.Data
         full_dict          = out_object.__dict__
         mat_filename       = out_object.Frame + '_' + out_object.Domain + '.mat'
 
@@ -1789,7 +1772,7 @@ class Cradar:
         '''
 
         import numpy as np
-        from Cradar.segy_toolbox import radar2segy
+        from lib.segy_toolbox import radar2segy
 
         from obspy import Trace, Stream
         #from obspy.core import AttribDict
@@ -1967,9 +1950,6 @@ class Cradar:
                       every_km_dist=10,
                       every_m_elev=1000,
                       every_twt=['ms', 10],
-                      plot_surface=False,
-                      plot_old_surface=False,
-                      plot_bed=False,
                       plot_layers=False,
                       show_legend=True,
                       xlabels_as_int=True,
@@ -1982,10 +1962,9 @@ class Cradar:
                       vmin='',
                       vmax='',
                       save_svg=False, 
-                      save_png=False, 
+                      save_raster=[False, "jpg"], 
                       suffix='',
                       out_folder='',
-                      interactive=False,
                       dpi=200):
 
         '''
@@ -2004,12 +1983,7 @@ class Cradar:
         import numpy as np 
         import os
 
-        if interactive == True:
-            pass
-            #%matplotlib qt
-
         
-
         # before plotting check and run these
         try:
             if hasattr(self, 'Surface_idx'):
@@ -2130,12 +2104,12 @@ class Cradar:
             
 
         if vmin == '':
-            vmin = self.Data.min().min()
+            vmin = np.nanmin(self.Data)
         else:
             vmin = vmin
 
         if vmax == '':
-            vmax = self.Data.max().max()
+            vmax = np.nanmax(self.Data)
         else:
             vmax = vmax    
             
@@ -2144,29 +2118,6 @@ class Cradar:
         
         # plot echogram
         img = plt.imshow(self.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
-
-        '''# plot surface ?
-        if plot_surface == True:
-            if range_mode == 'twt':
-                plt.plot(self.Surface_idx, label='Surface')
-            if range_mode == 'elevation':
-                plt.plot(self.Surface_m_idx, label='Surface')
-
-        # plot old surface ?
-        if plot_old_surface == True:
-            if range_mode == 'twt':
-                plt.plot(self.Surface_idx_old, color='red', alpha=0.4, label='old Surface')
-            if range_mode == 'elevation':
-                plt.plot(self.Surface_m_idx_old, label='old Surface')
-
-        # plot bed ?
-        if plot_bed == True:
-            if range_mode == 'twt':
-                plt.plot(self.Bed_idx, color='red', linewidth=1, linestyle='dashed', label='bed')
-            if range_mode == 'elevation':
-                plt.plot(self.Bed_m_idx, color='red', linewidth=0.5, linestyle='dashed', label='bed')'''
-
-        # plot layers ?
 
         if plot_layers == True:
 
@@ -2191,10 +2142,9 @@ class Cradar:
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                             color=self.Layer[lr]['color'], s=0.2, label=lr)
 
-                    if lr != 'Surface':
-                        if lr != 'Bed':
-                            plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                    color=self.Layer[lr]['color'], s=0.2, label=lr)
+                    if lr != 'Surface' and lr != 'Bed' and lr != 'Surface_m':
+                        plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
+                                color=self.Layer[lr]['color'], s=0.2, label=lr)
 
             if range_mode == 'elevation':
                 
@@ -2221,7 +2171,10 @@ class Cradar:
         plt.xlabel(xaxis_label, fontsize=fontsize)
         plt.yticks(yticks, ytick_labels, fontsize=fontsize)
         plt.ylabel(yaxis_label, fontsize=fontsize)
+        plt.xlim(0, len(self.Longitude))
         plt.title(self.Frame, fontsize=fontsize)
+
+
 
         if show_cbar == True:
             cbr = plt.colorbar(img)
@@ -2230,12 +2183,17 @@ class Cradar:
         if show_legend == True:
             plt.legend()
 
-        if save_png == True:
+        if save_raster[0] == True:
+            if save_raster[1] == "jpg":
+                raster_type = ".jpg"
+            if save_raster[1] == "png":
+                raster_type = ".png" 
+
             if out_folder == '':
                 if not os.path.exists('figures'):
                     os.makedirs('figures')
 
-                figname = str(self.Frame) + suffix + '.jpg'
+                figname = str(self.Frame) + suffix + raster_type
                 plt.savefig('figures/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: figures/{}'.format(figname))
             
@@ -2243,7 +2201,7 @@ class Cradar:
                 if not os.path.exists(out_folder):
                     os.makedirs(out_folder)
 
-                figname = str(self.Frame) + suffix + '.jpg'
+                figname = str(self.Frame) + suffix + raster_type
                 plt.savefig(out_folder + '/' + figname, dpi=dpi, bbox_inches='tight')
                 print('==> Written: {}/{}'.format(out_folder, figname))
 
