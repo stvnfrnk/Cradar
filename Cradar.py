@@ -1103,11 +1103,11 @@ class Cradar:
             start = (np.abs(self.Distance - start_val)).argmin()
             end   = (np.abs(self.Distance - end_val)).argmin()
 
-        self.Data      = self.Data.T[start:end].T
+        self.Data      = self.Data[:,start:end]
 
         # tweak to make col. names start with zero
         # important later for indexing
-        self.Data      = pd.DataFrame(np.array(self.Data))
+        # self.Data      = pd.DataFrame(np.array(self.Data))
 
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
@@ -1219,7 +1219,7 @@ class Cradar:
             #     start = lower_lim
             #     end   = upper_lim
         
-        self.Data  = self.Data[start:end]
+        self.Data  = self.Data[start:end,:]
         domain     = self.Domain
 
         if domain == 'twt':
