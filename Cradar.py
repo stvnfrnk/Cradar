@@ -1087,7 +1087,7 @@ class Cradar:
     # Method: clip data along-track
     ##################################
 
-    def clip_along(self, start_val, end_val, mode='index'):
+    def clip_along(self, start_val, end_val, mode='trace'):
 
         '''
         '''
@@ -1951,6 +1951,7 @@ class Cradar:
                       every_m_elev=1000,
                       every_twt=['ms', 10],
                       plot_layers=False,
+                      markersize=0.2,
                       show_legend=True,
                       xlabels_as_int=True,
                       ylabels_as_int=True,
@@ -2140,11 +2141,11 @@ class Cradar:
 
                     if lr == 'Bed':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                            color=self.Layer[lr]['color'], s=0.2, label=lr)
+                            color=self.Layer[lr]['color'], s=markersize, label=lr)
 
                     if lr != 'Surface' and lr != 'Bed' and lr != 'Surface_m':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                color=self.Layer[lr]['color'], s=0.2, label=lr)
+                                color=self.Layer[lr]['color'], s=markersize, label=lr)
 
             if range_mode == 'elevation':
                 
@@ -2152,16 +2153,16 @@ class Cradar:
                     if '_m' in lr:
                         if lr == 'Surface_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                color=self.Layer[lr]['color'], s=0.2, label=lr)
+                                color=self.Layer[lr]['color'], s=markersize, label=lr)
 
                         if lr == 'Bed_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                color=self.Layer[lr]['color'], s=0.2, linestyle='dashed', label=lr)
+                                color=self.Layer[lr]['color'], s=markersize, linestyle='dashed', label=lr)
 
                         if lr != 'Surface_m':
                             if lr != 'Bed_m':
                                 plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                        color=self.Layer[lr]['color'], s=0.2, label=lr)
+                                        color=self.Layer[lr]['color'], s=markersize, label=lr)
 
         if vline != '':
             print('vlines')
