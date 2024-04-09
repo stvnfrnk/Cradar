@@ -1546,10 +1546,11 @@ class Cradar:
 
         out_object = copy.copy(self)
 
-        X      = out_object.Longitude
-        Y      = out_object.Latitude
-        Frame  = out_object.Frame
-        Season = 'dummy'
+        X       = out_object.Longitude
+        Y       = out_object.Latitude
+        Frame   = out_object.Frame
+        Segment = out_object.Segment
+        Season  = out_object.Season
 
         geometry     = geometry
         step         = step
@@ -1569,6 +1570,7 @@ class Cradar:
         out = coords2shape(X,
                            Y,
                            Frame,
+                           Segment,
                            Season,
                            EPSG_in=4326,
                            EPSG_out=4326,
@@ -1581,6 +1583,12 @@ class Cradar:
             out['Trace']      = np.arange(len(self.Longitude)) + 1
         else:
             pass
+
+        if geometry == "Point":
+            shape_filename = shape_filename + "_point"
+
+        if geometry == "Line":
+            shape_filename = shape_filename + "_line"
 
         if out_folder == '':
             if out_format == 'shapefile':
