@@ -34,7 +34,7 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
         gin.write('** {}\n'.format(file_sgy))
         gin.write('** dt = {}        samples = {}\n'.format(sample_interval, num_samples))
         gin.write('**\n')
-        gin.write('*CALL   GIN     {}     {:.04f}          SHOT\n'.format(int(t_length), float(sample_interval)))
+        gin.write('*CALL   GIN     {}   {:.04f}          SHOT\n'.format(int(t_length), float(sample_interval)))
         gin.write('TAPEOPT -tapefile {}\n'.format(seissrv_sgy_path))
         gin.write('DEFINE  SHOT    JPHYSIN\n')
         gin.write('REEL    1                               \n')
@@ -148,7 +148,7 @@ def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_fo
         gin.write('*CALL   DSIN\n')
         gin.write('LABEL   {}_scaled\n'.format(line_label_coords))
         gin.write('**\n')
-        gin.write('*CALL   AGC     100\n')
+        gin.write('*CALL   AGC     \n')
         gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
         gin.write('LABEL   {}_agc\n'.format(line_label_coords))   #####

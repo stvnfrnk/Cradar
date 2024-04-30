@@ -140,7 +140,7 @@ class Cradar:
     #############################
 
 
-    def load_awi_nc(self, nc_file='', dB=False):
+    def load_awi_nc(self, nc_file='', read_agc=False):
 
         '''
 
@@ -150,7 +150,7 @@ class Cradar:
         from lib.read_input import read_awi_nc
 
         
-        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file)
+        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file, read_agc=read_agc)
 
         #self.Frame      = Frame
         self.Reader     = 'xarray'
@@ -163,7 +163,7 @@ class Cradar:
         # self.Aircraft_altitude  = Aircraft_altitude
         # self.GPS_time   = GPS_time
         self.Layer      = Layer
-        self.dB         = dB
+        self.dB         = True
 
         return self
 

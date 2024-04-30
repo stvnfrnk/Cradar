@@ -121,7 +121,7 @@ def read_awi_segy(segy_file):
 
 
 
-def read_awi_nc(nc_file):
+def read_awi_nc(nc_file, read_agc=False):
 
     # load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
 
@@ -134,7 +134,11 @@ def read_awi_nc(nc_file):
 
     dx =  xr.load_dataset(nc_file)
 
-    Data       = dx.variables['WAVEFORM'].values[::-1]
+    if read_agc == True:
+        Data       = dx.variables['DATA_AGC'].values[::-1]
+    else:
+        Data       = dx.variables['DATA'].values[::-1]
+
     Longitude  = dx.variables['LONGITUDE'].values
     Latitude   = dx.variables['LATITUDE'].values
     Time       = dx.variables['TWT'].values
