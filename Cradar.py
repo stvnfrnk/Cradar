@@ -268,7 +268,7 @@ class Cradar:
             
             surface    = {'trace'  : np.arange(len(np.array(twt_s).flatten())) + 1,
                         'value'    : np.array(twt_s).flatten(),
-                        'color'    : [33, 113, 181]}
+                        'color'    : [255, 255, 9]}
             self.Layer['Surface'] = surface
 
             # bottom    = {'trace'  : np.arange(len(np.array(self.Bed_idx).flatten())) + 1,
@@ -351,7 +351,7 @@ class Cradar:
         import numpy as np
 
         if layer_name == 'Surface':
-            color = [33, 113, 181]
+            color = [255, 255, 9]
 
         if layer_name == 'Bed':
             color = [227, 26, 28]
@@ -580,7 +580,7 @@ class Cradar:
         self.Layer = {}
         surface    = {'trace'   : np.arange(len(np.array(srf))) + 1,
                     'value'     : np.array(srf),
-                    'color'     : 'blue'}
+                    'color'     : 'yellow'}
         
         self.Layer['Surface'] = surface
         
