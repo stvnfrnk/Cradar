@@ -165,6 +165,9 @@ class Cradar:
         self.Layer      = Layer
         self.dB         = True
 
+        print("")
+        print('==> Loaded {}'.format(nc_file))
+
         return self
 
     ########## END of load_awi_nc() ###########
@@ -529,8 +532,15 @@ class Cradar:
                 values_idx = np.array([])
                 vz         = self.Layer[lr]['value']
                 for i in range(len(vz)):
-                    v_idx      = (np.abs(np.array(Z) - int(np.array(vz)[i]))).argmin()
-                    values_idx = np.append(values_idx, v_idx)
+                    if vz[i] == np.nan:
+                        v_idx = np.nan
+                    else:
+                        try:
+                            v_idx      = (np.abs(np.array(Z) - int(np.array(vz)[i]))).argmin()
+                        except:
+                            v_idx      = np.nan
+
+                        values_idx = np.append(values_idx, v_idx)
                 
                 #values_idx[values_idx == 0] = np.nan
 
@@ -2027,7 +2037,7 @@ class Cradar:
     def plot_echogram(self, 
                       figsize_x=10,
                       figsize_y=6,
-                      range_mode='twt',
+                      range_mode='',
                       every_km_dist=10,
                       every_m_elev=1000,
                       every_twt=['ms', 10],
@@ -2201,17 +2211,15 @@ class Cradar:
         # plot echogram
         img = plt.imshow(self.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
 
+        # plot layers
         if plot_layers == True:
-
             layer_list = list(self.Layer.keys())
             n          = len(layer_list) #- 2
             offset     = 0
             colors     = plt.cm.spring(np.linspace(0,1,n + offset))
             c = 0
-            
 
             if range_mode == 'twt':
-                
                 for lr in layer_list:
                     self.reshape_layer_values(lr)
 
@@ -2228,22 +2236,24 @@ class Cradar:
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                                 color=self.Layer[lr]['color'], s=markersize, label=lr)
 
-            if range_mode == 'elevation':
-                
+            elif range_mode == 'elevation':
                 for lr in layer_list:
-                    if '_m' in lr:
+                    if '_m' not in lr:
+                        pass
+                    else:
                         if lr == 'Surface_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                                 color=self.Layer[lr]['color'], s=markersize, label=lr)
 
-                        if lr == 'Bed_m':
+                        elif lr == 'Bed_m':
                             plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                                 color=self.Layer[lr]['color'], s=markersize, linestyle='dashed', label=lr)
 
-                        if lr != 'Surface_m':
+                        elif lr != 'Surface_m':
                             if lr != 'Bed_m':
-                                plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                                        color=self.Layer[lr]['color'], s=markersize, label=lr)
+                                if "_m" in lr:
+                                    plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
+                                            color=self.Layer[lr]['color'], s=markersize, label=lr)
 
         if vline != '':
             print('vlines')

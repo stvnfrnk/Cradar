@@ -141,10 +141,11 @@ def radar2segy(data='',
 
 
         # Create some random data.
-        if to_dB == False:
-            trace_  = np.array(data[i])
-        elif to_dB == True:
-            trace_  = np.array(20*np.log10(data[i]))
+        # if to_dB == False:
+        #     trace_  = np.array(data[i])
+        # elif to_dB == True:
+        #     trace_  = np.array(20*np.log10(data[i]))
+        trace_  = np.array(data[:,i])
         trace_  = np.require(trace_, dtype=np.float32)
         trace_  = trace_.flatten()
         trace   = Trace(data=trace_)
