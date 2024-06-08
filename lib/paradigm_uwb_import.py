@@ -8,7 +8,11 @@ def read_readme(sgy_path, file_readme):
         num_traces      = text.split('Number of traces:')[1].split('\nSample')[0].replace(" ", "")
         sample_interval = text.split('Sample interval in ns:')[1].split('\n')[0].replace(" ", "")
         twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(" ", "")
-        num_samples     = text.split('Number of samples per trace:')[1].split('\n')[0].replace(" ", "")
+        try:
+            num_samples     = text.split('Number of samples per trace:')[1].split('\n')[0].replace(" ", "")
+        except:
+            print("'Number of samples per trace:' string not found... calculating num_samples instead...")
+            num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
 
 
         return start_time, stop_time, num_traces, sample_interval, twt_trace, num_samples
@@ -61,7 +65,7 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
         gin.write('HCSUB   statcor 1000    statcor\n')
         gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
-        gin.write('LABEL   {}\n'.format(line_label_coords))
+        gin.write('LABEL   {}{}\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
         gin.write('*END')
 
@@ -130,12 +134,12 @@ def write_scale(sample_interval, num_samples, line_label, label_suffix, line_lab
         gin.write('** {}\n'.format(file_sgy))
         gin.write('** dt = {}        samples = {}\n'.format(sample_interval, num_samples))
         gin.write('*CALL   DSIN\n')
-        gin.write('LABEL   {}\n'.format(line_label_coords))
+        gin.write('LABEL   {}{}\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
         gin.write('*CALL   SCALE                   {}\n'.format(scale_factor))
         gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
-        gin.write('LABEL   {}_scaled\n'.format(line_label_coords))   #####
+        gin.write('LABEL   {}{}_scaled\n'.format(line_label_coords, label_suffix))   #####
         gin.write('**\n')
         gin.write('*END\n')
 
@@ -146,12 +150,12 @@ def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_fo
     with open(line_folder + '/' + agc_filename, 'w') as gin:
         gin.write('*JOB    s/p_rada{}\n'.format(line_label))
         gin.write('*CALL   DSIN\n')
-        gin.write('LABEL   {}_scaled\n'.format(line_label_coords))
+        gin.write('LABEL   {}{}_scaled\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
         gin.write('*CALL   AGC     \n')
         gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
-        gin.write('LABEL   {}_agc\n'.format(line_label_coords))   #####
+        gin.write('LABEL   {}{}_agc\n'.format(line_label_coords, label_suffix))   #####
         gin.write('**\n')
         gin.write('*END\n')
 

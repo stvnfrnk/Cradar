@@ -173,6 +173,43 @@ class Cradar:
 
 
     #############################
+    # Method: load_awi_nc
+    #############################
+
+
+    def load_awi_nc_old(self, nc_file='', read_agc=False):
+
+        '''
+
+
+        '''
+
+        from lib.read_input import read_awi_nc_old
+
+        
+        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc_old(nc_file)
+
+        #self.Frame      = Frame
+        self.Reader     = 'xarray'
+        self.Domain     = 'twt'
+        self.Data       = Data
+        self.Time       = Time
+        self.Longitude  = Longitude
+        self.Latitude   = Latitude
+
+        # self.Aircraft_altitude  = Aircraft_altitude
+        # self.GPS_time   = GPS_time
+        self.Layer      = Layer
+        self.dB         = True
+
+        return self
+
+    ########## END of load_awi_nc() ###########
+
+
+
+
+    #############################
     # Method: load_bas_nc
     #############################
 
@@ -349,14 +386,29 @@ class Cradar:
     def add_layer_by_frame_trace(self, layer_name, traces, values, color=''):
 
         import numpy as np
+        import pandas as pd
 
-        if layer_name == 'Surface':
-            color = [255, 255, 9]
+        # if layer_name == 'Surface':
+        #     color = [255, 255, 9]
 
-        if layer_name == 'Bed':
-            color = [227, 26, 28]
+        # if layer_name == 'Bed':
+        #     color = [227, 26, 28]
 
         color = tuple(np.round(np.array( color ) / 255, 3))
+
+        df_idx       = pd.DataFrame(np.arange(len(self.Longitude)) + 1)
+        df_idx.index = df_idx.index + 1
+
+        df_lyr = pd.DataFrame(traces)
+        df_lyr["value"] = values
+
+        df_lyr.columns = ["trace", "value"]
+        df_lyr.index   = df_lyr["trace"]
+        del df_lyr["trace"]
+
+        df     = df_idx.join(df_lyr)
+        values = df["value"].values
+        traces = df.index.values
 
         layer = {'trace'  : traces,
                  'value'  : values,
@@ -369,6 +421,7 @@ class Cradar:
         
         self.Layer[layer_name] = layer
         #self.reshape_layer_values(layer_name)
+
         print('==> added layer: {}'.format(layer_name))
 
 
@@ -485,6 +538,26 @@ class Cradar:
                 print('... getting layer idx for {}'.format(lr))
 
     
+    def layer2surface(self):
+
+        import numpy as np
+
+        layer_list = list(self.Layer.keys())
+
+        for lr in layer_list:
+            if '_m' not in lr:
+                if 'Surface' not in lr:
+                    self.Layer[lr]["value"]     = self.Layer[lr]["value"] - self.Layer["Surface"]["value"]
+                    try:
+                        self.Layer[lr]["value_idx"] = self.Layer[lr]["value_idx"] - self.Layer["Surface"]["value_idx"]
+                    except:
+                        pass
+
+                    print('... layer2surface for {}'.format(lr))
+
+
+
+
     def layer2elevation(self, speed_of_ice=168900000.0):
 
         import numpy as np
@@ -1104,26 +1177,26 @@ class Cradar:
             end   = (np.abs(self.Distance - end_val)).argmin()
 
         self.Data      = self.Data[:,start:end]
-
-        # tweak to make col. names start with zero
-        # important later for indexing
-        # self.Data      = pd.DataFrame(np.array(self.Data))
-
         self.Longitude = self.Longitude[start:end]
         self.Latitude  = self.Latitude[start:end]
         
-
         # optional
-        try:
-            layer_list = list(self.Layer.keys())
-            for lr in layer_list:
-                layer_list2 = list(self.Layer[lr].keys())
-                for lr2 in layer_list2:
-                    self.Layer[lr][lr2]     = self.Layer[lr][lr2][start:end]
-                    #self.Layer[lr]['trace'] = self.Layer[lr]['trace'] - start
-                    self.Layer[lr]['trace'] = np.arange(len(self.Layer[lr]['trace'])).flatten() + 1
-        except:
-            pass
+        #try:
+        layer_list = list(self.Layer.keys())
+        for lr in layer_list:
+            self.Layer[lr]["value"] = self.Layer[lr]["value"][start:end]
+            self.Layer[lr]['trace'] = np.arange(int(end - start)).flatten() + 1
+                
+                
+                # layer_keys = list(self.Layer[lr].keys())
+                # for key in layer_keys:
+                #     if "color" in key:
+                #         pass
+                #     else:
+                #         self.Layer[lr][key]     = self.Layer[lr][key][start:end]
+                #         self.Layer[lr]['trace'] = np.arange(len(self.Layer[lr]['trace'])).flatten() + 1
+        #except:
+        #    pass
 
         try:
             self.Elevation = self.Elevation[start:end]
@@ -2145,13 +2218,13 @@ class Cradar:
                 for lr in layer_list:    
                     if lr == 'Surface':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
-                            s=0.2, label=lr)
+                            s=markersize, label=lr)
 
-                    if lr == 'Bed':
+                    elif lr == 'Base':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                             color=self.Layer[lr]['color'], s=markersize, label=lr)
 
-                    if lr != 'Surface' and lr != 'Bed' and lr != 'Surface_m':
+                    elif lr != 'Surface' and lr != 'Base' and lr != 'Surface_m':
                         plt.scatter(x=self.Layer[lr]['trace'], y=self.Layer[lr]['value_idx'], 
                                 color=self.Layer[lr]['color'], s=markersize, label=lr)
 
@@ -2181,6 +2254,7 @@ class Cradar:
         plt.yticks(yticks, ytick_labels, fontsize=fontsize)
         plt.ylabel(yaxis_label, fontsize=fontsize)
         plt.xlim(0, len(self.Longitude))
+        plt.ylim(self.Data.shape[0], 0)
         plt.title(self.Frame, fontsize=fontsize)
 
 
