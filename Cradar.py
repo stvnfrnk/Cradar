@@ -1396,8 +1396,6 @@ class Cradar:
             Data.append(obj.Data)
             Longitude.append(obj.Longitude)
             Latitude.append(obj.Latitude)
-            Elevation.append(obj.Elevation)
-            GPS_time.append(obj.GPS_time)
             
             #Bottom.append(obj.Bottom)
             try:
@@ -1412,6 +1410,14 @@ class Cradar:
                 pass
             try:
                 Spacing.append()
+            except:
+                pass
+            try:
+                Elevation.append(obj.Elevation)
+            except:
+                pass
+            try:
+                GPS_time.append(obj.GPS_time)
             except:
                 pass
 
@@ -1431,41 +1437,40 @@ class Cradar:
 
         new_obj.Longitude = np.concatenate(Longitude)
         new_obj.Latitude  = np.concatenate(Latitude)
-        new_obj.Elevation = np.concatenate(Elevation)
-        new_obj.GPS_time  = np.concatenate(GPS_time)
-
 
         try:
             new_obj.Heading   = np.concatenate(Heading)
             new_obj.Roll      = np.concatenate(Roll)
             new_obj.Pitch     = np.concatenate(Pitch)
+            new_obj.Elevation = np.concatenate(Elevation)
+            new_obj.GPS_time  = np.concatenate(GPS_time)
         except:
             pass
 
         ###########################
         # concat layer
 
-        crd_list   = added_objects
-        layer_list = list(added_objects[0].Layer.keys())
+        # crd_list   = added_objects
+        # layer_list = list(added_objects[0].Layer.keys())
 
-        for lr in layer_list:
-            n_traces      = [crd_list[0].Layer[lr]['trace']]
-            n_values      = [crd_list[0].Layer[lr]['value']]
-            concat_length = []
+        # for lr in layer_list:
+        #     n_traces      = [crd_list[0].Layer[lr]['trace']]
+        #     n_values      = [crd_list[0].Layer[lr]['value']]
+        #     concat_length = []
 
-            for i in np.arange(len(crd_list) - 1) + 1:
-                prev_frame_length = len(crd_list[i-1].Longitude)
-                concat_length.append(prev_frame_length)
+        #     for i in np.arange(len(crd_list) - 1) + 1:
+        #         prev_frame_length = len(crd_list[i-1].Longitude)
+        #         concat_length.append(prev_frame_length)
 
-                n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
-                n_values.append(crd_list[i].Layer[lr]['value'])
+        #         n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
+        #         n_values.append(crd_list[i].Layer[lr]['value'])
 
-            new_traces = np.concatenate(n_traces)
-            new_values = np.concatenate(n_values)
+        #     new_traces = np.concatenate(n_traces)
+        #     new_values = np.concatenate(n_values)
 
-            new_obj.Layer[lr]['trace'] = new_traces
-            new_obj.Layer[lr]['value'] = new_values
-            new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
+        #     new_obj.Layer[lr]['trace'] = new_traces
+        #     new_obj.Layer[lr]['value'] = new_values
+        #     new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
 
                 
         new_obj.Frames    = Frames
