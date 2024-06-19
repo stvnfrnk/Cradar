@@ -5,7 +5,7 @@
 # from a SEGY file
 ################################
 
-def plot_segy(segy_input, png=False, cmap='bone_r', log10=False):
+def plot_segy(segy_input, png=False, cmap='bone_r', log10=False, differenciate=False, vmin="", vmax=""):
     
     '''
     
@@ -18,12 +18,25 @@ def plot_segy(segy_input, png=False, cmap='bone_r', log10=False):
     
     stream  = _read_segy(segy_input, headonly=True)
     data    = np.stack(t.data for t in list(stream.traces))
+
+    data = data[:, 110:500]
+
+    if differenciate == True:
+        data = np.diff(data)
+    else:
+        pass
+
+    if vmin == "":
+        vmin = np.min(data)
+
+    if vmax == "":
+        vmax = np.max(data)
     
     fig = plt.subplots(figsize=(20,10))
     if log10 == False:
-        plt.imshow(data.T, cmap=cmap, aspect='auto')
+        plt.imshow(data.T, cmap=cmap, aspect='auto', vmin=vmin, vmax=vmax)
     elif log10 == True:
-        plt.imshow(np.log10(data).T, cmap=cmap, aspect='auto')
+        plt.imshow(np.log10(data).T, cmap=cmap, aspect='auto', vmin=vmin, vmax=vmax)
     plt.colorbar()
     plt.show()
 
@@ -33,6 +46,8 @@ def plot_segy(segy_input, png=False, cmap='bone_r', log10=False):
         
     else:
         return fig
+    
+
 
 
 
