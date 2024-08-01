@@ -172,6 +172,7 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
         coord_y = int(find_nearest(array_y, y[i]))
         value   = [data[0][coord_y][coord_x]]
         values.append(value)
+        #print(value)
 
     return np.array(values).flatten()
 
