@@ -557,9 +557,30 @@ class Cradar:
         for lr in layer_list:
             if '_m' not in lr:
                 if 'Surface' not in lr:
-                    self.Layer[lr]["value"]     = self.Layer[lr]["value"] - self.Layer["Surface"]["value"]
+                    common_traces = np.intersect1d(self.Layer[lr]['trace'], self.Layer['Surface']['trace'])
+                    new_vals = []
+                    color = self.Layer[lr]['color']
+                    for tr in common_traces:
+                        idx_hr   = np.where(self.Layer[lr]['trace'] == tr)[0][0]
+                        idx_sf   = np.where(self.Layer['Surface']['trace'] == tr)[0][0]
+                        val      = self.Layer[lr]['value'][idx_hr] - self.Layer['Surface']['value'][idx_sf]
+                        new_vals.append(val)
+
+                    self.Layer[lr]['trace'] = np.array(common_traces)
+                    self.Layer[lr]['value'] = np.array(new_vals)
+                    
+                    
                     try:
-                        self.Layer[lr]["value_idx"] = self.Layer[lr]["value_idx"] - self.Layer["Surface"]["value_idx"]
+                        common_traces = np.intersect1d(self.Layer[lr]['trace'], self.Layer['Surface']['trace'])
+                        new_vals_idx = []
+                        color = self.Layer[lr]['color']
+                        for tr in common_traces:
+                            idx_hr   = np.where(self.Layer[lr]['trace'] == tr)[0][0]
+                            idx_sf   = np.where(self.Layer['Surface']['trace'] == tr)[0][0]
+                            val_idx  = self.Layer[lr]['value_idx'][idx_hr] - self.Layer['Surface']['value_idx'][idx_sf]
+                            new_vals_idx.append(val_idx)
+
+                        self.Layer[lr]['value_idx'] = np.array(new_vals_idx)
                     except:
                         pass
 
@@ -1450,27 +1471,78 @@ class Cradar:
         ###########################
         # concat layer
 
-        # crd_list   = added_objects
-        # layer_list = list(added_objects[0].Layer.keys())
+        crd_list   = added_objects
+        
+        lr_key_list = []
+        for crd in crd_list:
+            for ky in crd.Layer.keys():
+                lr_key_list.append(ky)
+            
+        layer_list = np.unique(lr_key_list)
+        
+        # create empty Layer dicts
+        for lr in layer_list:
+            lr_dct   = {"trace"  : 0,
+                        "value"  : 0,
+                        "color"  : 0}
+            new_obj.Layer[lr] = lr_dct
 
-        # for lr in layer_list:
-        #     n_traces      = [crd_list[0].Layer[lr]['trace']]
-        #     n_values      = [crd_list[0].Layer[lr]['value']]
-        #     concat_length = []
+        for lr in layer_list:
+            print("==> Concatenating Layer: {}".format(lr))
+            
+            # find first frame where layer appears
+            nn = []
+            n = 0
+            for crd in crd_list:
+                if lr in crd.Layer:
+                    # print("SnAcc_02 at n={}".format(n))
+                    nn.append(n)
+                n = n + 1
+            k = min(nn)
+            
+            if k == 0:
+                n_traces      = [crd_list[k].Layer[lr]['trace']]
+                n_values      = [crd_list[k].Layer[lr]['value']]
+                color         = [crd_list[k].Layer[lr]['color']]
+            else:
+                pass
+                
+            concat_length = []
 
-        #     for i in np.arange(len(crd_list) - 1) + 1:
-        #         prev_frame_length = len(crd_list[i-1].Longitude)
-        #         concat_length.append(prev_frame_length)
+            for i in np.arange(len(crd_list) - 1) + 1:
+                prev_frame_length = len(crd_list[i-1].Longitude)
+                concat_length.append(prev_frame_length)
+                
+                if k == 0:
+                    try:
+                        n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
+                        n_values.append(crd_list[i].Layer[lr]['value'])
+                    except:
+                        pass
+                else:
+                    if i < k:
+                        pass
+                    
+                    if i == k:
+                        n_traces      = [crd_list[k].Layer[lr]['trace'] + np.sum(concat_length)]
+                        n_values      = [crd_list[k].Layer[lr]['value']]
+                        color         = [crd_list[k].Layer[lr]['color']]
+                        
+                    if i > k:
+                        try:
+                            n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
+                            n_values.append(crd_list[i].Layer[lr]['value'])
+                        except:
+                            pass
+                
+                    
 
-        #         n_traces.append(crd_list[i].Layer[lr]['trace'] + np.sum(concat_length))
-        #         n_values.append(crd_list[i].Layer[lr]['value'])
+            new_traces = np.concatenate(n_traces)
+            new_values = np.concatenate(n_values)
 
-        #     new_traces = np.concatenate(n_traces)
-        #     new_values = np.concatenate(n_values)
-
-        #     new_obj.Layer[lr]['trace'] = new_traces
-        #     new_obj.Layer[lr]['value'] = new_values
-        #     new_obj.Layer[lr]['color'] = crd_list[0].Layer[lr]['color']
+            new_obj.Layer[lr]['trace'] = new_traces
+            new_obj.Layer[lr]['value'] = new_values
+            new_obj.Layer[lr]['color'] = color
 
                 
         new_obj.Frames    = Frames
