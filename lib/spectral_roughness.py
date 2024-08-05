@@ -12,6 +12,7 @@ def spectral_roughness( Line_ID='',
                         N_list=[],
                         step=1,
                         tfl=2**13,
+                        spacing_limit=50,
                         out_format=['csv']
                         ):
 
@@ -48,20 +49,8 @@ def spectral_roughness( Line_ID='',
     print('')
     print("For the following N's: {}".format(N_list))
     print('')
-    print('==> Reading Segment')
+    print('==> Reading Segment {}'.format(Line_ID))
 
-    # if coordinates == 'll':
-    #     df = df[['Longitude', 'Latitude', 'Bed_elev']]
-    # elif coordinates == 'xy':
-    #     df = df[[ 'X', 'Y', 'Bed_elev']]
-    # else:
-    #     print('define coordinates....')
-
-    # #df = df.dropna()
-    # #df = df[~df.isin([np.nan, np.inf, -np.inf]).any(1)]
-    # df = df.reset_index()
-
-    # df['Z'] = df['Bed_elev']
 
     ####################################################################
     ##################
@@ -381,10 +370,40 @@ def spectral_roughness( Line_ID='',
             name     = RMS_d_list[N][1]
             df[name] = pd.DataFrame(data)
 
+
+    ###############################################################################
+    ###################
+    # CLEAN AROUND GAPS
+    ###################
+
+    print("")
+    print("==> Removing values around spacing gaps of more than {} m".format(spacing_limit))
+    spacing_limit = 50
+    gap_idxs      = df[df["Spacing"] > spacing_limit].index.values
+
+    cleanup_list = []
+    for N in N_list:
+        cols = [col for col in df.columns if "N_{}".format(N) in col]
+        gate = 2**N
+        cleanup_list.append([N, gate, cols])
+
+    for line in cleanup_list:
+        win = int( (line[1] / 2) + 2 )
+        for col_name in line[2]:
+            for idx in gap_idxs:
+                df[col_name][idx-win:idx+win] = np.nan
+
+    print("... done.")
+
+
+
+
     ###############################################################################        
     ##################
     # WRITE DATA
     ##################
+    print("")
+    print("==> Writing {} data.".format(out_format))
     
     # Export to .csv
     if 'csv' in out_format:
@@ -413,6 +432,8 @@ def spectral_roughness( Line_ID='',
 
         gdf.to_file('geojson/' + filename + '.geojson', driver='GeoJSON')
         print('==> Saved: geojson/{}.geojson'.format(filename))
+
+    print("... done.")
 
     ######################################################################    
     
