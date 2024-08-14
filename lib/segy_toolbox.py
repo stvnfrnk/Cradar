@@ -299,6 +299,8 @@ def radar2segy(data='',
     stream.stats.binary_file_header.number_of_samples_per_data_trace_for_original_field_recording = num_of_samples
     stream.stats.binary_file_header.data_sample_format_code = 5
 
+    stream.stats.binary_file_header.number_of_data_traces_per_ensemble=1
+
     return stream
 
 
