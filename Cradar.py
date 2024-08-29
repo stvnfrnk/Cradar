@@ -914,7 +914,7 @@ class Cradar:
     # Method: calc_elevation
     #############################
 
-    def twt2elevation(twt_object,
+    def twt2elevation( twt_object,
                        reference='',
                        sample_int=1,
                        speed_of_ice=1.689e8):

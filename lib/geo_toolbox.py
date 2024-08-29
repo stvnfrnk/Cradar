@@ -174,7 +174,23 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
         values.append(value)
         #print(value)
 
-    return np.array(values).flatten()
+    arr = np.array(values).flatten()
+
+    if -99999.0 in arr:
+        num_nans = len(np.where(arr == -99999.0))
+        print(np.where(arr == -99999.0))
+        print("Found {} NaN values in DEM_surface, ... interpolating...".format(num_nans))
+
+        arr = np.where(arr == -99999.0, np.nan, arr)
+        arr = np.array(pd.DataFrame(arr).interpolate()).flatten()
+    else:
+        pass
+
+    return arr
+
+    # fill nan values if available
+
+    
 
 
 def gridtrack1(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=''):
