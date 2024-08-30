@@ -89,22 +89,10 @@ def radar_twt2elevation(data='',
     time_step  = np.diff(twt).mean()
     depth_step = time_step * speed_of_ice / 2
 
-    print(surf_idx)
-    print(surf_idx.min())
-    print(surf_idx.max())
-
     # maximum height of air and ice to estimate output matrix dims
     max_air_height = int((twt[surf_idx.max()] * speed_of_light) + 1)
     max_ice_height = int(((twt[-1] - twt[surf_idx.min()]) * speed_of_ice / 2) + 1)
     total_height   = max_air_height + max_ice_height + ( dem_surf.max() - dem_surf.min() )
-
-    # print("max_air_height: {}".format(max_air_height))
-    # print("max_ice_height: {}".format(max_ice_height))
-    # print("dem_surf.max(): {}".format(dem_surf.max()))
-    # print("dem_surf.min(): {}".format(dem_surf.min()))
-    # print("total_height: {}".format(total_height))
-
-
 
     # get dimension of output matrix
     x_dim   = len(surf_idx)

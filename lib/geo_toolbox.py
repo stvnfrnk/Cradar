@@ -163,7 +163,6 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
     data    = np.array(rds[:])
     array_x = np.array(rds.coords['x'])
     array_y = np.array(rds.coords['y'])
-    # NaN     = rds.attrs['_FillValue']
 
     values = []
 
@@ -172,13 +171,12 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
         coord_y = int(find_nearest(array_y, y[i]))
         value   = [data[0][coord_y][coord_x]]
         values.append(value)
-        #print(value)
 
     arr = np.array(values).flatten()
 
+    # fill nan values if available
     if -99999.0 in arr:
-        num_nans = len(np.where(arr == -99999.0))
-        print(np.where(arr == -99999.0))
+        num_nans = len(np.where(arr == -99999.0)[0])
         print("Found {} NaN values in DEM_surface, ... interpolating...".format(num_nans))
 
         arr = np.where(arr == -99999.0, np.nan, arr)
@@ -188,7 +186,7 @@ def gridtrack(Longitude='', Latitude='', geotif='', geotif_name='', geotif_epsg=
 
     return arr
 
-    # fill nan values if available
+    
 
     
 
