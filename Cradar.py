@@ -2115,6 +2115,10 @@ class Cradar:
                       figsize_x=10,
                       figsize_y=6,
                       range_mode='',
+                      with_map=False,
+                      flight_lines="",
+                      geotif="",
+                      epsg="",
                       every_km_dist=10,
                       every_m_elev=1000,
                       every_twt=['ms', 10],
@@ -2149,6 +2153,11 @@ class Cradar:
         '''
 
         import matplotlib.pyplot as plt
+        from matplotlib import gridspec
+        from pyproj import Transformer
+        import rasterio
+        import geopandas as gpd
+        import pandas as pd
         import numpy as np 
         import os
 
@@ -2283,10 +2292,71 @@ class Cradar:
             vmax = vmax    
             
 
-        plt.figure(figsize=(figsize_x,figsize_y))
+
+
+        ###################################################
+        #
+        if with_map == True:
+            flight_lines = flight_lines
+            Lon          = self.Longitude
+            Lat          = self.Latitude
+
+            survey_lines = gpd.read_file(flight_lines)
+
+            # generate data frames for points
+            df          = pd.DataFrame(Lon)
+            df['Lat']   = pd.DataFrame(Lat)
+            df.columns  = ['Lon', 'Lat']
+            
+
+            transformer = Transformer.from_crs(4326, epsg, always_xy=True)
+            Lon, Lat    = self.Longitude, self.Latitude
+            df["X"], df["Y"]        = transformer.transform(Lon, Lat)
+
+            df_first    = df[0:1]
+
+            # create geopandas data frames
+            frame  = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["X"], df["Y"]))
+            first  = gpd.GeoDataFrame(df_first, geometry=gpd.points_from_xy(df_first["X"], df_first["Y"]))
+
+            # set crs to EPSG:4326
+            frame        = frame.set_crs(epsg=epsg)
+            first        = first.set_crs(epsg=epsg)
+            survey_lines = survey_lines.set_crs(epsg=epsg)
+
+            if geotif != "":
+                src = rasterio.open(geotif)
+        #
+        ####################################################
+
         
-        # plot echogram
-        img = plt.imshow(self.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
+        
+        if with_map == False:
+            plt.figure(figsize=(figsize_x,figsize_y))
+            img = plt.imshow(self.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
+
+        
+        if with_map == True:
+            fig, ax = plt.subplots(figsize=(figsize_x,figsize_y))
+            gs      = gridspec.GridSpec(1, 2,
+                                        width_ratios=[1.2, 3],
+                                        height_ratios=[1]
+                                        )
+
+            ax0 = plt.subplot(gs[0])
+            if geotif != "":
+                extent = [src.bounds[0], src.bounds[2], src.bounds[1], src.bounds[3]]
+                ax = rasterio.plot.show(src, extent=extent, ax=ax0)
+
+            survey_lines.plot(ax=ax0, color='black', linewidth=0.5, zorder=1)
+            frame.plot(ax=ax0, color='blue', markersize=15, zorder=2)
+            first.plot(ax=ax0, color='red', markersize=35, zorder=3)
+            plt.xlabel("X (EPSG:{})".format(epsg))
+            plt.ylabel("Y (EPSG:{})".format(epsg))
+
+            ax1 = plt.subplot(gs[1])
+            img = plt.imshow(self.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
+                
 
         # plot layers
         if plot_layers == True:
