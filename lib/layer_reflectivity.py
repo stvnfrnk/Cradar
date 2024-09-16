@@ -64,8 +64,6 @@ def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelop
 
         dB_max_bf = data_e1.max()
 
-        # print("i: {}, bed_idx: {}, lower_lim: {}, upper_lim: {}".format(i, bed_idx, lower_lim, upper_lim))
-
         if 0:
             # find maximum pixel in reduced section
             # and shift around maximum
@@ -134,8 +132,6 @@ def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelop
             dB.append(dB_integral)
             x_min_.append(llim)
             x_max_.append(ulim)
-
-            print("dB max: {}, dB integrated: {}".format(20*np.log10(dB_max), 20*np.log10(dB_integral)))
 
 
     ##################################################
