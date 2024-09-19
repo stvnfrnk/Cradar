@@ -19,7 +19,7 @@ def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelop
     lon  = crd_object.Longitude
     lat  = crd_object.Latitude
 
-    bed_trace  = np.where(crd_object.Layer[layer_name]["value_idx"] != 0)[0] #crd_object.Layer[layer_name]['trace']
+    bed_trace  = crd_object.Layer[layer_name]['trace'] - 1 #np.where(crd_object.Layer[layer_name]["value_idx"] != 0)[0] #
     bed_twt    = crd_object.Layer[layer_name]['value'][bed_trace]
     bed_index  = crd_object.Layer[layer_name]['value_idx'][bed_trace]
 
@@ -37,51 +37,54 @@ def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelop
 
     # iterate over bedrock picks
     for i in range(len(bed_trace)):
+        
+        if bed_index[i] == 0:
+            pass
+        else:
+            trace       = bed_trace[i]           # trace number in bedpick
+            bed_idx     = bed_index[i]       # time in 
 
-        trace       = bed_trace[i]           # trace number in bedpick
-        bed_idx     = bed_index[i]       # time in 
+            bed_twt_list.append(bed_twt[i])
+            surf_twt_list.append(surf_twt[i])
+            lon_list.append(lon[i])
+            lat_list.append(lat[i])
 
-        bed_twt_list.append(bed_twt[i])
-        surf_twt_list.append(surf_twt[i])
-        lon_list.append(lon[i])
-        lat_list.append(lat[i])
+            # get index where surface reflection is located
+            # idx = (np.abs(twt - bed_twt)).argmin()
 
-        # get index where surface reflection is located
-        # idx = (np.abs(twt - bed_twt)).argmin()
+            # get single trace of radargram
+            tr = data[trace]
 
-        # get single trace of radargram
-        tr = data[trace]
+            # get average value for noise based on lowest n values
+            mean_noise = np.sort(tr)[0:n_noise].mean()
 
-        # get average value for noise based on lowest n values
-        mean_noise = np.sort(tr)[0:n_noise].mean()
+            # delete values around bedrock reflection
+            lower_lim = int(bed_idx - envelope)
+            upper_lim = int(bed_idx + envelope)
 
-        # delete values around bedrock reflection
-        lower_lim = int(bed_idx - envelope)
-        upper_lim = int(bed_idx + envelope)
+            # reduce data to bed section
+            data_e1 = tr[lower_lim:upper_lim]                         #np.delete(data[:lower_lim], np.s_[0:upper_lim])
 
-        # reduce data to bed section
-        data_e1 = tr[lower_lim:upper_lim]                         #np.delete(data[:lower_lim], np.s_[0:upper_lim])
+            dB_max_bf = data_e1.max()
 
-        dB_max_bf = data_e1.max()
+            if 0:
+                # find maximum pixel in reduced section
+                # and shift around maximum
+                max_idx   = data_e1.argmax()
+                lower_lim = int(max_idx - int(envelope/2))
+                upper_lim = int(max_idx + int(envelope/2))
+                data_e2      = data_e1[lower_lim:upper_lim]
 
-        if 0:
-            # find maximum pixel in reduced section
-            # and shift around maximum
-            max_idx   = data_e1.argmax()
-            lower_lim = int(max_idx - int(envelope/2))
-            upper_lim = int(max_idx + int(envelope/2))
-            data_e2      = data_e1[lower_lim:upper_lim]
-
-        # append data
-        bed_index_list.append(bed_idx)
-        bed_trace_list.append(bed_trace[i])
-        bed_win_list.append(data_e1)
-        mean_noise_list.append(mean_noise)
-        # Bed_TWT.append(bed_twt)
-        # Surf_TWT.append(surf_twt)
-        # Longitude.append(lon)
-        # Latitude.append(lat)
-        dB_max_before.append(dB_max_bf)
+            # append data
+            bed_index_list.append(bed_idx)
+            bed_trace_list.append(bed_trace[i])
+            bed_win_list.append(data_e1)
+            mean_noise_list.append(mean_noise)
+            # Bed_TWT.append(bed_twt)
+            # Surf_TWT.append(surf_twt)
+            # Longitude.append(lon)
+            # Latitude.append(lat)
+            dB_max_before.append(dB_max_bf)
 
     # convert to array or dataframes
     bedrock_index = np.array(bed_index_list)
