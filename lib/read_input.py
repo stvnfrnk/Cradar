@@ -158,12 +158,19 @@ def read_awi_nc(nc_file, read_agc=False):
 
 
     surface_twt = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
+    base_twt    = dx.variables['Bottom_pick'].values
 
     Layer = {}
     surface  = {'trace'  : np.arange(len(np.array(surface_twt).flatten())) + 1,
                 'value'  : np.array(surface_twt).flatten(),
                 'color'  : 'blue'}
+    
+    base     = {'trace'  : np.arange(len(np.array(base_twt).flatten())) + 1,
+                'value'  : np.array(base_twt).flatten(),
+                'color'  : 'orange'}
+    
     Layer['Surface'] = surface
+    Layer['Base']    = base
 
     return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer
 
