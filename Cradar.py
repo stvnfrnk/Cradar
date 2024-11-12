@@ -1299,8 +1299,8 @@ class Cradar:
             end   = end_val
 
         if mode == 'elevation':
-            lower_lim = np.where(self.Z == start_val)[0][0]
-            upper_lim = np.where(self.Z == end_val)[0][0]
+            lower_lim = np.abs(self.Z - start_val).argmin()  # np.where(self.Z == start_val)[0][0]
+            upper_lim = np.abs(self.Z - end_val).argmin()    # np.where(self.Z == end_val)[0][0]
 
             if lower_lim > upper_lim:
                 start = upper_lim
@@ -1709,8 +1709,8 @@ class Cradar:
         X       = out_object.Longitude
         Y       = out_object.Latitude
         Frame   = out_object.Frame
-        Segment = out_object.Segment
-        Season  = out_object.Season
+        Segment = "dummy"                # out_object.Segment
+        Season  = "dummy"                # out_object.Season
 
         geometry     = geometry
         step         = step
@@ -2109,7 +2109,6 @@ class Cradar:
     #####################################
     # Plotting Echograms
     #####################################
-
 
     def plot_echogram(self, 
                       figsize_x=10,
