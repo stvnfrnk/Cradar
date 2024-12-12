@@ -98,7 +98,7 @@ def read_awi_segy(segy_file):
     import pandas as pd
 
     stream  = _read_segy(segy_file, headonly=True)
-    data    = pd.DataFrame(np.array([t.data for t in list(stream.traces)]))
+    Data    = np.transpose(np.array([t.data for t in list(stream.traces)]))
 
     header            = stream.binary_file_header.__dict__
     frame             = header['line_number']
@@ -111,7 +111,7 @@ def read_awi_segy(segy_file):
     time[0] = 0
     time    = np.cumsum(time)
 
-    Data   = data.T
+    # Data   = data.T
     Stream = stream
     Time   = time
     Frame  = str(frame)
@@ -119,7 +119,12 @@ def read_awi_segy(segy_file):
     return Data, Time, Frame, Stream
 
 
+################################################################################################
+################################################################################################
 
+###################
+# AWI NC Files
+###################
 
 def read_awi_nc(nc_file, read_agc=False):
 
@@ -133,32 +138,33 @@ def read_awi_nc(nc_file, read_agc=False):
     import numpy as np
 
     dx =  xr.load_dataset(nc_file)
+    try:
+        if read_agc == True:
+            Data       = dx.variables['data_agc'].values[::-1]
+        else:
+            Data       = dx.variables['data'].values[::-1]
 
-    if read_agc == True:
-        Data       = dx.variables['DATA_AGC'].values[::-1]
-    else:
-        Data       = dx.variables['DATA'].values[::-1]
+        Longitude              = dx.variables['lon'].values
+        Latitude               = dx.variables['lat'].values
+        Time                   = dx.variables['twt'].values
+        Aircraft_altitude      = dx.variables['altitude'].values
+        Ice_surface_elevation  = dx.variables['surface'].values
+        surface_twt            = dx.variables['surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
+        base_twt               = dx.variables['bed_pick'].values
+    except:
+        if read_agc == True:
+            Data       = dx.variables['DATA_AGC'].values[::-1]
+        else:
+            Data       = dx.variables['DATA'].values[::-1]
 
-    Longitude  = dx.variables['LONGITUDE'].values
-    Latitude   = dx.variables['LATITUDE'].values
-    Time       = dx.variables['TWT'].values
+        Longitude              = dx.variables['LONGITUDE'].values
+        Latitude               = dx.variables['LATITUDE'].values
+        Time                   = dx.variables['TWT'].values
+        Aircraft_altitude      = dx.variables['ALTITUDE'].values
+        Ice_surface_elevation  = dx.variables['Surface'].values
+        surface_twt            = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
+        base_twt               = dx.variables['Bottom_pick'].values
 
-    Aircraft_altitude      = dx.variables['ALTITUDE'].values
-    Ice_surface_elevation  = dx.variables['Surface'].values
-    # Range                  = dx.variables['RANGE'].values
-
-    # if Time.size == 0:
-    #     sample_interval   = 1.3333 * 10e-9
-    #     number_of_samples = dx.attrs['SAMPLES']
-
-    #     # build time array
-    #     time    = np.repeat(sample_interval, number_of_samples)
-    #     time[0] = 0
-    #     Time    = np.cumsum(time)
-
-
-    surface_twt = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
-    base_twt    = dx.variables['Bottom_pick'].values
 
     Layer = {}
     surface  = {'trace'  : np.arange(len(np.array(surface_twt).flatten())) + 1,
@@ -175,48 +181,3 @@ def read_awi_nc(nc_file, read_agc=False):
     return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer
 
 
-
-
-
-def read_awi_nc_old(nc_file):
-
-    # load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
-
-    '''
-
-    '''
-
-    import xarray as xr
-    import numpy as np
-
-    dx   =  xr.load_dataset(nc_file)
-    Data = dx.variables['WAVEFORM'].values[::-1]
-
-    Longitude  = dx.variables['LONGITUDE'].values
-    Latitude   = dx.variables['LATITUDE'].values
-    Time       = dx.variables['TWT'].values
-
-    Aircraft_altitude      = dx.variables['ALTITUDE'].values
-    # Ice_surface_elevation  = dx.variables['Surface'].values
-    Ice_surface_elevation  = []
-    # Range                  = dx.variables['RANGE'].values
-
-    # if Time.size == 0:
-    #     sample_interval   = 1.3333 * 10e-9
-    #     number_of_samples = dx.attrs['SAMPLES']
-
-    #     # build time array
-    #     time    = np.repeat(sample_interval, number_of_samples)
-    #     time[0] = 0
-    #     Time    = np.cumsum(time)
-
-
-    # surface_twt = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
-
-    Layer = {}
-    # surface  = {'trace'  : np.arange(len(np.array(surface_twt).flatten())) + 1,
-    #             'value'  : np.array(surface_twt).flatten(),
-    #             'color'  : 'blue'}
-    # Layer['Surface'] = surface
-
-    return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer

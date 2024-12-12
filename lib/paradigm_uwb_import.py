@@ -1,21 +1,21 @@
 
 
-def read_readme(readme_path, file_readme):
+def read_readme(file_readme):
     with open(file_readme) as f:
         text = f.read()
         start_time      = text.split('Start time: ')[1].split('T')[1].split('.00\n')[0].replace(" ", "")
         stop_time       = text.split('Stop time: ')[1].split('T')[1].split('.00\n')[0].replace(" ", "")
-        num_traces      = text.split('Number of traces:')[1].split('\nSample')[0].replace(" ", "")
-        sample_interval = text.split('Sample interval in ns:')[1].split('\n')[0].replace(" ", "")
-        twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(" ", "")
+        num_traces      = text.split('Number of traces:')[1].split('\n')[0].replace(" ", "")
+        sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(" ", "")
+        twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(" ", "")
         try:
-            num_samples     = text.split('Number of samples per trace:')[1].split('\n')[0].replace(" ", "")
+            num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(" ", "")
         except:
             print("'Number of samples per trace:' string not found... calculating num_samples instead...")
             num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
 
 
-        return start_time, stop_time, num_traces, sample_interval, twt_trace, num_samples
+        return num_traces, sample_interval, twt_trace, num_samples
 
 
 
@@ -32,13 +32,15 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
     new_sample_interval = int(t_length // new_num_samples)
     new_t_length        = int(new_num_samples * new_sample_interval)
 
+    ts_buffer = " " * int(9 - len(str(int(t_length))))
+
     with open(line_folder + '/' + gin_filename, 'w') as gin:
         gin.write('*JOB    s/p_rada{}\n'.format(line_label))
         gin.write('** FLIGHT No/Segment {}\n'.format(segment))
         gin.write('** {}\n'.format(file_sgy))
         gin.write('** dt = {}        samples = {}\n'.format(sample_interval, num_samples))
         gin.write('**\n')
-        gin.write('*CALL   GIN     {}   {:.04f}          SHOT\n'.format(int(t_length), float(sample_interval)))
+        gin.write('*CALL   GIN     {}{}{:.04f}          SHOT\n'.format(int(t_length), ts_buffer, float(sample_interval)))
         gin.write('TAPEOPT -tapefile {}\n'.format(seissrv_sgy_path))
         gin.write('DEFINE  SHOT    JPHYSIN\n')
         gin.write('REEL    1                               \n')
@@ -91,14 +93,14 @@ def write_scale(sample_interval, num_samples, line_label, label_suffix, line_lab
 
 
 
-def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_folder):
+def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_folder, agc_gate):
 
     with open(line_folder + '/' + agc_filename, 'w') as gin:
         gin.write('*JOB    s/p_rada{}\n'.format(line_label))
         gin.write('*CALL   DSIN\n')
-        gin.write('LABEL   {}{}_scaled\n'.format(line_label_coords, label_suffix))
+        gin.write('LABEL   {}{}\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
-        gin.write('*CALL   AGC     \n')
+        gin.write('*CALL   AGC     {}\n'.format(agc_gate))
         gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
         gin.write('LABEL   {}{}_agc\n'.format(line_label_coords, label_suffix))   #####

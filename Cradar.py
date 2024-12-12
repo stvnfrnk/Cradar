@@ -705,7 +705,7 @@ class Cradar:
         from scipy.ndimage import gaussian_filter
 
         stream = self.Stream
-        data   = self.Data
+        data   = pd.DataFrame(self.Data)
 
         sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
         sample_interval = float(int(sample_interval) / 1000)
@@ -726,8 +726,20 @@ class Cradar:
             index = surf_idx[i]
             val   = self.Time[index]
             srf.append(val)
-        self.Surface = np.array(srf)
+        Surface_tracked = np.array(srf)
 
+        color = tuple(np.round(np.array( [255, 255, 9] ) / 255, 3))
+
+        layer = {'trace'  : np.arange(len(self.Longitude)),
+                 'value'  : Surface_tracked,
+                 'color'  : color}
+        
+        try:
+            self.Layer
+        except:
+            self.Layer             = {}
+        
+        self.Layer["Surface"] = layer
 
         # construct time (twt) array
 
@@ -736,7 +748,7 @@ class Cradar:
         #twt_s  = np.cumsum(twt_)
 
         #self.Time2        = twt_s
-        self.Surface_idx = np.array(surf_idx)
+        # self.Surface_idx = np.array(surf_idx)
 
 
 
@@ -1670,11 +1682,11 @@ class Cradar:
 
     def agc(self, window=50):
 
-        from lib.radar_toolbox import automatic_gain_control
+        from lib.radar_toolbox import automatic_gain_control2
 
 
         print('==> applying automatic gain control for layer sharpening')
-        new_data  = automatic_gain_control(self.Data, window=window)
+        new_data  = automatic_gain_control2(self.Data, window=window)
         self.Data = new_data
 
         del new_data
