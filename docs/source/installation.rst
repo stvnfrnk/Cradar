@@ -6,12 +6,17 @@ Required libraries
 ------------------
 
 For radar data loading and processing:
+
 - numpy, pandas, scipy, h5py, obspy, xarray, pyproj, geopy
 
+
 For geo-file I/O:
+
 - geopandas, fiona, shapely, pyproj, geopy, rioxarray
 
+
 For plotting:
+
 - matplotlib, geopandas, shapely, pyproj, rasterio,
 
 
@@ -33,6 +38,7 @@ Module import and Cradar class initialization
 
 >>> from Cradar import Cradar
 >>> crd = Cradar()
+
 imports the Cradar module and initiates an empty Cradar class in the "crd" object
 
 
