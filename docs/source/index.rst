@@ -21,5 +21,6 @@ Contents
 .. toctree::
 
    Home <self>
+   installation
    usage
-   api
+   plotting
