@@ -1036,7 +1036,7 @@ class Cradar:
     # Method: twt2surface
 #############################
 
-    def twt2surface(twt_object):
+    def twt2surface(twt_object, padding=0):
 
         '''
         
@@ -1059,7 +1059,7 @@ class Cradar:
         twt      = p2s_obj.Time
         surf_idx = p2s_obj.Layer['Surface']['value_idx'] #p2s_obj.Surface
 
-        data_new, time_new =  radar_twt2surface(data=data, twt=twt, surf_idx=surf_idx)
+        data_new, time_new =  radar_twt2surface(data=data, twt=twt, surf_idx=surf_idx, padding=padding)
 
 
         # re-define instance atributes

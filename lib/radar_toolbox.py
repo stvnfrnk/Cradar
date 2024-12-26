@@ -3,7 +3,7 @@
 
 
 
-def radar_twt2surface(data="", twt="", surf_idx=""):
+def radar_twt2surface(data="", twt="", surf_idx="", padding=0):
 
     import numpy  as np
     import time
@@ -13,6 +13,9 @@ def radar_twt2surface(data="", twt="", surf_idx=""):
     data     = data                   # Data matrix
     twt      = twt                    # Time array
     surf_idx = surf_idx               # idx of surf. reflection
+    padding  = padding                # extra padding above surf reflection
+
+    surf_idx = surf_idx - padding
 
     # transpose into rows if necessary
     data    = np.transpose(data)
