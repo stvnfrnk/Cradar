@@ -1,42 +1,39 @@
 Installation
-=====
+============
 
-.. _installation:
+
+Required libraries
+------------------
+
+For radar data loading and processing:
+- numpy, pandas, scipy, h5py, obspy, xarray, pyproj, geopy
+
+For geo-file I/O:
+- geopandas, fiona, shapely, pyproj, geopy, rioxarray
+
+For plotting:
+- matplotlib, geopandas, shapely, pyproj, rasterio,
+
 
 Installation
 ------------
 
-To use Lumache, first install it using pip:
+To use Cradar, clone the repository from GitHub:
 
 .. code-block:: console
 
-   (.venv) $ pip install lumache
+   $ git clone https://github.com/stvnfrnk/Cradar.git
 
-Creating recipes
-----------------
-
-To retrieve a list of random ingredients,
-you can use the ``lumache.get_random_ingredients()`` function:
-
-.. autofunction:: lumache.get_random_ingredients
-
-The ``kind`` parameter should be either ``"meat"``, ``"fish"``,
-or ``"veggies"``. Otherwise, :py:func:`lumache.get_random_ingredients`
-will raise an exception.
-
-.. autoexception:: lumache.InvalidKindError
-
-For example:
-
->>> import lumache
->>> lumache.get_random_ingredients()
-['shells', 'gorgonzola', 'parsley']
+Add the path to the Cradar folder to your $PYTHONPATH
 
 
-Another example:
+
+Module import and Cradar class initialization
+---------------------------------------------
 
 >>> from Cradar import Cradar
->>> crd = Cradar().load_cresis_matfile(matfile, dB=False)
-['shells', 'gorgonzola', 'parsley']
+>>> crd = Cradar()
+imports the Cradar module and initiates an empty Cradar class in the "crd" object
+
 
 
