@@ -6,6 +6,7 @@
 #
 
 pydata-sphinx-theme
+sphinx_rtd_theme
 
 # alabaster==0.7.12
 #     # via sphinx
