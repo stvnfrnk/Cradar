@@ -41,6 +41,6 @@ pygments_style = 'sphinx'
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 
-html_sidebars = {
-    "**": ["sidebar-nav-bs", "sidebar-ethical-ads"]
-}
+# html_sidebars = {
+#     "**": ["sidebar-nav-bs", "sidebar-ethical-ads"]
+# }
