@@ -6,7 +6,7 @@
 #
 
 # pydata-sphinx-theme
-pip install sphinx_rtd_theme
+sphinx-rtd-theme
 
 # alabaster==0.7.12
 #     # via sphinx
