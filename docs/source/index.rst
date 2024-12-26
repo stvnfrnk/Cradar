@@ -19,4 +19,5 @@ Contents
 
    installation
    usage
+   plotting
    api
