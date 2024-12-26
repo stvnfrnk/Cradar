@@ -17,6 +17,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    "nbsphinx",
 ]
 
 intersphinx_mapping = {
@@ -30,6 +31,8 @@ templates_path = ['_templates']
 # -- Options for HTML output
 
 html_theme = "pydata_sphinx_theme"
+
+pygments_style = 'sphinx'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
