@@ -49,4 +49,4 @@ Jupyter Notebook Plotting Example
    :maxdepth: 2
    :caption: Contents:
 
-   notebooks/notebook_example_plotting.ipynb
+   notebooks/notebook_example_plotting
