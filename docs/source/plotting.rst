@@ -13,6 +13,7 @@ Function ``plot_radargram()``:
 >>> from lib.plot_functions import plot_radargram
 
 .. code-block:: python
+
     plot_radargram( crd_object, 
                     ax=None,
                     range_mode='twt',
@@ -48,4 +49,4 @@ Jupyter Notebook Plotting Example
    :maxdepth: 2
    :caption: Contents:
 
-   notebooks/Example 1
+   notebooks/notebook_example_plotting.ipynb
