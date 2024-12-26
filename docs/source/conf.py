@@ -17,11 +17,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx_rtd_theme',
-    "nbsphinx",
 ]
-
-
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -33,14 +29,11 @@ templates_path = ['_templates']
 
 # -- Options for HTML output
 
-extensions.append("sphinx_wagtail_theme")
-html_theme = 'sphinx_wagtail_theme'
-
-pygments_style = 'sphinx'
+html_theme = "pydata_sphinx_theme"
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 
-# html_sidebars = {
-#     "**": ["sidebar-nav-bs", "sidebar-ethical-ads"]
-# }
+html_sidebars = {
+    "**": ["sidebar-nav-bs", "sidebar-ethical-ads"]
+}
