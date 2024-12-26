@@ -1,6 +1,9 @@
 Plotting
 =========
 
+extensions = [
+    "nbsphinx",
+]
 
 Plotting a radargram
 --------------------
@@ -36,3 +39,13 @@ Function ``plot_radargram()``:
 Plotting a map with the radar profile
 -------------------------------------
 
+
+
+Jupyter Notebook Plotting Example
+---------------------------------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   notebooks/Example 1
