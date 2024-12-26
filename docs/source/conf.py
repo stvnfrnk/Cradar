@@ -21,6 +21,8 @@ extensions = [
     "nbsphinx",
 ]
 
+
+
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
@@ -31,7 +33,8 @@ templates_path = ['_templates']
 
 # -- Options for HTML output
 
-html_theme = "sphinx_rtd_theme"
+extensions.append("sphinx_wagtail_theme")
+html_theme = 'sphinx_wagtail_theme'
 
 pygments_style = 'sphinx'
 
