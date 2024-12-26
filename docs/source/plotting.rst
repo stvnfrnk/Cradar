@@ -5,11 +5,11 @@ Plotting
 Plotting a radargram
 --------------------
 
-Function ``plot_radargram``:
+Function ``plot_radargram()``:
 
 >>> from lib.plot_functions import plot_radargram
 
-.. code-block:: console
+.. code-block:: python
     plot_radargram( crd_object, 
                     ax=None,
                     range_mode='twt',
@@ -27,6 +27,10 @@ Function ``plot_radargram``:
                     cmap='binary',
                     vmin='',
                     vmax='')
+
+``crd_object``: bla bla
+``ax``        : next
+``range_mode``: twt or elevation
    
 
 Plotting a map with the radar profile
