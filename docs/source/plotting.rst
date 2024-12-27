@@ -41,10 +41,3 @@ Plotting a map with the radar profile
 
 Jupyter Notebook Plotting Example
 ---------------------------------
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-
-   notebooks/notebook_example_plotting.ipynb
-   notebooks/notebook_example_plotting
