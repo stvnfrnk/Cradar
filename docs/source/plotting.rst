@@ -1,9 +1,6 @@
 Plotting
 =========
 
-extensions = [
-    "nbsphinx",
-]
 
 Plotting a radargram
 --------------------
@@ -46,7 +43,8 @@ Jupyter Notebook Plotting Example
 ---------------------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
+   notebooks/notebook_example_plotting.ipynb
    notebooks/notebook_example_plotting
