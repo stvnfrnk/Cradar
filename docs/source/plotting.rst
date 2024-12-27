@@ -2,6 +2,7 @@ Plotting
 =========
 
 
+
 Plotting a radargram
 --------------------
 
@@ -10,7 +11,6 @@ Function ``plot_radargram()``:
 >>> from lib.plot_functions import plot_radargram
 
 .. code-block:: python
-
     plot_radargram( crd_object, 
                     ax=None,
                     range_mode='twt',
@@ -37,7 +37,3 @@ Function ``plot_radargram()``:
 Plotting a map with the radar profile
 -------------------------------------
 
-
-
-Jupyter Notebook Plotting Example
----------------------------------

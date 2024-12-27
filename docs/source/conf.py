@@ -31,8 +31,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
-    "nbsphinx",
-    'sphinx_rtd_theme',
 ]
 
 intersphinx_mapping = {
