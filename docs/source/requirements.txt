@@ -5,7 +5,6 @@
 #    pip-compile docs/requirements.in
 
 
-nbsphinx
 
 alabaster==0.7.12
     # via sphinx
