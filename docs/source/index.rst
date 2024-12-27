@@ -24,3 +24,4 @@ Contents
    installation
    usage
    plotting
+   notebooks/notebook_example_plotting
