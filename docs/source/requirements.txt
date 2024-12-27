@@ -4,6 +4,7 @@
 #
 #    pip-compile docs/requirements.in
 #
+ipykernel
 nbsphinx
 
 alabaster==0.7.12
