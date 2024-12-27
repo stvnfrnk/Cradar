@@ -5,9 +5,7 @@
 #    pip-compile docs/requirements.in
 
 
-sphinx==4.0.2
-ipython==7.19.0
-nbsphinx>=0.8.6
+nbsphinx
 
 alabaster==0.7.12
     # via sphinx
