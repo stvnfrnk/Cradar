@@ -95,12 +95,12 @@ class Cradar:
 
 
     #############################
-    # Method: load_awi_segy
+    # Method: load_segy
     #############################
 
-    def load_awi_segy(self, segy_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
+    def load_segy(self, segy_file, Longitude='', Latitude='', dB=False):
 
-        from lib.read_input import read_awi_segy
+        from lib.read_input import read_segy
 
         Longitude = Longitude
         Latitude  = Latitude
@@ -114,7 +114,7 @@ class Cradar:
         # except:
         #     print('... could not correct gps positions.')
 
-        Data, Time, Frame, stream = read_awi_segy(segy_file)
+        Data, Time, Frame, stream = read_segy(segy_file)
 
         self.Frame      = Frame
         self.Reader     = Reader
@@ -123,16 +123,13 @@ class Cradar:
         self.Time       = Time
         self.Longitude  = Longitude
         self.Latitude   = Latitude
-        # self.Elevation  = Elevation
-        # self.GPS_time   = GPS_time
-        # self.Layer      = Layer
         self.dB         = dB
         self.Stream     = stream
 
         return self
 
 
-    ########## END of load_awi_segy() ###########
+    ########## END of load_segy() ###########
 
 
     #############################

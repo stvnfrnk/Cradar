@@ -85,9 +85,7 @@ def read_cresis_mat(matfile):
 # AWI SEGY Files
 ###################
 
-def read_awi_segy(segy_file):
-
-    # load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
+def read_segy(segy_file):
 
     '''
 
@@ -95,7 +93,6 @@ def read_awi_segy(segy_file):
 
     from obspy.io.segy.segy import _read_segy
     import numpy as np
-    import pandas as pd
 
     stream  = _read_segy(segy_file, headonly=True)
     Data    = np.transpose(np.array([t.data for t in list(stream.traces)]))
