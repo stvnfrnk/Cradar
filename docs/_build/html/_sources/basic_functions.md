@@ -36,26 +36,28 @@ crd.add_distance()
 
 ## Trimming and merging data
 
-**Clip data in along-track (x-axis)**
+Clip data in along-track (x-axis)
 ```{code} python
 crd.clip_along(start_val, end_val, mode='trace')       # via trace numbers
 crd.clip_along(start_val, end_val, mode='distance')    # via distance (needs crd.add_distance()) 
 ```
 
-**Clip data in range (y-axis)**
+\
+Clip data in range (y-axis)
 ```{code} python
 crd.clip_range(start_val, end_val, mode='range_bin')   # via range bin numbers
-crd.clip_range(start_val, end_val, mode='twt')         # via twt limits
-crd.clip_range(start_val, end_val, mode='elevation')   # via elevation limits
+crd.clip_range(start_val, end_val, mode='twt')         # via twt limits in nanoseconds
+crd.clip_range(start_val, end_val, mode='elevation')   # via elevation limits in meters
 ```
 
-**Flip radargram on the y-axis**
+\
+Flip radargram on the y-axis
 ```{code} python
 crd.flip_lr()
 ```
 
-**Concatenating frames**
-Flip radargram on the y-axis
+\
+Concatenating frames
 ```{code} python
 Cradar.concat_frames(added_objects)
 

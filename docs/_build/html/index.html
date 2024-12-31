@@ -12,7 +12,12 @@
 <meta property="og:url" content="index.html" />
 <meta property="og:site_name" content="Sphinx Book Theme" />
 <meta property="og:description" content="This is a short step-by-step tutorial to get started with the Sphinx Book Theme. Table of contents: Topic Areas: Installation, Usage- Getting started, Loading data, Cradar attributes., Basic functi..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="/_images/social_previews/summary_index_1c225b60.png" />
+<meta property="og:image:alt" content="This is a short step-by-step tutorial to get started with the Sphinx Book Theme. Table of contents: Topic Areas: Installation, Usage- Getting started, Loadin..." />
 <meta name="description" content="This is a short step-by-step tutorial to get started with the Sphinx Book Theme. Table of contents: Topic Areas: Installation, Usage- Getting started, Loading data, Cradar attributes., Basic functi..." />
+<meta name="twitter:card" content="summary_large_image" />
 
     <title>Get started &#8212; Sphinx Book Theme</title>
   
@@ -75,7 +80,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Dec 28, 2024"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2024"/>
   </head>
   
   
@@ -204,6 +209,11 @@
 <li class="toctree-l1"><a class="reference internal" href="layers.html">Layers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="export_data.html">Export data</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="example_notebooks.html">Example Notebooks</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/example1.html">Plotting examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/example2.html">Second Notebook</a></li>
+</ul>
+</details></li>
 </ul>
 
     </div>
@@ -396,24 +406,8 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Get started</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of contents</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-and-activate-the-theme">Install and activate the theme</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-a-source-repository-button-to-your-theme">Add a source repository button to your theme</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customize-your-left-sidebar">Customize your left sidebar</a></li>
 </ul>
-</li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#theme-specific-elements">Theme-specific elements</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-width-elements">Full-width elements</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-cells">Code cells</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-some-margin-content-to-a-page">Add some margin content to a page</a></li>
-</ul>
-</li>
-</ul>
-
             </nav>
         </div>
     </div>
@@ -476,114 +470,13 @@ see <a class="reference external" href="https://myst-parser.readthedocs.io/">the
 <li class="toctree-l2"><a class="reference internal" href="export_data.html#export-profile-tracks">Export profile tracks</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="example_notebooks.html">Example Notebooks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/example1.html">Plotting examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/example2.html">Second Notebook</a></li>
+</ul>
+</li>
 </ul>
 </div>
-</section>
-<section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">#</a></h2>
-<p>You should be relatively familiar with <a class="reference external" href="http://www.sphinx-doc.org/">the Sphinx ecosystem</a>, and have it installed locally on your computer.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you don’t already have a Sphinx site ready to customize, you can create one with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sphinx-quickstart
-</pre></div>
-</div>
-</div>
-</section>
-<section id="install-and-activate-the-theme">
-<h2>Install and activate the theme<a class="headerlink" href="#install-and-activate-the-theme" title="Link to this heading">#</a></h2>
-<p>First install <code class="docutils literal notranslate"><span class="pre">sphinx-book-theme</span></code> with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">sphinx</span><span class="o">-</span><span class="n">book</span><span class="o">-</span><span class="n">theme</span>
-</pre></div>
-</div>
-<p>then, activate the theme in your Sphinx configuration (<code class="docutils literal notranslate"><span class="pre">conf.py</span></code>):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
-<span class="n">html_theme</span> <span class="o">=</span> <span class="s2">&quot;sphinx_book_theme&quot;</span>
-<span class="o">...</span>
-</pre></div>
-</div>
-<p>This will activate the Sphinx Book Theme for your documentation.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You may need to comment-out your <code class="docutils literal notranslate"><span class="pre">html_theme_options</span></code> configuration depending on your previous theme.</p>
-</div>
-</section>
-<section id="add-a-source-repository-button-to-your-theme">
-<h2>Add a source repository button to your theme<a class="headerlink" href="#add-a-source-repository-button-to-your-theme" title="Link to this heading">#</a></h2>
-<p>There are several ways that you can customize the Sphinx Book Theme.
-For this tutorial, we’ll add a pointer to a GitHub repository for our theme.</p>
-<p>To add a button that links to the repository for your documentation, add the following configuration in <code class="docutils literal notranslate"><span class="pre">conf.py</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_theme_options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="o">...</span>
-    <span class="s2">&quot;repository_url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/{your-docs-url}&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;use_repository_button&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="o">...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>When you build your documentation, your header should now include a small GitHub logo that has a link to the repository.</p>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
-<p>See <a class="reference internal" href="#source-files:repository"><code class="xref myst docutils literal notranslate"><span class="pre">source-files:repository</span></code></a> for more information.</p>
-</div>
-</section>
-<section id="customize-your-left-sidebar">
-<h2>Customize your left sidebar<a class="headerlink" href="#customize-your-left-sidebar" title="Link to this heading">#</a></h2>
-<p>There are a few major areas of the page that you can customize with the book theme.
-The most common is the <strong>primary sidebar</strong> (by default, on the left of the page).</p>
-<p>Sidebar elements are defined as HTML templates by Sphinx, Sphinx extensions, and the current theme.
-You may specify which pages should contain which sidebar elements using the <code class="docutils literal notranslate"><span class="pre">html_sidebars</span></code> configuration.
-We’ll skip this step in this tutorial, but if you’d like to learn more, see <a class="reference internal" href="#sidebar-primary:items"><code class="xref myst docutils literal notranslate"><span class="pre">sidebar-primary:items</span></code></a>.</p>
-<p>Let’s <strong>customize the logo of our site</strong>.
-To do so, we’ll edit the <code class="docutils literal notranslate"><span class="pre">html_logo</span></code> and <code class="docutils literal notranslate"><span class="pre">html_title</span></code> configuration options.</p>
-<p>To add a site logo, follow these steps:</p>
-<ol class="arabic">
-<li><p>Put an image in your documentation’s root (e.g., <code class="docutils literal notranslate"><span class="pre">myimage.png</span></code>).</p></li>
-<li><p>Add a line to your <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> file that looks like this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_logo</span> <span class="o">=</span> <span class="s2">&quot;path/to/myimage.png&quot;</span>
-</pre></div>
-</div>
-<p>Where the path is relative to your <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> file.</p>
-</li>
-</ol>
-<p>Next we’ll <strong>customize the title of the site</strong>.
-To do so, add a line to your <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> file that looks like this:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">html_title</span> <span class="o">=</span> <span class="s2">&quot;My site title&quot;</span>
-</pre></div>
-</div>
-<p>This title will now be placed underneath the logo.</p>
-</section>
-</section>
-<section class="tex2jax_ignore mathjax_ignore" id="theme-specific-elements">
-<h1>Theme-specific elements<a class="headerlink" href="#theme-specific-elements" title="Link to this heading">#</a></h1>
-<p>This page contains a number of reference elements to see how they look in this
-theme. The information is not meant to be easy to read or understand, just browse
-through and see how things look!</p>
-<section id="full-width-elements">
-<h2>Full-width elements<a class="headerlink" href="#full-width-elements" title="Link to this heading">#</a></h2>
-<section id="code-cells">
-<h3>Code cells<a class="headerlink" href="#code-cells" title="Link to this heading">#</a></h3>
-</section>
-</section>
-<section id="add-some-margin-content-to-a-page">
-<h2>Add some margin content to a page<a class="headerlink" href="#add-some-margin-content-to-a-page" title="Link to this heading">#</a></h2>
-<p>There are a few special kinds of content that this theme supports, largely inspired by <a class="reference external" href="https://edwardtufte.github.io/tufte-css/">the Tufte CSS theme styles</a>.
-One kind of content is <strong>margin content</strong>.
-This allows you to “pop out” content to the side of the page, in the margins.
-Add some margin content to a page by adding the following directive (written with <a class="reference external" href="https://myst-parser.readthedocs.io">MyST Markdown</a>).</p>
-<aside class="margin sidebar">
-<p class="sidebar-title">Look, some margin content!</p>
-<p>On wider screens, this content will pop out to the side!</p>
-</aside>
-<div class="highlight-md notranslate"><div class="highlight"><pre><span></span>```{margin} Look, some margin content!
-On wider screens, this content will pop out to the side!
-```
-</pre></div>
-</div>
-<p>On wide screens, margin content will pop out to the side of the page and allow content underneath it to move upwards.
-This allows you to provide extra information without interrupting the flow of information.</p>
-<p>There are many other things that you can do with the Sphinx Book Theme.
-Now that you’ve gotten a start, check out the other sections to the left to learn more about how to use it.</p>
 </section>
 </section>
 
@@ -643,24 +536,8 @@ Now that you’ve gotten a start, check out the other sections to the left to le
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Get started</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#table-of-contents">Table of contents</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prerequisites">Prerequisites</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-and-activate-the-theme">Install and activate the theme</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-a-source-repository-button-to-your-theme">Add a source repository button to your theme</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customize-your-left-sidebar">Customize your left sidebar</a></li>
 </ul>
-</li>
-<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#theme-specific-elements">Theme-specific elements</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#full-width-elements">Full-width elements</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#code-cells">Code cells</a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#add-some-margin-content-to-a-page">Add some margin content to a page</a></li>
-</ul>
-</li>
-</ul>
-
   </nav></div>
 
 </div></div>
@@ -693,7 +570,7 @@ By the Executable Book Project
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Dec 28, 2024.
+  Last updated on Dec 29, 2024.
   <br/>
 </p>
   </div>

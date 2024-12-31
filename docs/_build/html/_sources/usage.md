@@ -9,7 +9,7 @@ Import the Cradar class from the Cradar folder and initialize the class.
 ```{code} python
 from Cradar import Cradar
 
-crd = Cradar()
+crd = Cradar()       # creates an empty Cradar object
 ```
 
 

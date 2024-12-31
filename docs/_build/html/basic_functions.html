@@ -76,7 +76,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
-    <meta name="docbuild:last-update" content="Dec 28, 2024"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2024"/>
   </head>
   
   
@@ -203,6 +203,7 @@
 <li class="toctree-l1"><a class="reference internal" href="layers.html">Layers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="export_data.html">Export data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_notebooks.html">Example Notebooks</a></li>
 </ul>
 
     </div>
@@ -439,23 +440,25 @@ Adds the range bin index (<em>value_idx</em>) to a layer.</p>
 </section>
 <section id="trimming-and-merging-data">
 <h2>Trimming and merging data<a class="headerlink" href="#trimming-and-merging-data" title="Link to this heading">#</a></h2>
-<p><strong>Clip data in along-track (x-axis)</strong></p>
+<p>Clip data in along-track (x-axis)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">crd</span><span class="o">.</span><span class="n">clip_along</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;trace&#39;</span><span class="p">)</span>       <span class="c1"># via trace numbers</span>
 <span class="n">crd</span><span class="o">.</span><span class="n">clip_along</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;distance&#39;</span><span class="p">)</span>    <span class="c1"># via distance (needs crd.add_distance()) </span>
 </pre></div>
 </div>
-<p><strong>Clip data in range (y-axis)</strong></p>
+<p><br />
+Clip data in range (y-axis)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">crd</span><span class="o">.</span><span class="n">clip_range</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;range_bin&#39;</span><span class="p">)</span>   <span class="c1"># via range bin numbers</span>
-<span class="n">crd</span><span class="o">.</span><span class="n">clip_range</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;twt&#39;</span><span class="p">)</span>         <span class="c1"># via twt limits</span>
-<span class="n">crd</span><span class="o">.</span><span class="n">clip_range</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">)</span>   <span class="c1"># via elevation limits</span>
+<span class="n">crd</span><span class="o">.</span><span class="n">clip_range</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;twt&#39;</span><span class="p">)</span>         <span class="c1"># via twt limits in nanoseconds</span>
+<span class="n">crd</span><span class="o">.</span><span class="n">clip_range</span><span class="p">(</span><span class="n">start_val</span><span class="p">,</span> <span class="n">end_val</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">)</span>   <span class="c1"># via elevation limits in meters</span>
 </pre></div>
 </div>
-<p><strong>Flip radargram on the y-axis</strong></p>
+<p><br />
+Flip radargram on the y-axis</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">crd</span><span class="o">.</span><span class="n">flip_lr</span><span class="p">()</span>
 </pre></div>
 </div>
-<p><strong>Concatenating frames</strong>
-Flip radargram on the y-axis</p>
+<p><br />
+Concatenating frames</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Cradar</span><span class="o">.</span><span class="n">concat_frames</span><span class="p">(</span><span class="n">added_objects</span><span class="p">)</span>
 
 <span class="c1">## Example</span>
@@ -602,7 +605,7 @@ By the Executable Book Project
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Dec 28, 2024.
+  Last updated on Dec 29, 2024.
   <br/>
 </p>
   </div>

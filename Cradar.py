@@ -137,7 +137,7 @@ class Cradar:
     #############################
 
 
-    def load_awi_nc(self, nc_file='', read_agc=False):
+    def load_awi_nc(self, nc_file, frame="", read_agc=False):
 
         '''
 
@@ -149,7 +149,7 @@ class Cradar:
         
         Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file, read_agc=read_agc)
 
-        #self.Frame      = Frame
+        self.Frame      = frame
         self.Reader     = 'xarray'
         self.Domain     = 'twt'
         self.Data       = Data
@@ -691,65 +691,65 @@ class Cradar:
 
 
 
-    def emr_preprocess(self, skip=100, gauss_factor=1):
+    # def emr_preprocess(self, skip=100, gauss_factor=1):
 
-        '''
+    #     '''
 
-        '''
+    #     '''
 
-        import numpy as np
-        import pandas as pd
-        from scipy.ndimage import gaussian_filter
+    #     import numpy as np
+    #     import pandas as pd
+    #     from scipy.ndimage import gaussian_filter
 
-        stream = self.Stream
-        data   = pd.DataFrame(self.Data)
+    #     stream = self.Stream
+    #     data   = pd.DataFrame(self.Data)
 
-        sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
-        sample_interval = float(int(sample_interval) / 1000)
+    #     sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
+    #     sample_interval = float(int(sample_interval) / 1000)
 
-        ### Find Surface Reflection id's
-        factor = 10
+    #     ### Find Surface Reflection id's
+    #     factor = 10
 
-        # filter to avoid large jumps
+    #     # filter to avoid large jumps
 
 
-        data = pd.DataFrame(gaussian_filter(data.values, sigma=gauss_factor))
-        data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
-        surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
+    #     data = pd.DataFrame(gaussian_filter(data.values, sigma=gauss_factor))
+    #     data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
+    #     surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
 
-        # get surface values
-        srf = []
-        for i in range(len(surf_idx)):
-            index = surf_idx[i]
-            val   = self.Time[index]
-            srf.append(val)
-        Surface_tracked = np.array(srf)
+    #     # get surface values
+    #     srf = []
+    #     for i in range(len(surf_idx)):
+    #         index = surf_idx[i]
+    #         val   = self.Time[index]
+    #         srf.append(val)
+    #     Surface_tracked = np.array(srf)
 
-        color = tuple(np.round(np.array( [255, 255, 9] ) / 255, 3))
+    #     color = tuple(np.round(np.array( [255, 255, 9] ) / 255, 3))
 
-        layer = {'trace'  : np.arange(len(self.Longitude)),
-                 'value'  : Surface_tracked,
-                 'color'  : color}
+    #     layer = {'trace'  : np.arange(len(self.Longitude)),
+    #              'value'  : Surface_tracked,
+    #              'color'  : color}
         
-        try:
-            self.Layer
-        except:
-            self.Layer             = {}
+    #     try:
+    #         self.Layer
+    #     except:
+    #         self.Layer             = {}
         
-        self.Layer["Surface"] = layer
+    #     self.Layer["Surface"] = layer
 
-        # construct time (twt) array
+    #     # construct time (twt) array
 
-        #twt_ns = np.ones(data.shape[0]) * sample_interval # in nanoseconds
-        #twt_   = twt_ns / 10e8 # in seconds
-        #twt_s  = np.cumsum(twt_)
+    #     #twt_ns = np.ones(data.shape[0]) * sample_interval # in nanoseconds
+    #     #twt_   = twt_ns / 10e8 # in seconds
+    #     #twt_s  = np.cumsum(twt_)
 
-        #self.Time2        = twt_s
-        # self.Surface_idx = np.array(surf_idx)
+    #     #self.Time2        = twt_s
+    #     # self.Surface_idx = np.array(surf_idx)
 
 
 
-        del stream, data, data_filtered, surf_idx#, twt_ns, twt_
+    #     del stream, data, data_filtered, surf_idx#, twt_ns, twt_
 
 
     #############################
@@ -795,7 +795,6 @@ class Cradar:
 
     def retrack_surface(self, roll_factor=10, sigma=2, gate=[0, 0], differenciate=False, offset=1):
 
-        import copy
         import numpy as np
         import pandas as pd
         from scipy.ndimage import gaussian_filter
@@ -1292,18 +1291,18 @@ class Cradar:
     # Method: clip data in range
     ##################################
 
-    def clip_range(self, start_val, end_val, mode='index'):
+    def clip_range(self, start_val, end_val, mode='range_bin'):
 
         import numpy as np
 
         '''
 
-        mode = 'index'
+        mode = 'range_bin'
         mode = 'elevation'
         mode = 'twt'
         '''
 
-        if mode == 'index':
+        if mode == 'range_bin':
             start = start_val
             end   = end_val
 
@@ -1565,19 +1564,6 @@ class Cradar:
 
     ########## END of concat_frames() ###########
 
-
-
-
-
-    ##################
-    # Method: rename
-    ##################
-
-    def rename_frame(self, new_framename):
-        self.Frame = new_framename
-
-
-    ########## END of rename() ###########
 
 
 

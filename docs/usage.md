@@ -67,9 +67,9 @@ crd = Cradar().load_segy(sgy_file, Longitude=Lon, Latitude=Lat, dB=False)
 |---------------------------------------|----------------|--------------------------------------------------------|
 | crd.Layer                             | Dictionary     | Dictionary with layer information                      |
 | crd.Layer["Surface"]                  |                | Example of "Surface" Layer                             |
-| crd.Longitude["Surface"]["trace"]     | 1d numpy array | Array containing trace numbers                         |
-| crd.Longitude["Surface"]["value"]     | 1d numpy array | Array containing the twt of "Surface"                  |
-| crd.Longitude["Surface"]["value_idx"] | 1d numpy array | Array containing the index (range sample) of "Surface" |
+| crd.Layer["Surface"]["trace"]         | 1d numpy array | Array containing trace numbers                         |
+| crd.Layer["Surface"]["value"]         | 1d numpy array | Array containing the twt of "Surface"                  |
+| crd.Layer["Surface"]["value_idx"]     | 1d numpy array | Array containing the index (range sample) of "Surface" |
 
 \
 **Additional attributes**
