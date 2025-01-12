@@ -15,7 +15,7 @@ class Cradar:
     # Method: load_cresis_mat
     #############################
 
-    def load_cresis_mat(self, filename, dB=False):
+    def load_cresis_mat(self, filename, frame="", dB=False):
 
         import numpy as np
         from lib.read_input import read_cresis_mat
@@ -28,7 +28,7 @@ class Cradar:
         # else:
         #     Data = np.transpose(Data)
 
-        self.Frame      = Frame
+        self.Frame      = frame
         self.Reader     = Reader
         self.Domain     = Domain
         self.Data       = Data
@@ -147,7 +147,7 @@ class Cradar:
         from lib.read_input import read_awi_nc
 
         
-        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc(nc_file, read_agc=read_agc)
+        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Ice_thickness, Layer = read_awi_nc(nc_file, read_agc=read_agc)
 
         self.Frame      = frame
         self.Reader     = 'xarray'
@@ -156,6 +156,8 @@ class Cradar:
         self.Time       = Time
         self.Longitude  = Longitude
         self.Latitude   = Latitude
+        
+        self.Ice_thickness = Ice_thickness
 
         # self.Aircraft_altitude  = Aircraft_altitude
         # self.GPS_time   = GPS_time
@@ -488,7 +490,7 @@ class Cradar:
 
             for i in range(len(v_twt)):
                 if v_twt[i] == np.nan:
-                    v_idx = np.nan
+                    v_idx = -9999
                 else:
                     v_idx      = (np.abs(np.array(time) - np.array(v_twt)[i])).argmin()
                     values_idx = np.append(values_idx, v_idx)
@@ -691,67 +693,6 @@ class Cradar:
 
 
 
-    # def emr_preprocess(self, skip=100, gauss_factor=1):
-
-    #     '''
-
-    #     '''
-
-    #     import numpy as np
-    #     import pandas as pd
-    #     from scipy.ndimage import gaussian_filter
-
-    #     stream = self.Stream
-    #     data   = pd.DataFrame(self.Data)
-
-    #     sample_interval = str(stream.binary_file_header).split('sample_interval_in_microseconds: ')[1].split('sample_interval_in_microseconds_of_original_field_recording')[0].split('\n')[0]
-    #     sample_interval = float(int(sample_interval) / 1000)
-
-    #     ### Find Surface Reflection id's
-    #     factor = 10
-
-    #     # filter to avoid large jumps
-
-
-    #     data = pd.DataFrame(gaussian_filter(data.values, sigma=gauss_factor))
-    #     data_filtered  = data.diff().rolling(factor, center=True, win_type='hamming').mean()
-    #     surf_idx       = ( data_filtered[skip::].idxmax(axis=0, skipna=True) - (factor/2) ).astype(int)
-
-    #     # get surface values
-    #     srf = []
-    #     for i in range(len(surf_idx)):
-    #         index = surf_idx[i]
-    #         val   = self.Time[index]
-    #         srf.append(val)
-    #     Surface_tracked = np.array(srf)
-
-    #     color = tuple(np.round(np.array( [255, 255, 9] ) / 255, 3))
-
-    #     layer = {'trace'  : np.arange(len(self.Longitude)),
-    #              'value'  : Surface_tracked,
-    #              'color'  : color}
-        
-    #     try:
-    #         self.Layer
-    #     except:
-    #         self.Layer             = {}
-        
-    #     self.Layer["Surface"] = layer
-
-    #     # construct time (twt) array
-
-    #     #twt_ns = np.ones(data.shape[0]) * sample_interval # in nanoseconds
-    #     #twt_   = twt_ns / 10e8 # in seconds
-    #     #twt_s  = np.cumsum(twt_)
-
-    #     #self.Time2        = twt_s
-    #     # self.Surface_idx = np.array(surf_idx)
-
-
-
-    #     del stream, data, data_filtered, surf_idx#, twt_ns, twt_
-
-
     #############################
     # Method: add_raster_values
     #############################
@@ -781,9 +722,6 @@ class Cradar:
         print('==> Added {} to the data'.format(geotif_name))
 
         del raster_vals, Longitude, Latitude
-
-
-
 
     ########## END of rename() ###########
 
@@ -848,13 +786,13 @@ class Cradar:
 
 
 
-    #############################
-    # Method: correct_geom_spreading
-    #############################
+    ########################################
+    # Method: correct_geometric_spreading()
+    ########################################
 
-    def correct4attenuation(raw_object, mode=0, loss_factor=0):
+    def correct_geometric_spreading(raw_object, v_ice=1.68914e8):
 
-        from lib.radar_toolbox import correct4attenuation
+        from lib.radar_toolbox import correct_geometric_spreading
         import copy
 
         if raw_object.dB == False:
@@ -862,33 +800,59 @@ class Cradar:
         else:
             print('==> Data should not be in dB on input.')
 
-        mode        = mode
+        try:
+            new_obj = copy.deepcopy(raw_object)
+        except:
+            new_obj = copy.copy(raw_object)
+
+        data     = new_obj.Data
+        twt      = new_obj.Time
+        surf_idx = new_obj.Layer['Surface']['value_idx']
+
+        data_new = correct_geometric_spreading(data, twt, surf_idx, v_ice=v_ice)
+
+        new_obj.Data = data_new
+        new_obj.dB   = False
+
+        return new_obj
+
+    ########## END of correct_geometric_spreading() ###########
+
+
+
+    ##########################################
+    # Method: correct_englacial_attenuation()
+    ##########################################
+
+    def correct4constant_englacial_attenuation(raw_object, loss_factor=0, v_ice=1.68914e8):
+
+        from lib.radar_toolbox import correct4constant_englacial_attenuation
+        import copy
+
+        if raw_object.dB == True:
+            pass
+        else:
+            print('==> Data should be in dB on input.')
+
         loss_factor = loss_factor
 
         try:
-            geom_obj = copy.deepcopy(raw_object)
+            new_obj = copy.deepcopy(raw_object)
         except:
-            geom_obj = copy.copy(raw_object)
+            new_obj = copy.copy(raw_object)
 
-        # geom_obj.get_surf_idx()
+        data     = new_obj.Data
+        twt      = new_obj.Time
+        surf_idx = new_obj.Layer['Surface']['value_idx']
 
-        data     = geom_obj.Data
-        twt      = geom_obj.Time
-        surf_idx = geom_obj.Layer['Surface']['value_idx']
+        data_new = correct4constant_englacial_attenuation(data, twt, surf_idx, v_ice=v_ice, loss_factor=loss_factor)
 
-        data_new = correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=mode, loss_factor=loss_factor)
+        new_obj.Data = data_new
 
-        geom_obj.Data = data_new
-        geom_obj.dB   = True
-
-        return geom_obj
-
-        del geom_obj, data, twt, surf_idx, data_new
+        return new_obj
 
 
-    ########## END of get_surf_idx() ###########
-
-
+    ########## END of correct_englacial_attenuation() ###########
 
 
 
@@ -1188,6 +1152,10 @@ class Cradar:
             self.Roll    = self.Roll[::-1]
         except:
             pass
+        try:
+            self.Ice_thickness    = self.Ice_thickness[::-1]
+        except:
+            pass
 
 
     ########## END of flip_lr() ###########
@@ -1275,6 +1243,11 @@ class Cradar:
             pass
         try:
             self.Distance    = self.Distance[start:end]
+        except:
+            pass
+
+        try:
+            self.Ice_thickness    = self.Ice_thickness[start:end]
         except:
             pass
 
@@ -1393,16 +1366,17 @@ class Cradar:
         namelist = []
 
         # default attributes
-        Data      = []
-        Longitude = []
-        Latitude  = []
-        Elevation = []
-        GPS_time  = []
-        Heading   = []
-        Roll      = []
-        Pitch     = []
-        Spacing   = []
-        Frames    = []
+        Data          = []
+        Longitude     = []
+        Latitude      = []
+        Elevation     = []
+        GPS_time      = []
+        Heading       = []
+        Roll          = []
+        Pitch         = []
+        Spacing       = []
+        Frames        = []
+        Ice_thickness = []
 
         # additional important attributes
         if added_objects[0].Domain == 'twt':
@@ -1449,6 +1423,10 @@ class Cradar:
                 GPS_time.append(obj.GPS_time)
             except:
                 pass
+            try:
+                Ice_thickness.append(obj.Ice_thickness)
+            except:
+                pass
 
         new_obj.Reader    = added_objects[0].Reader
 
@@ -1466,6 +1444,11 @@ class Cradar:
 
         new_obj.Longitude = np.concatenate(Longitude)
         new_obj.Latitude  = np.concatenate(Latitude)
+
+        try:
+            new_obj.Ice_thickness  = np.concatenate(Ice_thickness)
+        except:
+            pass
 
         try:
             new_obj.Heading   = np.concatenate(Heading)
@@ -1613,6 +1596,22 @@ class Cradar:
 
 
     ########## END of inverse_db() ###########
+
+
+
+    ########################
+    # Method: relative power
+    ########################
+
+    def to_relative_power(self):
+
+        import numpy as np
+
+        self.Data = self.Data - np.nanmin(self.Data)
+
+
+    ########## END of inverse_db() ###########
+
 
 
 
@@ -1877,7 +1876,7 @@ class Cradar:
         except:
             pass
 
-        out_object.Data  = out_object.Data.values
+        # out_object.Data  = out_object.Data
         full_dict        = out_object.__dict__
         h5_filename      = out_object.Frame + '_' + out_object.Domain + '.h5'
 

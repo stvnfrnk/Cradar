@@ -125,8 +125,6 @@ def read_segy(segy_file):
 
 def read_awi_nc(nc_file, read_agc=False):
 
-    # load_awi_segy(self, segy_file='', coordinate_file='', Longitude='', Latitude='', dB=False, correct_gps=True):
-
     '''
 
     '''
@@ -148,6 +146,7 @@ def read_awi_nc(nc_file, read_agc=False):
         Ice_surface_elevation  = dx.variables['surface'].values
         surface_twt            = dx.variables['surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
         base_twt               = dx.variables['bed_pick'].values
+        Ice_thickness          = dx.variables['thickness'].values
     except:
         if read_agc == True:
             Data       = dx.variables['DATA_AGC'].values[::-1]
@@ -161,6 +160,7 @@ def read_awi_nc(nc_file, read_agc=False):
         Ice_surface_elevation  = dx.variables['Surface'].values
         surface_twt            = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
         base_twt               = dx.variables['Bottom_pick'].values
+        Ice_thickness          = dx.variables['Thickness'].values
 
 
     Layer = {}
@@ -175,6 +175,6 @@ def read_awi_nc(nc_file, read_agc=False):
     Layer['Surface'] = surface
     Layer['Base']    = base
 
-    return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer
+    return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Ice_thickness, Layer
 
 

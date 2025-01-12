@@ -414,58 +414,53 @@ def automatic_gain_control2(data, window=50):
 ########################
 ########################
 
-def rangegain(self, slope):
-    """Apply a range gain.
-    Parameters
-    ----------
-    slope: float
-        The slope of the linear range gain to be applied. Maybe try 1.0e-2?
-    """
-    if isinstance(self.trig, (float, int, np.float, np.int64)):
-        gain = self.travel_time[int(self.trig) + 1:] * slope
-        self.data[int(self.trig + 1):, :] *= np.atleast_2d(gain).transpose()
-    else:
-        for i, trig in enumerate(self.trig):
-            gain = self.travel_time[int(trig) + 1:] * slope
-            self.data[int(trig) + 1:, i] *= gain
-    self.flags.rgain = True
+# def rangegain(self, slope):
+#     """Apply a range gain.
+#     Parameters
+#     ----------
+#     slope: float
+#         The slope of the linear range gain to be applied. Maybe try 1.0e-2?
+#     """
+#     if isinstance(self.trig, (float, int, np.float, np.int64)):
+#         gain = self.travel_time[int(self.trig) + 1:] * slope
+#         self.data[int(self.trig + 1):, :] *= np.atleast_2d(gain).transpose()
+#     else:
+#         for i, trig in enumerate(self.trig):
+#             gain = self.travel_time[int(trig) + 1:] * slope
+#             self.data[int(trig) + 1:, i] *= gain
+#     self.flags.rgain = True
 
 
-def agc(self, window=50, scaling_factor=50):
-    """Try to do some automatic gain control
-    This is from StoDeep--I'm not sure it is useful but it was easy to roll over so
-    I'm going to keep it. I think you should have most of this gone with a bandpass,
-    but whatever.
-    Parameters
-    ----------
-    window: int, optional
-        The size of window we use in number of samples (default 50)
-    scaling_factor: int, optional
-        The scaling factor. This gets divided by the max amplitude when we rescale the input.
-        Default 50.
-    """
-    maxamp = np.zeros((self.snum,))
-    # In the for loop, old code indexed used range(window // 2). This did not make sense to me.
-    for i in range(self.snum):
-        maxamp[i] = np.max(np.abs(self.data[max(0, i - window // 2):
-                                            min(i + window // 2, self.snum), :]))
-    maxamp[maxamp == 0] = 1.0e-6
-    self.data *= (scaling_factor / np.atleast_2d(maxamp).transpose()).astype(self.data.dtype)
-    self.flags.agc = True
+# def agc(self, window=50, scaling_factor=50):
+#     """Try to do some automatic gain control
+#     This is from StoDeep--I'm not sure it is useful but it was easy to roll over so
+#     I'm going to keep it. I think you should have most of this gone with a bandpass,
+#     but whatever.
+#     Parameters
+#     ----------
+#     window: int, optional
+#         The size of window we use in number of samples (default 50)
+#     scaling_factor: int, optional
+#         The scaling factor. This gets divided by the max amplitude when we rescale the input.
+#         Default 50.
+#     """
+#     maxamp = np.zeros((self.snum,))
+#     # In the for loop, old code indexed used range(window // 2). This did not make sense to me.
+#     for i in range(self.snum):
+#         maxamp[i] = np.max(np.abs(self.data[max(0, i - window // 2):
+#                                             min(i + window // 2, self.snum), :]))
+#     maxamp[maxamp == 0] = 1.0e-6
+#     self.data *= (scaling_factor / np.atleast_2d(maxamp).transpose()).astype(self.data.dtype)
+#     self.flags.agc = True
 
 
 #########################
 #########################
 
 
-def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_factor=0):
+def correct_geometric_spreading(data, twt, surf_idx, v_ice=1.68914e8):
 
     '''
-    modes:  0 = geometric spreading 
-            1 = constant ice thickness loss in dB
-            2 = both, 1 & 2
-
-    factor: ice thickness dependend loss in dB
     
     '''
 
@@ -475,21 +470,8 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
     data      = np.transpose(data)
     twt       = twt
     surf_idx  = surf_idx
-    mode      = mode
 
-    if mode == 0:
-        print('==> Correcting for geometrical spreading')
-
-    elif mode == 1:
-        print('==> Correcting for geometrical spreading and ice thickness ({} dB/km)'.format(loss_factor))
-
-    if mode == 1:
-
-        # transform dB to amplitude (inverse of: 20 * log10 ?)
-        #loss_factor == 10**loss_factor / 20
-
-        # loss factor given in dB/km --> db/m
-        loss_factor = loss_factor / 1000
+    print('==> Correcting for geometrical spreading')
 
     v_ice     = v_ice / 2
     v_air     = (2.99792458e8 / 2)
@@ -497,7 +479,7 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
     new_matrix = []
 
     # a little tweak to avoid too small amplitudes in the first array
-    twt[0] = twt[1]
+    # twt[0] = twt[1]
 
     # for every trace
     for trace in range(data.shape[0]):
@@ -505,43 +487,67 @@ def correct4attenuation(data, twt, surf_idx, v_ice=1.68914e8, mode=0, loss_facto
         air_col    = range(int(surf_idx[trace]))
         ice_col    = range(int(surf_idx[trace]), len(data[trace]))
         power      = np.array(data[trace])
-        geom_range = []
-        att_range  = []
+        distance   = []
         
         # for every pixel in the air col.
         for pixel in air_col:
             air_m = twt[pixel] * v_air
-            geom_range.append(air_m)                    
-            if mode == 1 or mode == 2:
-                att_range.append(1)
-            #print(air_m)
+            distance.append(air_m)
             
         for pixel in ice_col:
             ice_m = twt[pixel] * v_ice
-            geom_range.append(ice_m)
+            distance.append(ice_m)
 
-            if mode == 1:
-                atrange = twt[pixel] * v_ice - twt[int(surf_idx[trace])]
-                #print(atrange)
-                att_range.append(atrange)
-            
-        geom_range = np.array(geom_range)
-        new_power  = power * (geom_range ** 2)
-        #np.savetxt("new_power1.csv", new_power, delimiter=",")
-        new_power  = 20 * np.log10(new_power)
-        #np.savetxt("geom_range.csv", geom_range, delimiter=",")
-        #np.savetxt("att_range.csv", att_range, delimiter=",")
-        #np.savetxt("new_power2.csv", new_power, delimiter=",")
+        distance   = np.array(distance)
+        new_power  = power * (distance ** 2)
+        new_matrix.append(new_power)
+    
+    new_data = np.transpose(np.array(new_matrix))
+
+    return new_data
+
+
+
+
+def correct4constant_englacial_attenuation(data, twt, surf_idx, v_ice=1.68914e8, loss_factor=0):
+
+    '''
+    
+    '''
+
+    import numpy as np
+    import pandas as pd
+
+    data      = np.transpose(data)
+    twt       = twt
+    surf_idx  = surf_idx
+
+    print('==> Correcting constant englacial attenuation of ice thickness ({} dB/km)'.format(loss_factor))
+
+    loss_factor = loss_factor / 1000
+    v_ice       = v_ice / 2
+    new_matrix  = []
+
+    # for every trace
+    for trace in range(data.shape[0]):
+        air_col    = range(int(surf_idx[trace]))
+        ice_col    = range(int(surf_idx[trace]), len(data[trace]))
+        power      = np.array(data[trace])
+        att_range  = []
         
-        if mode == 1:
+        # for every pixel in the air col.
+        # assuming no attenuation for air
+        for pixel in air_col:
+            att_range.append(0)
+            
+        for pixel in ice_col:
+            ice_m = twt[pixel] * v_ice
+            atrange = ice_m - twt[int(surf_idx[trace])]
+            att_range.append(atrange)
 
-            att_range = np.array(att_range)
-            the_loss  = att_range * loss_factor * 2 
-            new_power = new_power + the_loss
-            #np.savetxt("the_loss.csv", the_loss, delimiter=",")
-            # print(att_range)
-            # print(the_loss)
-            # print(new_power)
+        att_range = np.array(att_range)
+        the_loss  = att_range * loss_factor * 2 
+        new_power = power + the_loss
         
         new_matrix.append(new_power)
     

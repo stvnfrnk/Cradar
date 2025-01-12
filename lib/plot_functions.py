@@ -1,7 +1,7 @@
 
-#####################################
-# Plot radargram
-#####################################
+###########################
+# Method: plot_radargram()
+###########################
 
 def plot_radargram( crd_object, 
                     ax=None,
@@ -15,6 +15,7 @@ def plot_radargram( crd_object,
                     xlabels_as_int=True,
                     ylabels_as_int=True,
                     vline_list=[],
+                    title="",
                     fontsize=12,
                     show_cbar=True,
                     cmap='binary',
@@ -223,7 +224,7 @@ def plot_radargram( crd_object,
     ax.set_ylabel(yaxis_label, fontsize=fontsize)
     ax.set_xlim(0, len(crd_object.Longitude))
     ax.set_ylim(crd_object.Data.shape[0], 0)
-    ax.set_title(crd_object.Frame, fontsize=fontsize)
+    ax.set_title(title, fontsize=fontsize)
 
 
 
@@ -274,20 +275,13 @@ def plot_radargram( crd_object,
             plt.savefig(out_folder + '/' + figname)
             print('==> Written: {}/{}'.format(out_folder, figname))
 
-
-    # if show_figure == True:
-    #     ax.show()
-    # else:
-    #     ax.clf()
-    #     ax.close('all')
-
     return radargram
 
 
 
-#####################################
-# Plot radargram
-#####################################
+#####################
+# Method: plot_map()
+#####################
 
 def plot_map(crd_object, 
              ax=None,

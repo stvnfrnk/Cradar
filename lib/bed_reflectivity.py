@@ -19,9 +19,9 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
     lon  = crd_object.Longitude
     lat  = crd_object.Latitude
 
-    bed_trace  = crd_object.Layer['Bed']['trace']
-    bed_twt    = crd_object.Layer['Bed']['value']
-    bed_index  = crd_object.Layer['Bed']['value_idx']
+    bed_trace  = crd_object.Layer['Base']['trace']
+    bed_twt    = crd_object.Layer['Base']['value']
+    bed_index  = crd_object.Layer['Base']['value_idx']
 
     surf_twt   = crd_object.Layer['Surface']['value']
 
@@ -37,9 +37,8 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
 
     # iterate over bedrock picks
     for i in range(len(bed_trace)):
-
         trace       = bed_trace[i]           # trace number in bedpick
-        bed_idx     = bed_index[i]       # time in 
+        bed_idx     = bed_index[i]           # time in 
 
         bed_twt_list.append(bed_twt[i])
         surf_twt_list.append(surf_twt[i])
@@ -59,10 +58,17 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
         lower_lim = int(bed_idx - envelope)
         upper_lim = int(bed_idx + envelope)
 
-        # reduce data to bed section
-        data_e1 = trace[lower_lim:upper_lim]                         #np.delete(data[:lower_lim], np.s_[0:upper_lim])
 
-        dB_max_bf = data_e1.max()
+        # reduce data to bed section
+        try:
+            data_e1   = trace[lower_lim:upper_lim]
+            dB_max_bf = data_e1.max()
+        except:
+            print("")
+            print("Problem in line 64: data_e1   = trace[lower_lim:upper_lim]")
+            print("Problem in line 65: dB_max_bf = data_e1.max()")
+            data_e1   = np.repeat(np.nan, upper_lim-lower_lim)
+            dB_max_bf = np.nan
 
         if 0:
             # find maximum pixel in reduced section
@@ -93,8 +99,11 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
     # create dataframe 
     df_near_bed   = pd.DataFrame(bedrock_win)
     df_no_average = copy.copy(df_near_bed)
-    df            = df_near_bed.rolling(50, center=True, win_type='hamming').mean().T
-    # df        = df.T
+    # df            = df_near_bed.rolling(50, center=True, win_type='hamming').mean().T
+    df        = df_near_bed
+
+    # print(df_near_bed)
+    # print(df)
 
     # empty lists
     dB          = []
@@ -111,28 +120,35 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
 
     if mode == 'fixed_envelope':
 
+        # print(df)
+        # print(df.shape)
+
+        df = df.T
+
         # iterate over columns in dataframe (for real now)
         for col in df:
+            # print(df[col])
 
             # find maximum value in column
             dB_max = df[col].max()
             dB_max_.append(dB_max)
             db_max_idx = df[col].idxmax()
 
-            llim = int( ( len(df[col])/2 ) - fixed_envelope_bins / 20 )
+            llim = int( ( len(df[col])/2 ) - fixed_envelope_bins  / 4 )
             ulim = int( ( len(df[col])/2 ) + fixed_envelope_bins )
 
             try:
-                dB_integral   = np.trapz(np.array(df[col][llim:ulim])) 
+                dB_integral   = 20 * np.log10(np.trapz(np.array(df[col][llim:ulim])))
             except:
                 dB_integral   = np.nan
 
             
 
             dB.append(dB_integral)
-            x_min_.append(llim)
-            x_max_.append(ulim)
+            x_min_.append( int(bed_index_list[col] - (fixed_envelope_bins / 4 ) ) )
+            x_max_.append( int(bed_index_list[col] + fixed_envelope_bins) )
 
+        # print(x_min_)
 
     ##################################################
     #
@@ -183,20 +199,20 @@ def get_bed_reflectivity(crd_object, envelope=200, fixed_envelope_bins=50, n_noi
             width_.append(width)
 
 
-        dB          = np.array(dB)
-        dB_max      = np.array(dB_max_)
-        x_min       = np.array(x_min_)
-        x_max       = np.array(x_max_)
-        noise_floor = np.array(noise_floor)
-        noise_mean  = np.nanmean(noise_floor)
-        width       = np.array(width_)
+    dB          = np.array(dB)
+    dB_max      = np.array(dB_max_)
+    x_min       = np.array(x_min_)
+    x_max       = np.array(x_max_)
+    noise_floor = np.array(noise_floor)
+    noise_mean  = np.nanmean(noise_floor)
+    width       = np.array(width_)
 
-        bed_twt   = np.array(bed_twt_list)
-        surf_twt  = np.array(surf_twt_list)
-        longitude = np.array(lon_list)
-        latitude  = np.array(lat_list)
+    bed_twt   = np.array(bed_twt_list)
+    surf_twt  = np.array(surf_twt_list)
+    longitude = np.array(lon_list)
+    latitude  = np.array(lat_list)
 
-        # Peakiness
-        peakyness   = dB_max / dB
+    # Peakiness
+    peakyness   = dB_max / dB
 
     return df, df_no_average, dB, dB_max, dB_max_before, x_min, x_max, peakyness, bed_twt, surf_twt, longitude, latitude, bed_traces
