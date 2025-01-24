@@ -287,6 +287,9 @@ def plot_map(crd_object,
              ax=None,
              flight_lines="",
              geotif="",
+             points="",
+             lines="",
+             polygons="",
              epsg=""):
                     
     '''
@@ -300,7 +303,13 @@ def plot_map(crd_object,
     from rasterio.plot import show
     import geopandas as gpd
     import pandas as pd
-    import numpy as np 
+    import numpy as np
+
+
+    point_dict_list   = points
+    line_dict_list    = lines
+    polygon_dict_list = polygons
+    
 
     if ax is None:
         ax = plt.gca()
@@ -349,6 +358,62 @@ def plot_map(crd_object,
     first.plot(ax=ax, color='red', markersize=35, zorder=3)
     ax.set_xlabel("X (EPSG:{})".format(epsg))
     ax.set_ylabel("Y (EPSG:{})".format(epsg))
+
+    # plot polygons if available
+    if polygons == "":
+        pass
+    else:
+        for polygon_dict in polygon_dict_list:
+            pol_file  = polygon_dict["file"]
+            edgecolor = polygon_dict["edgecolor"]
+            linewidth = polygon_dict["linewidth"]
+            alpha     = polygon_dict["alpha"]
+            zorder    = polygon_dict["zorder"]
+            try:
+                facecolor = polygon_dict["facecolor"]
+            except:
+                pass
+
+            gpd_polygon = gpd.read_file(pol_file)
+
+            if polygon_dict["boundary"] == True:
+                gpd_polygon.boundary.plot(ax=ax, edgecolor=edgecolor, linewidth=linewidth, alpha=alpha, zorder=zorder)
+            else:
+                gpd_polygon.plot(ax=ax, edgecolor=edgecolor, facecolor=facecolor, linewidth=linewidth, alpha=alpha, zorder=zorder)
+
+
+    # plot lines if available
+    if lines == "":
+        pass
+    else:
+        for line_dict in line_dict_list:
+            line_file  = line_dict["file"]
+            color      = line_dict["color"]
+            linewidth  = line_dict["linewidth"]
+            alpha      = line_dict["alpha"]
+            zorder     = line_dict["zorder"]
+
+            gpd_line = gpd.read_file(line_file)
+            gpd_line.plot(ax=ax, color=color, linewidth=linewidth, alpha=alpha, zorder=zorder)
+
+
+    # plot points if available
+    if points == "":
+        pass
+    else:
+        for point_dict in point_dict_list:
+            point_file = point_dict["file"]
+            facecolor  = point_dict["facecolor"]
+            edgecolor  = point_dict["edgecolor"]
+            markersize = point_dict["markersize"]
+            alpha      = point_dict["alpha"]
+            zorder     = point_dict["zorder"]
+
+            gpd_point = gpd.read_file(point_file)
+            gpd_point.plot(ax=ax, facecolor=facecolor, edgecolor=edgecolor, markersize=markersize, alpha=alpha, zorder=zorder)
+
+
+
 
     return map
 
