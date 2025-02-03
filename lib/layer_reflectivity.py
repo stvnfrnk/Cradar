@@ -1,5 +1,5 @@
 
-def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelope_bins=50, n_noise=200, percent=10000, min_width=10, max_width=75, mode='flexible_envelope'):
+def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelope_bins=50, n_noise=200, percent=10000, min_width=10, max_width=75, mode='flexible_envelope', v_ice=1.69e8):
 
     import numpy as np
     import pandas as pd
@@ -202,24 +202,27 @@ def get_layer_backscatter(crd_object, layer_name="", envelope=200, fixed_envelop
     longitude = np.array(lon_list)
     latitude  = np.array(lat_list)
 
+    layer_thickness = ( (bed_twt - surf_twt) / 2 ) * v_ice
+
 
 
 
     ## Build Dictionary for return
 
-    return_dict = {"DataFrame"     : df,
-                    "DF_no_average" : df_no_average,
-                    "dB"            : dB,
-                    "dB_max"        : dB_max,
-                    "dB_max_before" : dB_max_before,
-                    "x_min"         : x_min,
-                    "x_max"         : x_max,
-                    "peakyness"     : peakyness,
-                    "bed_twt"       : bed_twt,
-                    "surf_twt"      : surf_twt,
-                    "longitude"     : longitude,
-                    "latitude"      : latitude,
-                    "bed_traces"    : bed_traces}
+    return_dict = {"DataFrame"        : df,
+                    "DF_no_average"   : df_no_average,
+                    "dB"              : dB,
+                    "dB_max"          : dB_max,
+                    "dB_max_before"   : dB_max_before,
+                    "x_min"           : x_min,
+                    "x_max"           : x_max,
+                    "peakyness"       : peakyness,
+                    "bed_twt"         : bed_twt,
+                    "surf_twt"        : surf_twt,
+                    "longitude"       : longitude,
+                    "latitude"        : latitude,
+                    "bed_traces"      : bed_traces,
+                    "layer_thickness" : layer_thickness}
 
     # return [df, df_no_average, dB, dB_max, dB_max_before, x_min, x_max, peakyness, bed_twt, surf_twt, longitude, latitude, bed_traces]
     return return_dict

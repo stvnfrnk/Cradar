@@ -146,7 +146,11 @@ def read_awi_nc(nc_file, read_agc=False):
         Ice_surface_elevation  = dx.variables['surface'].values
         surface_twt            = dx.variables['surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
         base_twt               = dx.variables['bed_pick'].values
-        Ice_thickness          = dx.variables['thickness'].values
+        try:
+            Ice_thickness      = dx.variables['thickness'].values
+        except:
+            Ice_thickness      = np.repeat(np.nan, len(Longitude))
+            
     except:
         if read_agc == True:
             Data       = dx.variables['DATA_AGC'].values[::-1]
@@ -160,7 +164,10 @@ def read_awi_nc(nc_file, read_agc=False):
         Ice_surface_elevation  = dx.variables['Surface'].values
         surface_twt            = dx.variables['Surface_pick'].values   #( (Aircraft_altitude - Ice_surface_elevation) / 299792458 ) * 2
         base_twt               = dx.variables['Bottom_pick'].values
-        Ice_thickness          = dx.variables['Thickness'].values
+        try:
+            Ice_thickness      = dx.variables['Thickness'].values
+        except:
+            Ice_thickness      = np.repeat(np.nan, len(Longitude))
 
 
     Layer = {}

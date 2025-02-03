@@ -427,6 +427,11 @@ class Cradar:
         print('==> added layer: {}'.format(layer_name))
 
 
+    #############################
+    # Method: LAyERS
+    #############################
+
+
     def add_layer_by_coords(self, layer_name, layer_lon, layer_lat, layer_val):
 
         import numpy as np
@@ -461,20 +466,27 @@ class Cradar:
 
 
 
-    def fix_missing_surface_picks(self):
+    def check_surface_pick(self):
 
         import numpy as np
 
-        missing = len(self.Longitude) - len(self.Layer['Surface']['trace'])
-        if missing == 0:
-            pass
-        elif missing > 0:
-            for i in range(missing):
-                self.Layer['Surface']['trace'] = np.append(self.Layer['Surface']['trace'], self.Layer['Surface']['trace'][-1] + 1)
-                self.Layer['Surface']['value'] = np.append(self.Layer['Surface']['value'], self.Layer['Surface']['value'][-1])
-        elif missing < 0:
-            self.Layer['Surface']['trace'] = self.Layer['Surface']['trace'][:missing]
-            self.Layer['Surface']['value'] = self.Layer['Surface']['value'][:missing]
+        try:
+            missing = len(self.Longitude) - len(self.Layer['Surface']['trace'])
+            if missing == 0:
+                print("Surface pick OK.")
+            elif missing > 0:
+                for i in range(missing):
+                    self.Layer['Surface']['trace'] = np.append(self.Layer['Surface']['trace'], self.Layer['Surface']['trace'][-1] + 1)
+                    self.Layer['Surface']['value'] = np.append(self.Layer['Surface']['value'], self.Layer['Surface']['value'][-1])
+                    print("Surface picks missing -- appending values")
+                    print("Check suface pick...")
+            elif missing < 0:
+                self.Layer['Surface']['trace'] = self.Layer['Surface']['trace'][:missing]
+                self.Layer['Surface']['value'] = self.Layer['Surface']['value'][:missing]
+                print("Surface pick has more values than radar data traces -- clipping last values...")
+                print("Check suface pick...")
+        except:
+            print("... check_surface_pick FAILED!")
 
 
     def get_layer_idx(self):

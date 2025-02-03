@@ -6,7 +6,7 @@
 def plot_radargram( crd_object, 
                     ax=None,
                     range_mode='',
-                    every_km_dist=10,
+                    every_dist=["km", 2],
                     every_m_elev=1000,
                     every_twt=['ms', 10],
                     plot_layers=False,
@@ -51,26 +51,45 @@ def plot_radargram( crd_object,
     if ax is None:
         ax = plt.gca()
 
-    # Build xticks every n kilometers
-    distance_km = crd_object.Distance / 1000
-    num_xticks  = int(distance_km[-1]/every_km_dist)
+    if every_dist[0] == "m":
+        # Build xticks every n meters
+        distance   = crd_object.Distance
+        num_xticks = int(distance[-1]/every_dist[1])
+        tmp        = np.repeat(every_dist[1], num_xticks)
+        tmp[0]     = 0
+        xticks     = np.cumsum(tmp)
+        xticks_idx = []
 
-    xticks_km     = np.linspace(0, num_xticks*every_km_dist, num_xticks + 1)
-    xticks_km_idx = []
+        for i in range(len(xticks)):
+            idx = np.abs(distance - xticks[i]).argmin()
+            xticks_idx.append(idx)
+            
+        xticks_idx    = np.array(xticks_idx)
+        xtick_labels  = xticks.astype(int)
+            
+        xaxis_label   = 'Distance (m)'
 
-    for i in range(len(xticks_km)):
-        idx = np.abs(distance_km - xticks_km[i]).argmin()
-        xticks_km_idx.append(idx)
-        
-    xticks_km_idx = np.array(xticks_km_idx)
+    if every_dist[0] == "km":
+        # Build xticks every n meters
+        distance   = crd_object.Distance / 1000
+        num_xticks = int(distance[-1]/every_dist[1])
+        xticks     = np.linspace(0, num_xticks*every_dist[1], num_xticks + 1)
+        xticks_idx = []
 
-    xticks        = xticks_km_idx
-    xtick_labels  = xticks_km
+        for i in range(len(xticks)):
+            idx = np.abs(distance - xticks[i]).argmin()
+            xticks_idx.append(idx)
+            
+        xticks_idx    = np.array(xticks_idx)
+        xticks        = xticks_idx
+        xtick_labels  = xticks
 
-    if xlabels_as_int == True:
-        xtick_labels  = xticks_km.astype(int)
-        
-    xaxis_label   = 'Distance (km)'
+        if xlabels_as_int == True:
+            xtick_labels  = xticks.astype(int)
+            
+        xaxis_label   = 'Distance (km)'
+
+
 
     # Build yticks every n µs
     if range_mode == 'twt':
