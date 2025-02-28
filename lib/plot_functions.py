@@ -81,14 +81,9 @@ def plot_radargram( crd_object,
             xticks_idx.append(idx)
             
         xticks_idx    = np.array(xticks_idx)
-        xticks        = xticks_idx
-        xtick_labels  = xticks
-
-        if xlabels_as_int == True:
-            xtick_labels  = xticks.astype(int)
+        xtick_labels  = xticks.astype(int)
             
         xaxis_label   = 'Distance (km)'
-
 
 
     # Build yticks every n µs
@@ -237,7 +232,7 @@ def plot_radargram( crd_object,
         for vline in vline_list:
             ax.vlines(x=vline, ymin=0, ymax=len(crd_object.Time), color='white')
 
-    ax.set_xticks(xticks, xtick_labels, fontsize=fontsize)
+    ax.set_xticks(xticks_idx, xtick_labels, fontsize=fontsize)
     ax.set_xlabel(xaxis_label, fontsize=fontsize)
     ax.set_yticks(yticks, ytick_labels, fontsize=fontsize)
     ax.set_ylabel(yaxis_label, fontsize=fontsize)

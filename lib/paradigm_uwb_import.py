@@ -98,7 +98,7 @@ def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_fo
     with open(line_folder + '/' + agc_filename, 'w') as gin:
         gin.write('*JOB    s/p_rada{}\n'.format(line_label))
         gin.write('*CALL   DSIN\n')
-        gin.write('LABEL   {}{}\n'.format(line_label_coords, label_suffix))
+        gin.write('LABEL   {}{}_scaled\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
         gin.write('*CALL   AGC     {}\n'.format(agc_gate))
         gin.write('**\n')
@@ -109,31 +109,32 @@ def write_agc(line_label, label_suffix, line_label_coords, agc_filename, line_fo
 
 
 
-def get_ice_surf(file_ll, line_label, sample_interval, line_folder):
+def get_ice_surf(file_ll, line_label_coords, line_folder, campaign):
     import pandas as pd
 
-    df = pd.read_csv(file_ll, delim_whitespace=True)
-    df['LINE_LABEL'] = line_label
-    df['RT_SURF']    = df['RT_SURF'].astype(float) * float(sample_interval) * -1
-    df['RT_BED']    = df['RT_BED'].astype(float) * float(sample_interval) * -1
-    df = df[['LINE_LABEL', 'NR', 'LONGITUDE', 'LATITUDE', 'RT_SURF', 'RT_BED']]
+    df = pd.read_csv(file_ll, sep='\s+')
 
-    df['NR'] = df['NR'].astype(str)
-    df['NR'] = df['NR'].str.rjust(5, " ")
+    df["Surface Name"] = "Surface_autotracked"
+    df["Line Name"]    = line_label_coords
+    df["CMP Label"]    = df["NR"]
+    df["Shot Label"]   = df["NR"]
+    df["X Coordinate"] = df["LONGITUDE"]
+    df["Y Coordinate"] = df["LATITUDE"]
+    df["Value"]        = df["SURF_TWT"] * 1000 * 1000 * 1000
+    df["Segment ID"]   = line_label_coords
 
-    df['LONGITUDE'] = df['LONGITUDE'].map(lambda x: '{0:.9f}'.format(float(x)))
-    df['LATITUDE']  = df['LATITUDE'].map(lambda x: '{0:.9f}'.format(float(x)))
-    df['RT_SURF']   = df['RT_SURF'].map(lambda x: '{0:.2f}'.format(float(x)))
-    df['RT_BED']    = df['RT_BED'].map(lambda x: '{0:.2f}'.format(float(x)))
+    df = df[["Surface Name", "Line Name", "CMP Label", "Shot Label", "X Coordinate", "Y Coordinate", "Value", "Segment ID"]]
 
-    df.to_csv(line_folder + '/' + line_label + '_icesurf.csv', sep='\t', index=False)
+    df.to_csv(line_folder + '/' + line_label_coords + '_icesurf.csv', sep='\t', index=False)
+
+    return str(line_folder + '/' + line_label_coords + '_icesurf.csv')
 
 
 
 def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
     import pandas as pd
 
-    df = pd.read_csv(file_ll, delim_whitespace=True)
+    df = pd.read_csv(file_ll, sep='\s+')
     df.insert(0, 'LINE_LABEL', line_label_coords)
     df = df[['LINE_LABEL', 'LINE', 'NR', 'LONGITUDE', 'LATITUDE']]
     
