@@ -1200,11 +1200,13 @@ class Cradar:
         self.Latitude  = self.Latitude[start:end]
         
         # optional
-        #try:
-        layer_list = list(self.Layer.keys())
-        for lr in layer_list:
-            self.Layer[lr]["value"] = self.Layer[lr]["value"][start:end]
-            self.Layer[lr]['trace'] = np.arange(int(end - start)).flatten() + 1
+        try:
+            layer_list = list(self.Layer.keys())
+            for lr in layer_list:
+                self.Layer[lr]["value"] = self.Layer[lr]["value"][start:end]
+                self.Layer[lr]['trace'] = np.arange(int(end - start)).flatten() + 1
+        except:
+            pass
                 
                 
                 # layer_keys = list(self.Layer[lr].keys())
