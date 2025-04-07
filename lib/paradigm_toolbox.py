@@ -157,7 +157,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 #########################################
 # Functions for Horizon conversion
 
-def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_group, layer, filter, uwbm_only):
+def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_group, layer, filter):
 
     '''
     ..........
@@ -168,19 +168,14 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
     import os, glob
     import copy
 
-
-    if uwbm_only == True:
-        suffix = "_uwbm_only"
-    else:
-        suffix = ""
-
+    pd.options.mode.chained_assignment = None  # default='warn'
 
     if layer == "Base_master" or layer == "Surface_master" or layer == "Base_from_ice":
         out_dir = "{}\\{}".format(dir_csv_picks, layer)
     else:
         out_dir = "{}\\IRHs\\{}".format(dir_csv_picks, layer)
 
-    pick_files = sorted(glob.glob("{}\\{}\\{}*{}*{}{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format, suffix)))
+    pick_files = sorted(glob.glob("{}\\{}\\{}*{}*{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
 
     for file in pick_files:
         print(file)
@@ -207,81 +202,12 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             df.columns   = ["longitude", "latitude", "dm1", "dm2", "twt", "dm3", "dm4", "trace", "dm5", "id"]
             df           = df[df["longitude"].astype(str).str.contains("EOD|PROFILE|SNAPPING") == False]
             
-            
-            
-            # UWB antr2025
-            if "antr2025_20257" in df["id"].iloc[0]:
-                xs = df["id"].str.split("antr2025_20257_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
+            #################
+            ## ANT Seasons ##
 
-                df["season"]      = "antr2025"
-                df["prefix"]      = "20257_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-            
-            
-            elif "arkr2024_20247" in df["id"].iloc[0]:
-                xs = df["id"].str.split("arkr2024_20247_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "arkr2024"
-                df["prefix"]      = "20247_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-            
-            # UWB antr2024
-            elif "antr2024_20247" in df["id"].iloc[0]:
-                xs = df["id"].str.split("antr2024_20247_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "antr2024"
-                df["prefix"]      = "20247_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-
-
-            # UWB arkr2022
-            elif "arkr2022_20227" in df["id"].iloc[0]:
-                xs = df["id"].str.split("arkr2022_20227_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "arkr2022"
-                df["prefix"]      = "20227_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-                
-            # UWB antr2019
-            elif "antr2019_20197" in df["id"].iloc[0]:
-                xs = df["id"].str.split("antr2019_20197_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "antr2019"
-                df["prefix"]      = "20197_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-
-            # UWBM arkr2023
-            elif "arkr2023_20237" in df["id"].iloc[0]:
-                xs = df["id"].str.split("arkr2023_20237_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "arkr2023"
-                df["prefix"]      = "20237_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-
-            # UWBM antr2023
-            elif "antr2023_20238" in df["id"].iloc[0] and uwbm_only == True:
-                xs = df["id"].str.split("antr2023_20238_", expand = True)
-                xs.columns   = ["season_nom", "profile_id"]
-
-                df["season"]      = "antr2023"
-                df["prefix"]      = "20238_"
-                df["profile_id"] = xs["profile_id"]
-                df["paradigm_id"]  = df["prefix"] + df["profile_id"]
-
-            ### antr2017 contains emr and uwb
-            elif "antr2017" in df["id"].iloc[0]:
+            #############################################################
+            # antr2017: EMR & UWB
+            if "antr2017" in df["id"].iloc[0]:
 
                 # split emr and uwb part
                 mask   = df["id"].str.contains("20177")
@@ -315,8 +241,19 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df["profile_id"]  = xs["paradigm_id"]
                     df["paradigm_id"] = xs["paradigm_id"]
 
-            #### antr2023 contains emr and uwbm
-            elif "antr2023" in df["id"].iloc[0] and uwbm_only == False:
+            #############################################################
+            # UWB antr2019
+            elif "antr2019_20197" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("antr2019_20197_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "antr2019"
+                df["prefix"]      = "20197_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+            
+            #############################################################
+            # antr2023: EMR & UWBM
+            elif "antr2023" in df["id"].iloc[0]:
 
                 # split emr and uwb part
                 mask   = df["id"].str.contains("20238")
@@ -325,21 +262,19 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
 
                 if len(df_uwb) > 0:
                     # handle uwb part
-                    xs_uwb = df_uwb["id"].str.split("antr2023_20238_", expand = True)
-                    xs_uwb.columns   = ["season_nom", "profile_id"]
-
+                    xs_uwb                = df_uwb["id"].str.split("antr2023_20238_", expand = True)
+                    xs_uwb.columns        = ["season_nom", "profile_id"]
                     df_uwb["season"]      = "antr2023"
                     df_uwb["prefix"]      = "20238_"
-                    df_uwb["profile_id"] = xs_uwb["profile_id"]
-                    df_uwb["paradigm_id"]  = df_uwb["prefix"] + df_uwb["profile_id"]
+                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
+                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
 
                     # handle emr part
-                    xs_emr         = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns = ["season", "paradigm_id"]
-
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season", "paradigm_id"]
                     df_emr["season"]      = "antr2023"
-                    df_emr["profile_id"] = "None"
-                    df_emr["paradigm_id"]  = xs_emr["paradigm_id"]
+                    df_emr["profile_id"]  = "None"
+                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
 
                     df = pd.concat([df_emr, df_uwb]).reset_index(drop=True)
                 
@@ -350,6 +285,90 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df["profile_id"]  = xs["paradigm_id"]
                     df["paradigm_id"] = xs["paradigm_id"]
 
+            #############################################################
+            # antr2024: UWB
+            elif "antr2024_20247" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("antr2024_20247_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "antr2024"
+                df["prefix"]      = "20247_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+            
+            #############################################################
+            # antr2025: UWB
+            elif "antr2025_20257" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("antr2025_20257_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "antr2025"
+                df["prefix"]      = "20257_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+            
+
+
+            #################
+            ## ARK Seasons ##
+
+            #############################################################
+            # arkr2018: UWB & UWBM
+            elif "arkr2018" in df["id"].iloc[0]:
+                # UWB
+                df_uwb                = df[df["id"].str.match("arkr2018_20187_")]
+                xs                    = df_uwb["id"].str.split("arkr2018_20187_", expand = True)
+                xs.columns            = ["season_nom", "profile_id"]
+                df_uwb["season"]      = "arkr2018"
+                df_uwb["prefix"]      = "20187_"
+                df_uwb["profile_id"]  = xs["profile_id"]
+                df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
+
+                # UWBM
+                df_uwbm                = df[df["id"].str.match("arkr2018_20188_")]
+                xs                     = df_uwbm["id"].str.split("arkr2018_20188_", expand = True)
+                xs.columns             = ["season_nom", "profile_id"]
+                df_uwbm["season"]      = "arkr2018"
+                df_uwbm["prefix"]      = "20188_"
+                df_uwbm["profile_id"]  = xs["profile_id"]
+                df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
+
+                df = pd.concat([df_uwb, df_uwbm]).reset_index(drop=True)
+
+            #############################################################
+            # arkr2022: UWB
+            elif "arkr2022_20227" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("arkr2022_20227_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2022"
+                df["prefix"]      = "20227_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+
+            #############################################################
+            # arkr2023: UWB
+            elif "arkr2023_20237" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("arkr2023_20237_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2023"
+                df["prefix"]      = "20237_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+
+            #############################################################
+            # arkr2024: UWB
+            elif "arkr2024_20247" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("arkr2024_20247_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2024"
+                df["prefix"]      = "20247_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+            
+
+
+
+            #############################################################
+            #############################################################
+            # ONLY EMR in season
             else:
                 xs = df["id"].str.split("_", expand = True)
 
@@ -364,38 +383,25 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df["paradigm_id"]   = df["paradigm_id"].str.replace("_None", "")
                     df["profile_id"]   = copy.copy(df["paradigm_id"])
 
-            if "antr2017" in df["season"].iloc[0]:
+            # list of UWB or UWBM seasons
+            list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
+                                  "arkr2016", "arkr2018", "arkr2021", "arkr2022", "arkr2023", "arkr2024"]
+
+            # profile_id is different to paradigm_id (UWB, UWBM, ACCU, ASIRAS data)
+            if any(x in df["season"].iloc[0] for x in list_UWB_M_seasons):
                 df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
 
-            elif "arkr2022" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-
-            elif "antr2024" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-
-            elif "antr2025" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-            
-            elif "arkr2023" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-            
-            elif "antr2023" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-                
-            elif "antr2019" in df["season"].iloc[0]:
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-
+            # profile_id is the same as paradigm_id (EMR data)
             else:
                 df["profile_id"]   = copy.copy(df["paradigm_id"])
                 df                 = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
             
-            df["twt"]    = df["twt"] / 1000 / 1000 / 1000
-            df           = df.sort_values(by=["season", "paradigm_id", "trace"])
-
+            df["twt"]       = df["twt"] / 1000 / 1000 / 1000
+            df              = df.sort_values(by=["season", "paradigm_id", "trace"])
             df['longitude'] = df['longitude'].astype(float).apply(lambda x: "{:.7f}".format(x))
             df['latitude']  = df['latitude'].astype(float).apply(lambda x: "{:.7f}".format(x))
             df['twt']       = df['twt'].astype(float).apply(lambda x: "{:.12f}".format(x))
-            df['trace']       = df['trace'].astype(int).apply(lambda x: "{:5d}".format(x))
+            df['trace']     = df['trace'].astype(int).apply(lambda x: "{:5d}".format(x))
             df              = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
 
 
@@ -403,52 +409,10 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             os.makedirs(out_dir)
 
         group_list = []
-        groups = df.groupby("profile_id")
+        groups     = df.groupby("paradigm_id")
 
         for name, group in groups:
-            #try:
-            season = group["season"].iloc[0]
-            line   = name
-
-
-            
-            if "antr2024" in season:
-                profile_id = group["profile_id"].iloc[0]
-                line        = profile_id
-
-            if "antr2025" in season:
-                profile_id = group["profile_id"].iloc[0]
-                line        = profile_id
-
-            elif "arkr2022" in season:
-                profile_id = group["profile_id"].iloc[0]
-                line        = profile_id
-                
-            elif "antr2019" in season:
-                profile_id = group["profile_id"].iloc[0]
-                line        = profile_id
-
-            elif "arkr2023" in season:
-                profile_id = group["profile_id"].iloc[0]
-                line        = profile_id
-
-
-            elif "antr2017" in season:
-                if group["profile_id"].iloc[0] == "None":
-                    line = name
-                    del group["profile_id"]
-                else:
-                    profile_id = group["profile_id"].iloc[0]
-                    line        = profile_id
-
-            elif "antr2023" in season:
-                if group["profile_id"].iloc[0] == "None":
-                    line = name
-                    del group["profile_id"]
-                else:
-                    profile_id = group["profile_id"].iloc[0]
-                    line        = profile_id
-        
+            line = name
             group_list.append(group)
             print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
             group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
