@@ -256,27 +256,32 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             elif "antr2023" in df["id"].iloc[0]:
 
                 # split emr and uwb part
-                mask   = df["id"].str.contains("20238")
-                df_uwb = df[mask]
-                df_emr = df[~mask]
+                mask    = df["id"].str.contains("20238")
+                df_uwbm = df[mask]
+                df_emr  = df[~mask]
 
-                if len(df_uwb) > 0:
+                if len(df_uwbm) > 0:
+
                     # handle uwb part
-                    xs_uwb                = df_uwb["id"].str.split("antr2023_20238_", expand = True)
-                    xs_uwb.columns        = ["season_nom", "profile_id"]
-                    df_uwb["season"]      = "antr2023"
-                    df_uwb["prefix"]      = "20238_"
-                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
-                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
+                    xs_uwbm                = df_uwbm["id"].str.split("antr2023_20238_", expand = True)
+                    xs_uwbm.columns        = ["season_nom", "profile_id"]
+                    df_uwbm["season"]      = "antr2023"
+                    df_uwbm["prefix"]      = "20238_"
+                    df_uwbm["profile_id"]  = xs_uwbm["profile_id"]
+                    df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
 
-                    # handle emr part
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season", "paradigm_id"]
-                    df_emr["season"]      = "antr2023"
-                    df_emr["profile_id"]  = "None"
-                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
+                    # check if there is only uwbm data
+                    if "antr2023_20232_" not in df["id"] or "antr2023_20233_" not in df["id"]:
+                        df = copy.copy(df_uwbm)
+                    else:
+                        # handle emr part
+                        xs_emr                = df_emr["id"].str.split("_", expand = True)
+                        xs_emr.columns        = ["season", "paradigm_id"]
+                        df_emr["season"]      = "antr2023"
+                        df_emr["profile_id"]  = "None"
+                        df_emr["paradigm_id"] = xs_emr["paradigm_id"]
 
-                    df = pd.concat([df_emr, df_uwb]).reset_index(drop=True)
+                        df = pd.concat([df_emr, df_uwbm]).reset_index(drop=True)
                 
                 else:
                     xs                = df["id"].str.split("_", expand = True)
@@ -311,6 +316,20 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             ## ARK Seasons ##
 
             #############################################################
+            # arkr2012: ACCU
+            elif "arkr2012" in df["id"].iloc[0]:
+                # ACCU
+                df           = df[df["id"].str.match("arkr2012_20124_")]
+                xs                = df["id"].str.split("arkr2012_20124_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2012"
+                df["prefix"]      = "20124_"
+                df["profile_id"]  = "ACCU_" + xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + xs["profile_id"]
+
+
+
+            #############################################################
             # arkr2018: UWB & UWBM
             elif "arkr2018" in df["id"].iloc[0]:
                 # UWB
@@ -322,16 +341,24 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 df_uwb["profile_id"]  = xs["profile_id"]
                 df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
 
-                # UWBM
-                df_uwbm                = df[df["id"].str.match("arkr2018_20188_")]
-                xs                     = df_uwbm["id"].str.split("arkr2018_20188_", expand = True)
-                xs.columns             = ["season_nom", "profile_id"]
-                df_uwbm["season"]      = "arkr2018"
-                df_uwbm["prefix"]      = "20188_"
-                df_uwbm["profile_id"]  = xs["profile_id"]
-                df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
+                print("arkr2018 in df")
 
-                df = pd.concat([df_uwb, df_uwbm]).reset_index(drop=True)
+                if "arkr2018_20188_" not in df["id"]:
+                    df = copy.copy(df_uwb)
+                    print("arkr2018_20188_ not in df")
+                else:
+                    # UWBM
+                    df_uwbm                = df[df["id"].str.match("arkr2018_20188_")]
+                    xs                     = df_uwbm["id"].str.split("arkr2018_20188_", expand = True)
+                    xs.columns             = ["season_nom", "profile_id"]
+                    df_uwbm["season"]      = "arkr2018"
+                    df_uwbm["prefix"]      = "20188_"
+                    df_uwbm["profile_id"]  = xs["profile_id"]
+                    df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
+                    
+                    print("arkr2018_20188_ in df")
+
+                    df = pd.concat([df_uwb, df_uwbm]).reset_index(drop=True)
 
             #############################################################
             # arkr2022: UWB
@@ -385,7 +412,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
 
             # list of UWB or UWBM seasons
             list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
-                                  "arkr2016", "arkr2018", "arkr2021", "arkr2022", "arkr2023", "arkr2024"]
+                                  "arkr2012", "arkr2016", "arkr2018", "arkr2021", "arkr2022", "arkr2023", "arkr2024"]
 
             # profile_id is different to paradigm_id (UWB, UWBM, ACCU, ASIRAS data)
             if any(x in df["season"].iloc[0] for x in list_UWB_M_seasons):
