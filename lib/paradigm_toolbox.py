@@ -316,6 +316,16 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             ## ARK Seasons ##
 
             #############################################################
+            # arkr2016: UWB
+            elif "arkr2016_disco_20167" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("arkr2016_disco_20167_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2016"
+                df["prefix"]      = "20167_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+
+            #############################################################
             # arkr2012: ACCU
             elif "arkr2012" in df["id"].iloc[0]:
                 # ACCU
@@ -326,8 +336,6 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 df["prefix"]      = "20124_"
                 df["profile_id"]  = "ACCU_" + xs["profile_id"]
                 df["paradigm_id"] = df["prefix"] + xs["profile_id"]
-
-
 
             #############################################################
             # arkr2018: UWB & UWBM
@@ -441,5 +449,8 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
         for name, group in groups:
             line = name
             group_list.append(group)
+            #print(group[group.duplicated(keep=False)])
+            # group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
             print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
+            print(group[group.duplicated(subset=["trace"], keep=False)])
             group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)

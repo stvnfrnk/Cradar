@@ -67,7 +67,7 @@ def plot_radargram( crd_object,
         xticks_idx    = np.array(xticks_idx)
         xtick_labels  = xticks.astype(int)
             
-        xaxis_label   = 'Distance (m)'
+        xaxis_label   = 'Distance [m]'
 
     if every_dist[0] == "km":
         # Build xticks every n meters
@@ -83,7 +83,7 @@ def plot_radargram( crd_object,
         xticks_idx    = np.array(xticks_idx)
         xtick_labels  = xticks.astype(int)
             
-        xaxis_label   = 'Distance (km)'
+        xaxis_label   = 'Distance [km]'
 
 
     # Build yticks every n µs
@@ -113,9 +113,9 @@ def plot_radargram( crd_object,
             ytick_labels  = yticks_ms.astype(int)
             
         if every_twt[0] == 'ns':
-            yaxis_label   = 'TWT (ns)'
+            yaxis_label   = 'TWT [ns]'
         if every_twt[0] == 'ms':
-            yaxis_label   = 'TWT (µs)'
+            yaxis_label   = 'TWT [µs]'
         
 
     # Build yticks every n meters
@@ -143,7 +143,7 @@ def plot_radargram( crd_object,
         if ylabels_as_int == True:
             ytick_labels  = yticks_m.astype(int)
             
-        yaxis_label   = 'Elevation (m)'
+        yaxis_label   = 'Elevation [m]'
 
 
     # Build yticks every n meters
@@ -167,7 +167,7 @@ def plot_radargram( crd_object,
         if ylabels_as_int == True:
             ytick_labels  = yticks_m.astype(int)
             
-        yaxis_label   = 'Depth (m)'
+        yaxis_label   = 'Depth [m]'
         
     # set vmin/vmax depending if values are given
     if vmin == '':
