@@ -198,7 +198,7 @@ def plot_radargram( crd_object,
             for lr in layer_list:    
                 if lr == 'Surface':
                     ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                        s=markersize, label=lr)
+                        color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
 
                 elif lr == 'Base':
                     ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 

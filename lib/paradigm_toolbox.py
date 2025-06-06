@@ -49,29 +49,40 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
         gin.write('DEFINE  SHOT    JPHYSIN\n')
         gin.write('REEL    1                               \n')
         gin.write('**\n')
-        # gin.write('*CALL   RESAMP  {}       {}\n'.format(new_sample_interval, new_t_length))
-        # gin.write('**\n')
-        # gin.write('*CALL   HDRMATH\n')
-        # gin.write('HCADD   shot    0       chan\n')
-        # gin.write('**\n')
-        # gin.write('*CALL   HDRMATH\n')
-        # gin.write('HCMUL   hour    3600    desc\n')
-        # gin.write('HCMUL   minute  60      min60\n')
-        # gin.write('HHADD   desc    min60   dsec\n')
-        # gin.write('HHADD   dsec    second  dsec\n')
-        # gin.write('**\n')
-        # gin.write('*CALL   HDRMATH\n')
-        # gin.write('HCMUL   hour    10000   TIME\n')
-        # gin.write('HCMUL   minute  100     min100\n')
-        # gin.write('HHADD   TIME    min100  TIME\n')
-        # gin.write('HHADD   TIME    second  TIME\n')
-        # gin.write('**\n')
-        # gin.write('*CALL   HDRMATH\n')
-        # gin.write('HCMUL   WDEPTHRC-0.3    statcor\n')
-        # gin.write('HCSUB   statcor 1000    statcor\n')
-        # gin.write('**\n')
         gin.write('*CALL   DSOUT   OVERWRT\n')
         gin.write('LABEL   {}{}\n'.format(line_label_coords, label_suffix))
+        gin.write('**\n')
+        gin.write('*END')
+
+
+def write_gin_agc(sample_interval, num_samples, line_label, label_suffix, line_label_coords, segment, seissrv_segy_agc_path, gin_agc_filename, file_sgy_agc, line_folder):
+
+    t_length = float(sample_interval) * float(num_samples)
+
+    if int(num_samples) <= 1024:
+        new_num_samples = 1024
+    else:
+        i = (int(num_samples) // 1024) + 1
+        new_num_samples = 1024 * i
+
+    new_sample_interval = int(t_length // new_num_samples)
+    new_t_length        = int(new_num_samples * new_sample_interval)
+
+    ts_buffer = " " * int(9 - len(str(int(t_length))))
+
+    with open(line_folder + '/' + gin_agc_filename, 'w') as gin:
+        gin.write('*JOB    s/p_rada{}\n'.format(line_label))
+        gin.write('** FLIGHT No/Segment {}\n'.format(segment))
+        gin.write('** {}\n'.format(file_sgy_agc))
+        gin.write('** dt = {}        samples = {}\n'.format(sample_interval, num_samples))
+        gin.write('**\n')
+        gin.write('*CALL   GIN     {}{}{:.04f}          SHOT\n'.format(int(t_length), ts_buffer, float(sample_interval)))
+        gin.write('TAPEOPT -tapefile {}\n'.format(seissrv_segy_agc_path))
+        gin.write('DEFINE  SHOT    JPHYSIN\n')
+        gin.write('REEL    1                               \n')
+        gin.write('**\n')
+        gin.write('*CALL   DSOUT   OVERWRT\n')
+        gin.write('LABEL   {}{}_AGC_mapgis\n'.format(line_label_coords, label_suffix))
         gin.write('**\n')
         gin.write('*END')
 
@@ -132,6 +143,27 @@ def get_ice_surf(file_ll, line_label_coords, line_folder, campaign):
     df.to_csv(line_folder + '/' + line_label_coords + '_icesurf.csv', sep='\t', index=False)
 
     return str(line_folder + '/' + line_label_coords + '_icesurf.csv')
+
+
+def get_ice_base(file_ll, line_label_coords, line_folder, campaign):
+    import pandas as pd
+
+    df = pd.read_csv(file_ll, sep='\s+')
+
+    df["Surface Name"] = "Base_autotracked"
+    df["Line Name"]    = line_label_coords
+    df["CMP Label"]    = df["NR"]
+    df["Shot Label"]   = df["NR"]
+    df["X Coordinate"] = df["LONGITUDE"]
+    df["Y Coordinate"] = df["LATITUDE"]
+    df["Value"]        = df["BED_TWT"] * 1000 * 1000 * 1000
+    df["Segment ID"]   = line_label_coords
+
+    df = df[["Surface Name", "Line Name", "CMP Label", "Shot Label", "X Coordinate", "Y Coordinate", "Value", "Segment ID"]]
+
+    df.to_csv(line_folder + '/' + line_label_coords + '_icebase.csv', sep='\t', index=False)
+
+    return str(line_folder + '/' + line_label_coords + '_icebase.csv')
 
 
 
@@ -452,5 +484,5 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             #print(group[group.duplicated(keep=False)])
             # group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
             print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
-            print(group[group.duplicated(subset=["trace"], keep=False)])
+            # print(group[group.duplicated(subset=["trace"], keep=False)])
             group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
