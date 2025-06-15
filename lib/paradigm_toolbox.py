@@ -9,11 +9,27 @@ def read_readme(file_readme):
         text = f.read()
         start_time      = text.split('Start time: ')[1].split('T')[1].split('.00\n')[0].replace(" ", "")
         stop_time       = text.split('Stop time: ')[1].split('T')[1].split('.00\n')[0].replace(" ", "")
-        num_traces      = text.split('Number of traces:')[1].split('\n')[0].replace(" ", "")
-        sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(" ", "")
-        twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(" ", "")
+
         try:
-            num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(" ", "")
+            num_traces      = text.split('Number of traces:')[1].split('\n')[0].replace(" ", "")
+        except:
+            text.split('Number of traces:')[1].split('\n')[0].replace("         ", "")
+
+        try:
+            sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(" ", "")
+        except:
+            sample_interval = text.split('Raw data Sample interval in ns:')[1].split('\n')[0].replace(" ", "")
+
+        try:
+            twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(" ", "")
+        except:
+            twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(" ", "")
+        
+        try:
+            try:
+                num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(" ", "")
+            except:
+                num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace("         ", "")
         except:
             print("'Number of samples per trace:' string not found... calculating num_samples instead...")
             num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
@@ -238,8 +254,54 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             ## ANT Seasons ##
 
             #############################################################
+            # antr2012: ACCU & EMR
+            if "antr2012" in df["id"].iloc[0]:
+
+                # split accu and emr part
+                mask   = df["id"].str.contains("20124_")
+                df_accu = df[mask]
+                df_emr = df[~mask]
+
+                if len(df_accu) > 0:
+                    # handle uwb part
+                    xs_accu = df_accu["id"].str.split("antr2012_20124_", expand = True)
+                    xs_accu.columns   = ["season_nom", "profile_id"]
+
+                    df_accu["season"]      = "antr2012"
+                    df_accu["prefix"]      = "20124_"
+                    df_accu["profile_id"]  = "ACCU_" + xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+
+                    # handle emr part
+                    xs_emr         = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns = ["season", "paradigm_id"]
+
+                    df_emr["season"]      = "antr2017"
+                    df_emr["profile_id"]  = xs_emr["paradigm_id"]
+                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
+
+                    df = pd.concat([df_accu, df_emr]).reset_index(drop=True)
+                
+                else:
+                    xs                = df["id"].str.split("_", expand = True)
+                    xs.columns        = ["season", "paradigm_id"]
+                    df["season"]      = "antr2017"
+                    df["profile_id"]  = xs["paradigm_id"]
+                    df["paradigm_id"] = xs["paradigm_id"]
+
+
+                # ACCU
+                # df           = df[df["id"].str.match("arkr2012_20124_")]
+                # xs                = df["id"].str.split("arkr2012_20124_", expand = True)
+                # xs.columns        = ["season_nom", "profile_id"]
+                # df["season"]      = "arkr2012"
+                # df["prefix"]      = "20124_"
+                # df["profile_id"]  = "ACCU_" + xs["profile_id"]
+                # df["paradigm_id"] = df["prefix"] + xs["profile_id"]
+
+            #############################################################
             # antr2017: EMR & UWB
-            if "antr2017" in df["id"].iloc[0]:
+            elif "antr2017" in df["id"].iloc[0]:
 
                 # split emr and uwb part
                 mask   = df["id"].str.contains("20177")
