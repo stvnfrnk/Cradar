@@ -29,7 +29,7 @@ def read_readme(file_readme):
             try:
                 num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(" ", "")
             except:
-                num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace("         ", "")
+                num_samples     = text.split('Number of raw data samples:         ')[1].split('\n')[0]#.replace("         ", "")
         except:
             print("'Number of samples per trace:' string not found... calculating num_samples instead...")
             num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
@@ -226,7 +226,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
     pick_files = sorted(glob.glob("{}\\{}\\{}*{}*{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
 
     for file in pick_files:
-        print(file)
+        print("Loading: {}".format(file))
         
         if picks_format == "UKOOA":
             df               = pd.read_csv(file, sep="\s+",  header=None)

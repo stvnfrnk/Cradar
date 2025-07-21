@@ -117,7 +117,7 @@ def radar2segy(data='',
     X = X
     Y = Y
 
-    time_array   = year
+    # time_array   = year
     year         = year
     day_of_year  = day_of_year
     hour         = hour
