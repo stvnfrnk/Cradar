@@ -543,8 +543,12 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
         for name, group in groups:
             line = name
             group_list.append(group)
-            #print(group[group.duplicated(keep=False)])
-            # group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
+            if len(df[df.duplicated(subset=["profile_id","trace"], keep=False)]) != 0:
+                # print("!!! Duplicated entries found in {}:".format(line))
+                # print(group[group.duplicated(keep=False)])
+                # print("!!! Dropping duplicates with >> keep='first' << ")
+                group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
+
             print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
-            # print(group[group.duplicated(subset=["trace"], keep=False)])
+            # print([group.duplicated(subset=["trace"], keep=False)])
             group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
