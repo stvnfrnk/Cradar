@@ -276,7 +276,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     xs_emr         = df_emr["id"].str.split("_", expand = True)
                     xs_emr.columns = ["season", "paradigm_id"]
 
-                    df_emr["season"]      = "antr2017"
+                    df_emr["season"]      = "antr2antr2012017"
                     df_emr["profile_id"]  = xs_emr["paradigm_id"]
                     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
 
@@ -285,7 +285,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 else:
                     xs                = df["id"].str.split("_", expand = True)
                     xs.columns        = ["season", "paradigm_id"]
-                    df["season"]      = "antr2017"
+                    df["season"]      = "antr2012"
                     df["profile_id"]  = xs["paradigm_id"]
                     df["paradigm_id"] = xs["paradigm_id"]
 
@@ -303,37 +303,80 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             # antr2017: EMR & UWB
             elif "antr2017" in df["id"].iloc[0]:
 
-                # split emr and uwb part
-                mask   = df["id"].str.contains("20177")
-                df_uwb = df[mask]
-                df_emr = df[~mask]
+                list_df = []
 
+                # split uwb part from rest
+                mask     = df["id"].str.contains("antr2017_20177")
+                df_uwb   = df[mask]
+                df_rest  = df[~mask]
+
+                # split uwb part from rest
+                mask     = df_rest["id"].str.contains("antr2017_20174")
+                df_accu  = df_rest[mask]
+                df_emr   = df_rest[~mask]
+
+                # handle uwb part
                 if len(df_uwb) > 0:
-                    # handle uwb part
-                    xs_uwb = df_uwb["id"].str.split("antr2017_20177_", expand = True)
-                    xs_uwb.columns   = ["season_nom", "profile_id"]
-
+                    xs_uwb                = df_uwb["id"].str.split("antr2017_20177_", expand = True)
+                    xs_uwb.columns        = ["season_nom", "profile_id"]
                     df_uwb["season"]      = "antr2017"
                     df_uwb["prefix"]      = "20177_"
-                    df_uwb["profile_id"] = xs_uwb["profile_id"]
-                    df_uwb["paradigm_id"]  = df_uwb["prefix"] + df_uwb["profile_id"]
+                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
+                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
+                    list_df.append(df_uwb)
 
-                    # handle emr part
-                    xs_emr         = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns = ["season", "paradigm_id"]
+                # handle accu part
+                if len(df_accu) > 0:
+                    xs_accu                = df_accu["id"].str.split("antr2017_20174_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
+                    df_accu["season"]      = "antr2017"
+                    df_accu["prefix"]      = "20174_"
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
 
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "paradigm_id"]
                     df_emr["season"]      = "antr2017"
                     df_emr["profile_id"]  = xs_emr["paradigm_id"]
                     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
+                    list_df.append(df_emr)
 
-                    df = pd.concat([df_emr, df_uwb]).reset_index(drop=True)
+                df = pd.concat(list_df)
+
+                # # split emr and uwb part
+                # mask   = df["id"].str.contains("20177")
+                # df_uwb = df[mask]
+                # df_emr = df[~mask]
+
+                # if len(df_uwb) > 0:
+                #     # handle uwb part
+                #     xs_uwb = df_uwb["id"].str.split("antr2017_20177_", expand = True)
+                #     xs_uwb.columns   = ["season_nom", "profile_id"]
+
+                #     df_uwb["season"]      = "antr2017"
+                #     df_uwb["prefix"]      = "20177_"
+                #     df_uwb["profile_id"] = xs_uwb["profile_id"]
+                #     df_uwb["paradigm_id"]  = df_uwb["prefix"] + df_uwb["profile_id"]
+
+                #     # handle emr part
+                #     xs_emr         = df_emr["id"].str.split("_", expand = True)
+                #     xs_emr.columns = ["season", "paradigm_id"]
+
+                #     df_emr["season"]      = "antr2017"
+                #     df_emr["profile_id"]  = xs_emr["paradigm_id"]
+                #     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
+
+                #     df = pd.concat([df_emr, df_uwb]).reset_index(drop=True)
                 
-                else:
-                    xs                = df["id"].str.split("_", expand = True)
-                    xs.columns        = ["season", "paradigm_id"]
-                    df["season"]      = "antr2017"
-                    df["profile_id"]  = xs["paradigm_id"]
-                    df["paradigm_id"] = xs["paradigm_id"]
+                # else:
+                #     xs                = df["id"].str.split("_", expand = True)
+                #     xs.columns        = ["season", "paradigm_id"]
+                #     df["season"]      = "antr2017"
+                #     df["profile_id"]  = xs["paradigm_id"]
+                #     df["paradigm_id"] = xs["paradigm_id"]
 
             #############################################################
             # UWB antr2019
@@ -484,13 +527,50 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
 
             #############################################################
             # arkr2024: UWB
-            elif "arkr2024_20247" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("arkr2024_20247_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2024"
-                df["prefix"]      = "20247_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+            elif "arkr2024" in df["id"].iloc[0]:
+                list_df = []
+
+                # split uwb part from rest
+                mask     = df["id"].str.contains("arkr2024_20247")
+                df_uwb   = df[mask]
+                df_rest  = df[~mask]
+
+                # split uwb part from rest
+                mask     = df_rest["id"].str.contains("arkr2024_20244")
+                df_accu  = df_rest[mask]
+                df_emr   = df_rest[~mask]
+
+                # handle uwb part
+                if len(df_uwb) > 0:
+                    xs_uwb                = df_uwb["id"].str.split("arkr2024_20247_", expand = True)
+                    xs_uwb.columns        = ["season_nom", "profile_id"]
+                    df_uwb["season"]      = "arkr2024"
+                    df_uwb["prefix"]      = "20247_"
+                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
+                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
+                    list_df.append(df_uwb)
+
+                # handle accu part
+                if len(df_accu) > 0:
+                    xs_accu                = df_accu["id"].str.split("arkr2024_20244_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
+                    df_accu["season"]      = "arkr2024"
+                    df_accu["prefix"]      = "20244_"
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
+
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "profile_id"]
+                    df_emr["season"]      = "arkr2024"
+                    df_emr["prefix"]      = "20244_"
+                    df_emr["profile_id"]  = xs_emr["paradigm_id"]
+                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
+                    list_df.append(df_emr)
+
+                df = pd.concat(list_df)
             
 
 
