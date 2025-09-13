@@ -1,0 +1,101 @@
+def get_BAS_radar_profile_metadata():
+
+    import numpy as np
+
+    ########################################
+    # All CReSIS Accumulation Radar Seasons
+
+    dict_BAS_pasin  = {"Campaign Folder" : ["AGAP_2007",
+                                            "BBAS_2004",
+                                            "FISS_2015",
+                                            "FISS_2016",
+                                            "GRADES_IMAGE_2006",
+                                            "ICEGRAV_2012",
+                                            "IMAFI_2010",
+                                            "ITGC_2019",
+                                            "POLARGAP_2015",
+                                            "WISE_ISODYN_2005"],
+
+                    "Season Name"       :  ["AGAP_2007",
+                                            "ANT 2004/05",
+                                            "ANT 2015/16",
+                                            "ANT 2016/17",
+                                            "GRADES_IMAGE_2006",
+                                            "ANT 2012/13",
+                                            "ANT 2010/11",
+                                            "ANT 2019/20",
+                                            "ANT 2015/16",
+                                            "ANT 2005/06"],
+
+                    "Radar System"     :   ["PASIN-1",
+                                            "PASIN-1",
+                                            "PASIN-2",
+                                            "PASIN-2",
+                                            "PASIN-1",
+                                            "PASIN-1",
+                                            "PASIN-1",
+                                            "PASIN-2",
+                                            "PASIN-2",
+                                            "PASIN-1"],
+
+                    "Radar Specs"        : ["150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (13 MHz bandwidth)",
+                                            "150 MHz (13 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)",
+                                            "150 MHz (10 MHz bandwidth)"],
+
+                    "Platform"          :  ["BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter",
+                                            "BAS Twin Otter"],
+                                        
+                    "Campaign Name"     :  ["AGAP_2007",
+                                            "BBAS_2004",
+                                            "FISS_2015",
+                                            "FISS_2016",
+                                            "GRADES_IMAGE_2006",
+                                            "ICEGRAV_2012",
+                                            "IMAFI_2010",
+                                            "ITGC_2019",
+                                            "POLARGAP_2015",
+                                            "WISE_ISODYN_2005"],
+
+                    "Campaign Name Long":  ["Antarctica’s Gamburtsev Province Projec",
+                                            "Surveys over the fast-changing Pine Island",
+                                            "Filchner Ice Shelf system project",
+                                            "Filchner Ice Shelf system project",
+                                            "Glacial Retreat in Antarctica and Deglaciation of the Earth System – Inverse Modelling of Antarctica and Global Eustas",
+                                            "ICEGRAV survey over the Recovery and Slessor region of East Antarctica",
+                                            "Institute–Möller Antarctic Funding Initiative",
+                                            "Thwaites Glacier catchments",
+                                            "South Pole and Transantarctic Mountains",
+                                            "tarctica’s Wilkes Subglacial Basin and Dome C. Arrows"],
+
+                    "Campaign PI"       :  ["None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None",
+                                            "None"],
+
+                    "Grant ID"          : np.repeat("None", 10),
+                    "Pangaea Identifyer" : np.repeat("None", 10),
+                    "Radar Data DOI"     : np.repeat("None", 10)}
+    
+    
+    return dict_BAS_pasin
