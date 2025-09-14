@@ -303,7 +303,6 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             # antr2017: EMR & UWB
             elif "antr2017" in df["id"].iloc[0]:
 
-<<<<<<< HEAD:lib/paradigm_toolbox_remote.py
                 # split emr and uwb part
                 mask     = df["id"].str.contains("20177")
                 df_uwb   = df[mask]
@@ -316,22 +315,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 
                 # handle uwb part
                 try:
-=======
-                list_df = []
 
-                # split uwb part from rest
-                mask     = df["id"].str.contains("antr2017_20177")
-                df_uwb   = df[mask]
-                df_rest  = df[~mask]
-
-                # split uwb part from rest
-                mask     = df_rest["id"].str.contains("antr2017_20174")
-                df_accu  = df_rest[mask]
-                df_emr   = df_rest[~mask]
-
-                # handle uwb part
-                if len(df_uwb) > 0:
->>>>>>> 69897d7cbc19c5e5e14004fe1c456131c2acfd4f:lib/paradigm_toolbox.py
                     xs_uwb                = df_uwb["id"].str.split("antr2017_20177_", expand = True)
                     xs_uwb.columns        = ["season_nom", "profile_id"]
                     df_uwb["season"]      = "antr2017"
@@ -339,22 +323,16 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df_uwb["profile_id"]  = xs_uwb["profile_id"]
                     df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
                     list_df.append(df_uwb)
-<<<<<<< HEAD:lib/paradigm_toolbox_remote.py
                 except:
                     pass
                 
                 # handle accu part
                 try:
-=======
 
-                # handle accu part
-                if len(df_accu) > 0:
->>>>>>> 69897d7cbc19c5e5e14004fe1c456131c2acfd4f:lib/paradigm_toolbox.py
                     xs_accu                = df_accu["id"].str.split("antr2017_20174_", expand = True)
                     xs_accu.columns        = ["season_nom", "profile_id"]
                     df_accu["season"]      = "antr2017"
                     df_accu["prefix"]      = "20174_"
-<<<<<<< HEAD:lib/paradigm_toolbox_remote.py
                     df_accu["profile_id"]  = "ACCU_" + xs_accu["profile_id"]
                     df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
                     list_df.append(df_accu)
@@ -365,45 +343,16 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 try:
                     xs_emr                = df_emr["id"].str.split("_", expand = True)
                     xs_emr.columns        = ["season", "paradigm_id"]
-=======
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
 
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "paradigm_id"]
->>>>>>> 69897d7cbc19c5e5e14004fe1c456131c2acfd4f:lib/paradigm_toolbox.py
                     df_emr["season"]      = "antr2017"
                     df_emr["profile_id"]  = xs_emr["paradigm_id"]
                     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
                     list_df.append(df_emr)
-<<<<<<< HEAD:lib/paradigm_toolbox_remote.py
                 except:
                     pass
 
                 # merge whatever is there
                 df = pd.concat(list_df).reset_index(drop=True)
-=======
-
-                df = pd.concat(list_df)
-
-                # # split emr and uwb part
-                # mask   = df["id"].str.contains("20177")
-                # df_uwb = df[mask]
-                # df_emr = df[~mask]
-
-                # if len(df_uwb) > 0:
-                #     # handle uwb part
-                #     xs_uwb = df_uwb["id"].str.split("antr2017_20177_", expand = True)
-                #     xs_uwb.columns   = ["season_nom", "profile_id"]
-
-                #     df_uwb["season"]      = "antr2017"
-                #     df_uwb["prefix"]      = "20177_"
-                #     df_uwb["profile_id"] = xs_uwb["profile_id"]
-                #     df_uwb["paradigm_id"]  = df_uwb["prefix"] + df_uwb["profile_id"]
->>>>>>> 69897d7cbc19c5e5e14004fe1c456131c2acfd4f:lib/paradigm_toolbox.py
 
                 #     # handle emr part
                 #     xs_emr         = df_emr["id"].str.split("_", expand = True)
