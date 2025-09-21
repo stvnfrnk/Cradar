@@ -208,7 +208,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_group, layer, filter):
 
     '''
-    ..........
+    
     
     '''
 
@@ -276,7 +276,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     xs_emr         = df_emr["id"].str.split("_", expand = True)
                     xs_emr.columns = ["season", "paradigm_id"]
 
-                    df_emr["season"]      = "antr2antr2012017"
+                    df_emr["season"]      = "antr2012"
                     df_emr["profile_id"]  = xs_emr["paradigm_id"]
                     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
 
@@ -288,16 +288,87 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df["season"]      = "antr2012"
                     df["profile_id"]  = xs["paradigm_id"]
                     df["paradigm_id"] = xs["paradigm_id"]
+                    
+            #############################################################
+            # antr2013: ACCU & EMR
+            if "antr2013" in df["id"].iloc[0]:
 
+                # split accu and emr part
+                mask   = df["id"].str.contains("20134_")
+                df_accu = df[mask]
+                df_emr = df[~mask]
+                
+                list_df = []
 
-                # ACCU
-                # df           = df[df["id"].str.match("arkr2012_20124_")]
-                # xs                = df["id"].str.split("arkr2012_20124_", expand = True)
-                # xs.columns        = ["season_nom", "profile_id"]
-                # df["season"]      = "arkr2012"
-                # df["prefix"]      = "20124_"
-                # df["profile_id"]  = "ACCU_" + xs["profile_id"]
-                # df["paradigm_id"] = df["prefix"] + xs["profile_id"]
+                # handle accu part
+                if len(df_accu) > 0:
+                    xs_accu                = df_accu["id"].str.split("antr2013_20134_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
+                    df_accu["season"]      = "antr2013"
+                    df_accu["prefix"]      = "20134_"
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
+
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "profile_id"]
+                    df_emr["season"]      = "antr2013"
+                    df_emr["profile_id"]  = xs_emr["profile_id"]
+                    df_emr["paradigm_id"] = xs_emr["profile_id"]
+                    list_df.append(df_emr)
+                    
+                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
+                
+                
+            #############################################################
+            # antr2014: ACCU & EMR
+            if "antr2014" in df["id"].iloc[0]:
+
+                # split accu, snow and emr part
+                mask   = df["id"].str.contains("20144_")
+                df_accu = df[mask]
+                df_rest = df[~mask]
+                
+                mask    = df_rest["id"].str.contains("20145_")
+                df_snow = df_rest[mask]
+                df_emr  = df_rest[~mask]
+                
+                list_df = []
+
+                # handle accu part
+                if len(df_accu) > 0:
+                    xs_accu                = df_accu["id"].str.split("antr2014_20144_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
+                    df_accu["season"]      = "antr2014"
+                    df_accu["prefix"]      = "20144_"
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
+                    
+                # handle accu part
+                if len(df_snow) > 0:
+                    xs_snow                = df_snow["id"].str.split("antr2014_20145_", expand = True)
+                    xs_snow.columns        = ["season_nom", "profile_id"]
+                    df_snow["season"]      = "antr2014"
+                    df_snow["prefix"]      = "20145_"
+                    df_snow["profile_id"]  = xs_snow["profile_id"]
+                    df_snow["paradigm_id"] = df_snow["prefix"] + df_snow["profile_id"]
+                    list_df.append(df_snow)
+
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "profile_id"]
+                    df_emr["season"]      = "antr2014"
+                    df_emr["profile_id"]  = xs_emr["profile_id"]
+                    df_emr["paradigm_id"] = xs_emr["profile_id"]
+                    list_df.append(df_emr)
+                    
+                df = pd.concat([df_emr, df_accu, df_snow]).reset_index(drop=True)
+                    
+
 
             #############################################################
             # antr2017: EMR & UWB
@@ -528,7 +599,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 df_uwb   = df[mask]
                 df_rest  = df[~mask]
 
-                # split uwb part from rest
+                # split emr part from rest
                 mask     = df_rest["id"].str.contains("arkr2024_20244")
                 df_accu  = df_rest[mask]
                 df_emr   = df_rest[~mask]

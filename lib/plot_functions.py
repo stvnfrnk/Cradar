@@ -204,12 +204,28 @@ def plot_radargram( crd_object,
                         color=crd_object.Layer[lr]['color'], linewidth=linewidth, label=lr)
 
                 elif lr == 'Base':
-                    ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                        color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
+                    # Mask out 0 values in value_idx
+                    mask          = np.where(crd_object.Layer[lr]['value_idx'] != 0)[0]
+                    values        = crd_object.Layer[lr]['value_idx'][mask]
+                    trace_numbers = crd_object.Layer[lr]['trace'][mask]
+                    
+                    # Find where the gaps are
+                    gaps = np.where(np.diff(trace_numbers) != 1)[0] + 1
+
+                    # Split the array into continuous segments
+                    segments       = np.split(trace_numbers, gaps)
+                    value_segments = np.split(values, gaps)
+
+                    # Plot each segment
+                    for seg, val_seg in zip(segments, value_segments):
+                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth)
+
+                    # ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
+                    #     c=crd_object.Layer[lr]['color'], marker='o', s=markersize, label=lr)
 
                 elif lr != 'Surface' and lr != 'Base' and lr != 'Surface_m':
                     ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                            color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
+                            c=crd_object.Layer[lr]['color'], marker='o', s=markersize, label=lr)
 
         elif range_mode == 'elevation':
             for lr in layer_list:
@@ -218,17 +234,17 @@ def plot_radargram( crd_object,
                 else:
                     if lr == 'Surface_m':
                         ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                            color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
+                            c=crd_object.Layer[lr]['color'], marker='o', s=markersize, label=lr)
 
                     elif lr == 'Bed_m':
                         ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                            color=crd_object.Layer[lr]['color'], s=markersize, linestyle='dashed', label=lr)
+                            c=crd_object.Layer[lr]['color'], marker='o', s=markersize, linestyle='dashed', label=lr)
 
                     elif lr != 'Surface_m':
                         if lr != 'Bed_m':
                             if "_m" in lr:
                                 ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                                        color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
+                                        c=crd_object.Layer[lr]['color'], marker='o', s=markersize, label=lr)
 
     if vline_list != []:
         # print('vlines')
