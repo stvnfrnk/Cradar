@@ -261,33 +261,29 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 mask   = df["id"].str.contains("20124_")
                 df_accu = df[mask]
                 df_emr = df[~mask]
+                
+                list_df = []
 
+                # handle accu part
                 if len(df_accu) > 0:
-                    # handle uwb part
-                    xs_accu = df_accu["id"].str.split("antr2012_20124_", expand = True)
-                    xs_accu.columns   = ["season_nom", "profile_id"]
-
+                    xs_accu                = df_accu["id"].str.split("antr2012_20124_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
                     df_accu["season"]      = "antr2012"
                     df_accu["prefix"]      = "20124_"
-                    df_accu["profile_id"]  = "ACCU_" + xs_accu["profile_id"]
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
                     df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
 
-                    # handle emr part
-                    xs_emr         = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns = ["season", "paradigm_id"]
-
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "profile_id"]
                     df_emr["season"]      = "antr2012"
-                    df_emr["profile_id"]  = xs_emr["paradigm_id"]
-                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
-
-                    df = pd.concat([df_accu, df_emr]).reset_index(drop=True)
-                
-                else:
-                    xs                = df["id"].str.split("_", expand = True)
-                    xs.columns        = ["season", "paradigm_id"]
-                    df["season"]      = "antr2012"
-                    df["profile_id"]  = xs["paradigm_id"]
-                    df["paradigm_id"] = xs["paradigm_id"]
+                    df_emr["profile_id"]  = xs_emr["profile_id"]
+                    df_emr["paradigm_id"] = xs_emr["profile_id"]
+                    list_df.append(df_emr)
+                    
+                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
                     
             #############################################################
             # antr2013: ACCU & EMR
@@ -323,7 +319,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 
                 
             #############################################################
-            # antr2014: ACCU & EMR
+            # antr2014: ACCU, SNOW & EMR
             if "antr2014" in df["id"].iloc[0]:
 
                 # split accu, snow and emr part
@@ -347,7 +343,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
                     list_df.append(df_accu)
                     
-                # handle accu part
+                # handle snow part
                 if len(df_snow) > 0:
                     xs_snow                = df_snow["id"].str.split("antr2014_20145_", expand = True)
                     xs_snow.columns        = ["season_nom", "profile_id"]
@@ -369,9 +365,39 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 df = pd.concat([df_emr, df_accu, df_snow]).reset_index(drop=True)
                     
 
+            #############################################################
+            # antr2015: ACCU & EMR
+            if "antr2015" in df["id"].iloc[0]:
+
+                # split accu, snow and emr part
+                mask   = df["id"].str.contains("20154_")
+                df_accu = df[mask]
+                df_emr  = df[~mask]
+                list_df = []
+
+                # handle accu part
+                if len(df_accu) > 0:
+                    xs_accu                = df_accu["id"].str.split("antr2015_20154_", expand = True)
+                    xs_accu.columns        = ["season_nom", "profile_id"]
+                    df_accu["season"]      = "antr2015"
+                    df_accu["prefix"]      = "20154_"
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
+                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                    list_df.append(df_accu)
+
+                # handle emr part
+                if len(df_emr) > 0:
+                    xs_emr                = df_emr["id"].str.split("_", expand = True)
+                    xs_emr.columns        = ["season_nom", "profile_id"]
+                    df_emr["season"]      = "antr2015"
+                    df_emr["profile_id"]  = xs_emr["profile_id"]
+                    df_emr["paradigm_id"] = xs_emr["profile_id"]
+                    list_df.append(df_emr)
+                    
+                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
 
             #############################################################
-            # antr2017: EMR & UWB
+            # antr2017: EMR, ACCU & UWB
             elif "antr2017" in df["id"].iloc[0]:
 
                 # split emr and uwb part
@@ -404,7 +430,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     xs_accu.columns        = ["season_nom", "profile_id"]
                     df_accu["season"]      = "antr2017"
                     df_accu["prefix"]      = "20174_"
-                    df_accu["profile_id"]  = "ACCU_" + xs_accu["profile_id"]
+                    df_accu["profile_id"]  = xs_accu["profile_id"]
                     df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
                     list_df.append(df_accu)
                 except:
@@ -643,18 +669,21 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             #############################################################
             # ONLY EMR in season
             else:
-                xs = df["id"].str.split("_", expand = True)
-
                 try:
-                    xs.columns   = ["season", "paradigm_id", "subline"]
-                except:
-                    xs["subline"] = "None"
-                    xs.columns    = ["season", "paradigm_id", "subline"]
+                    xs = df["id"].str.split("_", expand = True)
 
-                    df["season"] = xs["season"].iloc[0]
-                    df["paradigm_id"]   = xs["paradigm_id"].map(str) + "_" + xs["subline"].map(str)
-                    df["paradigm_id"]   = df["paradigm_id"].str.replace("_None", "")
-                    df["profile_id"]   = copy.copy(df["paradigm_id"])
+                    try:
+                        xs.columns   = ["season", "paradigm_id", "subline"]
+                    except:
+                        xs["subline"] = "None"
+                        xs.columns    = ["season", "paradigm_id", "subline"]
+
+                        df["season"] = xs["season"].iloc[0]
+                        df["paradigm_id"]   = xs["paradigm_id"].map(str) + "_" + xs["subline"].map(str)
+                        df["paradigm_id"]   = df["paradigm_id"].str.replace("_None", "")
+                        df["profile_id"]   = copy.copy(df["paradigm_id"])
+                except:
+                    pass
 
             # list of UWB or UWBM seasons
             list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
@@ -688,11 +717,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             line = name
             group_list.append(group)
             if len(df[df.duplicated(subset=["profile_id","trace"], keep=False)]) != 0:
-                # print("!!! Duplicated entries found in {}:".format(line))
-                # print(group[group.duplicated(keep=False)])
-                # print("!!! Dropping duplicates with >> keep='first' << ")
                 group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
 
             print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
-            # print([group.duplicated(subset=["trace"], keep=False)])
             group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
