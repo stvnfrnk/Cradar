@@ -182,6 +182,7 @@ def plot_radargram( crd_object,
         vmax = vmax    
         
     # imshow radargram    
+    print("min: {}   max: {}".format(vmin, vmax))
     radargram = ax.imshow(crd_object.Data, aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.8)
 
     # plot layers
@@ -200,8 +201,21 @@ def plot_radargram( crd_object,
                 if lr == 'Surface':
                     # ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
                     #     color=crd_object.Layer[lr]['color'], s=markersize, label=lr)
-                    ax.plot(crd_object.Layer[lr]['trace'], crd_object.Layer[lr]['value_idx'], 
-                        color=crd_object.Layer[lr]['color'], linewidth=linewidth, label=lr)
+                    # Mask out 0 values in value_idx
+                    mask          = np.where(crd_object.Layer[lr]['value_idx'] != 0)[0]
+                    values        = crd_object.Layer[lr]['value_idx'][mask]
+                    trace_numbers = crd_object.Layer[lr]['trace'][mask]
+                    
+                    # Find where the gaps are
+                    gaps = np.where(np.diff(trace_numbers) != 1)[0] + 1
+
+                    # Split the array into continuous segments
+                    segments       = np.split(trace_numbers, gaps)
+                    value_segments = np.split(values, gaps)
+
+                    # Plot each segment
+                    for seg, val_seg in zip(segments, value_segments):
+                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth)
 
                 elif lr == 'Base':
                     # Mask out 0 values in value_idx
@@ -220,8 +234,6 @@ def plot_radargram( crd_object,
                     for seg, val_seg in zip(segments, value_segments):
                         plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth)
 
-                    # ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 
-                    #     c=crd_object.Layer[lr]['color'], marker='o', s=markersize, label=lr)
 
                 elif lr != 'Surface' and lr != 'Base' and lr != 'Surface_m':
                     ax.scatter(x=crd_object.Layer[lr]['trace'], y=crd_object.Layer[lr]['value_idx'], 

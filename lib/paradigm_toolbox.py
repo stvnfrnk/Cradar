@@ -250,6 +250,107 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             df.columns   = ["longitude", "latitude", "dm1", "dm2", "twt", "dm3", "dm4", "trace", "dm5", "id"]
             df           = df[df["longitude"].astype(str).str.contains("EOD|PROFILE|SNAPPING") == False]
             
+            
+            
+            #############################################################
+            
+            season = str(df["id"].iloc[0][0:8])
+            year   = str(df["id"].iloc[0][9:13])
+            
+            print(season, year)
+            
+            # get EMR
+            mask      = df["id"].str.contains("{}2".format(year))
+            df_emr600 = df[mask]
+            mask      = df["id"].str.contains("{}3".format(year))
+            df_emr60  = df[mask]
+            df_emr    = pd.concat([df_emr600, df_emr60])
+            
+            # get ACCU
+            mask      = df["id"].str.contains("{}4_".format(year))
+            df_accu   = df[mask]
+            
+            # get SNOW
+            # mask      = df["id"].str.contains("{}5_".format(year))
+            # df_snow   = df[mask]
+            
+            # get UWB
+            mask     = df["id"].str.contains("{}7_".format(year))
+            df_uwb   = df[mask]
+            
+            # get UWBM
+            mask     = df["id"].str.contains("{}8_".format(year))
+            df_uwbm  = df[mask]
+            
+            list_df  = []
+
+            # handle emr part
+            if len(df_emr) > 0:
+                xs_emr                = df_emr["id"].str.split("_", expand = True)
+                xs_emr.columns        = ["season_nom", "profile_id"]
+                df_emr["season"]      = season
+                df_emr["profile_id"]  = xs_emr["profile_id"]
+                df_emr["paradigm_id"] = xs_emr["profile_id"]
+                list_df.append(df_emr)
+                
+            # handle accu part
+            if len(df_accu) > 0:
+                xs_accu                = df_accu["id"].str.split("{}_{}4_".format(season, year), expand = True)
+                xs_accu.columns        = ["season_nom", "profile_id"]
+                df_accu["season"]      = season
+                df_accu["prefix"]      = "{}4_".format(year)
+                df_accu["profile_id"]  = xs_accu["profile_id"]
+                df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                list_df.append(df_accu)
+                
+            # handle snow part
+            # if len(df_snow) > 0:
+            #     xs_snow                = df_snow["id"].str.split("{}_{}5_".format(season, year), expand = True)
+            #     xs_snow.columns        = ["season_nom", "profile_id"]
+            #     df_snow["season"]      = season
+            #     df_snow["prefix"]      = "{}5_".format(year)
+            #     df_snow["profile_id"]  = xs_snow["profile_id"]
+            #     df_snow["paradigm_id"] = df_snow["prefix"] + df_snow["profile_id"]
+            #     list_df.append(df_snow)
+                
+            # handle uwb part
+            if len(df_uwb) > 0:
+                xs_uwb                = df_uwb["id"].str.split("{}_{}7_".format(season, year), expand = True)
+                xs_uwb.columns        = ["season_nom", "profile_id"]
+                df_uwb["season"]      = season
+                df_uwb["prefix"]      = "{}7_".format(year)
+                df_uwb["profile_id"]  = xs_uwb["profile_id"]
+                df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
+                list_df.append(df_uwb)
+            
+            # handle uwbm part
+            if len(df_uwbm) > 0:
+                xs_uwbm                = df_uwbm["id"].str.split("{}_{}8_".format(season, year), expand = True)
+                xs_uwbm.columns        = ["season_nom", "profile_id"]
+                df_uwbm["season"]      = season
+                df_uwbm["prefix"]      = "{}8_".format(season)
+                df_uwbm["profile_id"]  = xs_uwbm["profile_id"]
+                df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
+                list_df.append(df_uwbm)
+                
+                
+            # combine data frames
+            df = pd.concat(list_df).reset_index(drop=True)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            """
             #################
             ## ANT Seasons ##
 
@@ -596,6 +697,16 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                     df = pd.concat([df_uwb, df_uwbm]).reset_index(drop=True)
 
             #############################################################
+            # arkr2021: UWB
+            elif "arkr2021_20217" in df["id"].iloc[0]:
+                xs                = df["id"].str.split("arkr2021_20217_", expand = True)
+                xs.columns        = ["season_nom", "profile_id"]
+                df["season"]      = "arkr2021"
+                df["prefix"]      = "20217_"
+                df["profile_id"]  = xs["profile_id"]
+                df["paradigm_id"] = df["prefix"] + df["profile_id"]
+                
+            #############################################################
             # arkr2022: UWB
             elif "arkr2022_20227" in df["id"].iloc[0]:
                 xs                = df["id"].str.split("arkr2022_20227_", expand = True)
@@ -684,6 +795,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                         df["profile_id"]   = copy.copy(df["paradigm_id"])
                 except:
                     pass
+            """
 
             # list of UWB or UWBM seasons
             list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
