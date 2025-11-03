@@ -217,7 +217,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 #########################################
 # Functions for Horizon conversion
 
-def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_group, layer, filter):
+def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_format, layer_group, layer, filter):
 
     '''
     
@@ -235,9 +235,11 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
     else:
         out_dir = "{}\\IRHs\\{}".format(dir_csv_picks, layer)
 
-    pick_files = sorted(glob.glob("{}\\{}\\{}*{}*{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
+
+    pick_files   = sorted(glob.glob("{}\\{}\\{}*{}*{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
 
     for file in pick_files:
+        print("")
         print("Loading: {}".format(file))
         
         if picks_format == "UKOOA":
@@ -257,41 +259,39 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
         
         if picks_format == "GQC7":
-            df           = pd.read_csv(file, sep="\s+", skiprows=2, header=None)
+            df           = pd.read_csv(file, sep="\s+", skiprows=2, header=None, low_memory=False)
             df           = df[:-1]
             df.columns   = ["longitude", "latitude", "dm1", "dm2", "twt", "dm3", "dm4", "trace", "dm5", "id"]
             df           = df[df["longitude"].astype(str).str.contains("EOD|PROFILE|SNAPPING") == False]
             
-            
-            
+
             #############################################################
             
             season = str(df["id"].iloc[0][0:8])
             year   = str(df["id"].iloc[0][9:13])
-            
-            print(season, year)
-            
+                        
             # get EMR
-            mask      = df["id"].str.contains("{}2".format(year))
+            mask      = df["id"].str.contains("{}_{}2".format(season, year))
             df_emr600 = df[mask]
-            mask      = df["id"].str.contains("{}3".format(year))
+            mask      = df["id"].str.contains("{}_{}3".format(season, year))
             df_emr60  = df[mask]
             df_emr    = pd.concat([df_emr600, df_emr60])
             
+            
             # get ACCU
-            mask      = df["id"].str.contains("{}4_".format(year))
+            mask      = df["id"].str.contains("{}_{}4_".format(season, year))
             df_accu   = df[mask]
             
             # get SNOW
-            # mask      = df["id"].str.contains("{}5_".format(year))
-            # df_snow   = df[mask]
+            mask      = df["id"].str.contains("{}_{}5_".format(season, year))
+            df_snow   = df[mask]
             
             # get UWB
-            mask     = df["id"].str.contains("{}7_".format(year))
+            mask     = df["id"].str.contains("{}_{}7_".format(season, year))
             df_uwb   = df[mask]
             
             # get UWBM
-            mask     = df["id"].str.contains("{}8_".format(year))
+            mask     = df["id"].str.contains("{}_{}8_".format(season, year))
             df_uwbm  = df[mask]
             
             list_df  = []
@@ -299,6 +299,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             # handle emr part
             if len(df_emr) > 0:
                 xs_emr                = df_emr["id"].str.split("_", expand = True)
+                # xs_emr.to_csv("C:\\Users\\sfranke\\Desktop\\xs_emr.csv", sep="\t", index=False)
                 xs_emr.columns        = ["season_nom", "profile_id"]
                 df_emr["season"]      = season
                 df_emr["profile_id"]  = xs_emr["profile_id"]
@@ -308,22 +309,24 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             # handle accu part
             if len(df_accu) > 0:
                 xs_accu                = df_accu["id"].str.split("{}_{}4_".format(season, year), expand = True)
+                # xs_accu.to_csv("C:\\Users\\sfranke\\Desktop\\xs_accu.csv", sep="\t", index=False)
                 xs_accu.columns        = ["season_nom", "profile_id"]
                 df_accu["season"]      = season
                 df_accu["prefix"]      = "{}4_".format(year)
                 df_accu["profile_id"]  = xs_accu["profile_id"]
                 df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
+                df_accu.to_csv("C:\\Users\\sfranke\\Desktop\\df_accu.csv", sep="\t", index=False)
                 list_df.append(df_accu)
                 
             # handle snow part
-            # if len(df_snow) > 0:
-            #     xs_snow                = df_snow["id"].str.split("{}_{}5_".format(season, year), expand = True)
-            #     xs_snow.columns        = ["season_nom", "profile_id"]
-            #     df_snow["season"]      = season
-            #     df_snow["prefix"]      = "{}5_".format(year)
-            #     df_snow["profile_id"]  = xs_snow["profile_id"]
-            #     df_snow["paradigm_id"] = df_snow["prefix"] + df_snow["profile_id"]
-            #     list_df.append(df_snow)
+            if len(df_snow) > 0:
+                xs_snow                = df_snow["id"].str.split("{}_{}5_".format(season, year), expand = True)
+                xs_snow.columns        = ["season_nom", "profile_id"]
+                df_snow["season"]      = season
+                df_snow["prefix"]      = "{}5_".format(year)
+                df_snow["profile_id"]  = xs_snow["profile_id"]
+                df_snow["paradigm_id"] = df_snow["prefix"] + df_snow["profile_id"]
+                list_df.append(df_snow)
                 
             # handle uwb part
             if len(df_uwb) > 0:
@@ -340,7 +343,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
                 xs_uwbm                = df_uwbm["id"].str.split("{}_{}8_".format(season, year), expand = True)
                 xs_uwbm.columns        = ["season_nom", "profile_id"]
                 df_uwbm["season"]      = season
-                df_uwbm["prefix"]      = "{}8_".format(season)
+                df_uwbm["prefix"]      = "{}8_".format(year)
                 df_uwbm["profile_id"]  = xs_uwbm["profile_id"]
                 df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
                 list_df.append(df_uwbm)
@@ -349,487 +352,23 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
             # combine data frames
             df = pd.concat(list_df).reset_index(drop=True)
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            """
-            #################
-            ## ANT Seasons ##
 
-            #############################################################
-            # antr2012: ACCU & EMR
-            if "antr2012" in df["id"].iloc[0]:
+            # # list of UWB or UWBM seasons
+            # list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
+            #                       "arkr2012", "arkr2016", "arkr2018", "arkr2021", "arkr2022", "arkr2023", "arkr2024"]
 
-                # split accu and emr part
-                mask   = df["id"].str.contains("20124_")
-                df_accu = df[mask]
-                df_emr = df[~mask]
-                
-                list_df = []
+            # # profile_id is different to paradigm_id (UWB, UWBM, ACCU, ASIRAS data)
+            # if any(x in df["season"].iloc[0] for x in list_UWB_M_seasons):
+            #     df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
 
-                # handle accu part
-                if len(df_accu) > 0:
-                    xs_accu                = df_accu["id"].str.split("antr2012_20124_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "antr2012"
-                    df_accu["prefix"]      = "20124_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "profile_id"]
-                    df_emr["season"]      = "antr2012"
-                    df_emr["profile_id"]  = xs_emr["profile_id"]
-                    df_emr["paradigm_id"] = xs_emr["profile_id"]
-                    list_df.append(df_emr)
-                    
-                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
-                    
-            #############################################################
-            # antr2013: ACCU & EMR
-            if "antr2013" in df["id"].iloc[0]:
-
-                # split accu and emr part
-                mask   = df["id"].str.contains("20134_")
-                df_accu = df[mask]
-                df_emr = df[~mask]
-                
-                list_df = []
-
-                # handle accu part
-                if len(df_accu) > 0:
-                    xs_accu                = df_accu["id"].str.split("antr2013_20134_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "antr2013"
-                    df_accu["prefix"]      = "20134_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "profile_id"]
-                    df_emr["season"]      = "antr2013"
-                    df_emr["profile_id"]  = xs_emr["profile_id"]
-                    df_emr["paradigm_id"] = xs_emr["profile_id"]
-                    list_df.append(df_emr)
-                    
-                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
-                
-                
-            #############################################################
-            # antr2014: ACCU, SNOW & EMR
-            if "antr2014" in df["id"].iloc[0]:
-
-                # split accu, snow and emr part
-                mask   = df["id"].str.contains("20144_")
-                df_accu = df[mask]
-                df_rest = df[~mask]
-                
-                mask    = df_rest["id"].str.contains("20145_")
-                df_snow = df_rest[mask]
-                df_emr  = df_rest[~mask]
-                
-                list_df = []
-
-                # handle accu part
-                if len(df_accu) > 0:
-                    xs_accu                = df_accu["id"].str.split("antr2014_20144_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "antr2014"
-                    df_accu["prefix"]      = "20144_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-                    
-                # handle snow part
-                if len(df_snow) > 0:
-                    xs_snow                = df_snow["id"].str.split("antr2014_20145_", expand = True)
-                    xs_snow.columns        = ["season_nom", "profile_id"]
-                    df_snow["season"]      = "antr2014"
-                    df_snow["prefix"]      = "20145_"
-                    df_snow["profile_id"]  = xs_snow["profile_id"]
-                    df_snow["paradigm_id"] = df_snow["prefix"] + df_snow["profile_id"]
-                    list_df.append(df_snow)
-
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "profile_id"]
-                    df_emr["season"]      = "antr2014"
-                    df_emr["profile_id"]  = xs_emr["profile_id"]
-                    df_emr["paradigm_id"] = xs_emr["profile_id"]
-                    list_df.append(df_emr)
-                    
-                df = pd.concat([df_emr, df_accu, df_snow]).reset_index(drop=True)
-                    
-
-            #############################################################
-            # antr2015: ACCU & EMR
-            if "antr2015" in df["id"].iloc[0]:
-
-                # split accu, snow and emr part
-                mask   = df["id"].str.contains("20154_")
-                df_accu = df[mask]
-                df_emr  = df[~mask]
-                list_df = []
-
-                # handle accu part
-                if len(df_accu) > 0:
-                    xs_accu                = df_accu["id"].str.split("antr2015_20154_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "antr2015"
-                    df_accu["prefix"]      = "20154_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "profile_id"]
-                    df_emr["season"]      = "antr2015"
-                    df_emr["profile_id"]  = xs_emr["profile_id"]
-                    df_emr["paradigm_id"] = xs_emr["profile_id"]
-                    list_df.append(df_emr)
-                    
-                df = pd.concat([df_emr, df_accu]).reset_index(drop=True)
-
-            #############################################################
-            # antr2017: EMR, ACCU & UWB
-            elif "antr2017" in df["id"].iloc[0]:
-
-                # split emr and uwb part
-                mask     = df["id"].str.contains("20177")
-                df_uwb   = df[mask]
-                df_rest  = df[~mask]
-                mask     = df_rest["id"].str.contains("20174_")
-                df_accu  = df_rest[mask]
-                df_emr   = df_rest[~mask]
-                
-                list_df = []
-                
-                # handle uwb part
-                try:
-
-                    xs_uwb                = df_uwb["id"].str.split("antr2017_20177_", expand = True)
-                    xs_uwb.columns        = ["season_nom", "profile_id"]
-                    df_uwb["season"]      = "antr2017"
-                    df_uwb["prefix"]      = "20177_"
-                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
-                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
-                    list_df.append(df_uwb)
-                except:
-                    pass
-                
-                # handle accu part
-                try:
-
-                    xs_accu                = df_accu["id"].str.split("antr2017_20174_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "antr2017"
-                    df_accu["prefix"]      = "20174_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-                except:
-                    pass
-
-                # handle emr part
-                try:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season", "paradigm_id"]
-
-                    df_emr["season"]      = "antr2017"
-                    df_emr["profile_id"]  = xs_emr["paradigm_id"]
-                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
-                    list_df.append(df_emr)
-                except:
-                    pass
-
-                # merge whatever is there
-                df = pd.concat(list_df).reset_index(drop=True)
-
-                #     # handle emr part
-                #     xs_emr         = df_emr["id"].str.split("_", expand = True)
-                #     xs_emr.columns = ["season", "paradigm_id"]
-
-                #     df_emr["season"]      = "antr2017"
-                #     df_emr["profile_id"]  = xs_emr["paradigm_id"]
-                #     df_emr["paradigm_id"] = xs_emr["paradigm_id"]
-
-                #     df = pd.concat([df_emr, df_uwb]).reset_index(drop=True)
-                
-                # else:
-                #     xs                = df["id"].str.split("_", expand = True)
-                #     xs.columns        = ["season", "paradigm_id"]
-                #     df["season"]      = "antr2017"
-                #     df["profile_id"]  = xs["paradigm_id"]
-                #     df["paradigm_id"] = xs["paradigm_id"]
-
-            #############################################################
-            # UWB antr2019
-            elif "antr2019_20197" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("antr2019_20197_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "antr2019"
-                df["prefix"]      = "20197_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-            
-            #############################################################
-            # antr2023: EMR & UWBM
-            elif "antr2023" in df["id"].iloc[0]:
-
-                # split emr and uwb part
-                mask    = df["id"].str.contains("20238")
-                df_uwbm = df[mask]
-                df_emr  = df[~mask]
-
-                if len(df_uwbm) > 0:
-
-                    # handle uwb part
-                    xs_uwbm                = df_uwbm["id"].str.split("antr2023_20238_", expand = True)
-                    xs_uwbm.columns        = ["season_nom", "profile_id"]
-                    df_uwbm["season"]      = "antr2023"
-                    df_uwbm["prefix"]      = "20238_"
-                    df_uwbm["profile_id"]  = xs_uwbm["profile_id"]
-                    df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
-
-                    # check if there is only uwbm data
-                    if "antr2023_20232_" not in df["id"] or "antr2023_20233_" not in df["id"]:
-                        df = copy.copy(df_uwbm)
-                    else:
-                        # handle emr part
-                        xs_emr                = df_emr["id"].str.split("_", expand = True)
-                        xs_emr.columns        = ["season", "paradigm_id"]
-                        df_emr["season"]      = "antr2023"
-                        df_emr["profile_id"]  = "None"
-                        df_emr["paradigm_id"] = xs_emr["paradigm_id"]
-
-                        df = pd.concat([df_emr, df_uwbm]).reset_index(drop=True)
-                
-                else:
-                    xs                = df["id"].str.split("_", expand = True)
-                    xs.columns        = ["season", "paradigm_id"]
-                    df["season"]      = "antr2023"
-                    df["profile_id"]  = xs["paradigm_id"]
-                    df["paradigm_id"] = xs["paradigm_id"]
-
-            #############################################################
-            # antr2024: UWB
-            elif "antr2024_20247" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("antr2024_20247_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "antr2024"
-                df["prefix"]      = "20247_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-            
-            #############################################################
-            # antr2025: UWB
-            elif "antr2025_20257" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("antr2025_20257_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "antr2025"
-                df["prefix"]      = "20257_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-            
-
-
-            #################
-            ## ARK Seasons ##
-
-            #############################################################
-            # arkr2016: UWB
-            elif "arkr2016_disco_20167" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("arkr2016_disco_20167_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2016"
-                df["prefix"]      = "20167_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-
-            #############################################################
-            # arkr2012: ACCU
-            elif "arkr2012" in df["id"].iloc[0]:
-                # ACCU
-                df           = df[df["id"].str.match("arkr2012_20124_")]
-                xs                = df["id"].str.split("arkr2012_20124_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2012"
-                df["prefix"]      = "20124_"
-                df["profile_id"]  = "ACCU_" + xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + xs["profile_id"]
-
-            #############################################################
-            # arkr2018: UWB & UWBM
-            elif "arkr2018" in df["id"].iloc[0]:
-                # UWB
-                df_uwb                = df[df["id"].str.match("arkr2018_20187_")]
-                xs                    = df_uwb["id"].str.split("arkr2018_20187_", expand = True)
-                xs.columns            = ["season_nom", "profile_id"]
-                df_uwb["season"]      = "arkr2018"
-                df_uwb["prefix"]      = "20187_"
-                df_uwb["profile_id"]  = xs["profile_id"]
-                df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
-
-                print("arkr2018 in df")
-
-                if "arkr2018_20188_" not in df["id"]:
-                    df = copy.copy(df_uwb)
-                    print("arkr2018_20188_ not in df")
-                else:
-                    # UWBM
-                    df_uwbm                = df[df["id"].str.match("arkr2018_20188_")]
-                    xs                     = df_uwbm["id"].str.split("arkr2018_20188_", expand = True)
-                    xs.columns             = ["season_nom", "profile_id"]
-                    df_uwbm["season"]      = "arkr2018"
-                    df_uwbm["prefix"]      = "20188_"
-                    df_uwbm["profile_id"]  = xs["profile_id"]
-                    df_uwbm["paradigm_id"] = df_uwbm["prefix"] + df_uwbm["profile_id"]
-                    
-                    print("arkr2018_20188_ in df")
-
-                    df = pd.concat([df_uwb, df_uwbm]).reset_index(drop=True)
-
-            #############################################################
-            # arkr2021: UWB
-            elif "arkr2021_20217" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("arkr2021_20217_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2021"
-                df["prefix"]      = "20217_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-                
-            #############################################################
-            # arkr2022: UWB
-            elif "arkr2022_20227" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("arkr2022_20227_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2022"
-                df["prefix"]      = "20227_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-
-            #############################################################
-            # arkr2023: UWB
-            elif "arkr2023_20237" in df["id"].iloc[0]:
-                xs                = df["id"].str.split("arkr2023_20237_", expand = True)
-                xs.columns        = ["season_nom", "profile_id"]
-                df["season"]      = "arkr2023"
-                df["prefix"]      = "20237_"
-                df["profile_id"]  = xs["profile_id"]
-                df["paradigm_id"] = df["prefix"] + df["profile_id"]
-
-            #############################################################
-            # arkr2024: UWB
-            elif "arkr2024" in df["id"].iloc[0]:
-                list_df = []
-
-                # split uwb part from rest
-                mask     = df["id"].str.contains("arkr2024_20247")
-                df_uwb   = df[mask]
-                df_rest  = df[~mask]
-
-                # split emr part from rest
-                mask     = df_rest["id"].str.contains("arkr2024_20244")
-                df_accu  = df_rest[mask]
-                df_emr   = df_rest[~mask]
-
-                # handle uwb part
-                if len(df_uwb) > 0:
-                    xs_uwb                = df_uwb["id"].str.split("arkr2024_20247_", expand = True)
-                    xs_uwb.columns        = ["season_nom", "profile_id"]
-                    df_uwb["season"]      = "arkr2024"
-                    df_uwb["prefix"]      = "20247_"
-                    df_uwb["profile_id"]  = xs_uwb["profile_id"]
-                    df_uwb["paradigm_id"] = df_uwb["prefix"] + df_uwb["profile_id"]
-                    list_df.append(df_uwb)
-
-                # handle accu part
-                if len(df_accu) > 0:
-                    xs_accu                = df_accu["id"].str.split("arkr2024_20244_", expand = True)
-                    xs_accu.columns        = ["season_nom", "profile_id"]
-                    df_accu["season"]      = "arkr2024"
-                    df_accu["prefix"]      = "20244_"
-                    df_accu["profile_id"]  = xs_accu["profile_id"]
-                    df_accu["paradigm_id"] = df_accu["prefix"] + df_accu["profile_id"]
-                    list_df.append(df_accu)
-
-                # handle emr part
-                if len(df_emr) > 0:
-                    xs_emr                = df_emr["id"].str.split("_", expand = True)
-                    xs_emr.columns        = ["season_nom", "profile_id"]
-                    df_emr["season"]      = "arkr2024"
-                    df_emr["prefix"]      = "20244_"
-                    df_emr["profile_id"]  = xs_emr["paradigm_id"]
-                    df_emr["paradigm_id"] = xs_emr["paradigm_id"]
-                    list_df.append(df_emr)
-
-                df = pd.concat(list_df)
-            
-
-
-
-            #############################################################
-            #############################################################
-            # ONLY EMR in season
-            else:
-                try:
-                    xs = df["id"].str.split("_", expand = True)
-
-                    try:
-                        xs.columns   = ["season", "paradigm_id", "subline"]
-                    except:
-                        xs["subline"] = "None"
-                        xs.columns    = ["season", "paradigm_id", "subline"]
-
-                        df["season"] = xs["season"].iloc[0]
-                        df["paradigm_id"]   = xs["paradigm_id"].map(str) + "_" + xs["subline"].map(str)
-                        df["paradigm_id"]   = df["paradigm_id"].str.replace("_None", "")
-                        df["profile_id"]   = copy.copy(df["paradigm_id"])
-                except:
-                    pass
-            """
-
-            # list of UWB or UWBM seasons
-            list_UWB_M_seasons = ["antr2017", "antr2019", "antr2023", "antr2024", "antr2025",
-                                  "arkr2012", "arkr2016", "arkr2018", "arkr2021", "arkr2022", "arkr2023", "arkr2024"]
-
-            # profile_id is different to paradigm_id (UWB, UWBM, ACCU, ASIRAS data)
-            if any(x in df["season"].iloc[0] for x in list_UWB_M_seasons):
-                df = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-
-            # profile_id is the same as paradigm_id (EMR data)
-            else:
-                df["profile_id"]   = copy.copy(df["paradigm_id"])
-                df                 = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
+            # # profile_id is the same as paradigm_id (EMR data)
+            # else:
+            #     df["profile_id"]   = copy.copy(df["paradigm_id"])
+            #     df                 = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
             
             df["twt"]       = df["twt"] / 1000 / 1000 / 1000
             df              = df.sort_values(by=["season", "paradigm_id", "trace"])
-            df['longitude'] = df['longitude'].astype(float).apply(lambda x: "{:.7f}".format(x))
-            df['latitude']  = df['latitude'].astype(float).apply(lambda x: "{:.7f}".format(x))
-            df['twt']       = df['twt'].astype(float).apply(lambda x: "{:.12f}".format(x))
-            df['trace']     = df['trace'].astype(int).apply(lambda x: "{:5d}".format(x))
             df              = df[["season", "paradigm_id", "profile_id", "trace", "longitude", "latitude", "twt"]]
-
 
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
@@ -838,10 +377,64 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, picks_format, layer_gr
         groups     = df.groupby("paradigm_id")
 
         for name, group in groups:
-            line = name
-            group_list.append(group)
-            if len(df[df.duplicated(subset=["profile_id","trace"], keep=False)]) != 0:
-                group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
+            try:
+                line = name
+                group_list.append(group)
+                if len(df[df.duplicated(subset=["profile_id","trace"], keep=False)]) != 0:
+                    group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
+                    
+                # get lon lat from corresponding .ll file
+                res_id = int(group["paradigm_id"].iloc[0][4])
+                pid    = str(group["profile_id"].iloc[0])
+                
+                # print(pid)
+                
+                if res_id == 2:
+                    res_system = "EMR"
+                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                if res_id == 3:
+                    res_system = "EMR"
+                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                if res_id == 4:
+                    res_system = "ACCU"
+                    # print("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))
+                    # group.to_csv("C:\\Users\\sfranke\\Desktop\\group.csv", sep="\t", index=False)
+                    ll_file    = glob.glob("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                if res_id == 5:
+                    res_system = "SNOW"
+                    ll_file    = glob.glob("{}\\{}\\*\\SNOW_{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                if res_id == 7:
+                    res_system = "UWB"
+                    ll_file    = glob.glob("{}\\{}\\*\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                if res_id == 8:
+                    res_system = "UWBM"
+                    ll_file    = glob.glob("{}\\{}\\*\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                
+                #print(ll_file)
+                df_ll               = pd.read_csv(ll_file, sep="\s+")
+                df_ll["profile_id"] = pid
+                df_ll["NR"]         = df_ll["NR"].astype(int)
+                
+                group["profile_id"] = group["profile_id"].astype(str)
+                group["trace"]      = group["trace"].astype(int)
+                
+                
+                #print(df_ll.dtypes)
+                #print(group.dtypes)
+                
+                # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
+                df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
+                df_out['longitude'] = df_out['LONGITUDE']
+                df_out['latitude']  = df_out['LATITUDE']
+                df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
+                
+                df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: "{:.9f}".format(x))
+                df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: "{:.9f}".format(x))
+                df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: "{:.12f}".format(x))
+                df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: "{:5d}".format(x))
 
-            print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
-            group.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
+                print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
+                df_out.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
+                
+            except:
+                print("Problem with: {}".format(pid))
