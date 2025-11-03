@@ -36,6 +36,18 @@ def read_readme(file_readme):
 
 
         return num_traces, sample_interval, twt_trace, num_samples
+    
+
+# def read_readme_modams(file_readme):
+#     with open(file_readme) as f:
+#         text = f.read()
+
+#         num_traces      = text.split('Number of samples per echo:')[1].split('\n')[0].replace(" ", "")
+#         sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(" ", "")
+#         twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(" ", "")
+#         num_samples     = text.split('Number of samples per echo:')[1].split('\n')[0].replace(" ", "")
+
+#         return num_traces, sample_interval, twt_trace, num_samples
 
 
 
