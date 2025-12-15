@@ -255,8 +255,12 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
 
             #############################################################
             
-            season = str(df["id"].iloc[0][0:8])
-            year   = str(df["id"].iloc[0][9:13])
+            if "EMR" in df["id"].iloc[0]:
+                season = str(df["id"].iloc[0][5:13])
+                year   = str(df["id"].iloc[0][0:4])
+            else:
+                season = str(df["id"].iloc[0][0:8])
+                year   = str(df["id"].iloc[0][9:13])
                         
             # get EMR
             mask      = df["id"].str.contains("{}_{}2".format(season, year))
@@ -265,6 +269,9 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
             df_emr60  = df[mask]
             df_emr    = pd.concat([df_emr600, df_emr60])
             
+            # get EMR (MODAMS)
+            mask      = df["id"].str.contains("EMR".format(season, year))
+            df_modams = df[mask]
             
             # get ACCU
             mask      = df["id"].str.contains("{}_{}4_".format(season, year))
@@ -293,6 +300,15 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
                 df_emr["profile_id"]  = xs_emr["profile_id"]
                 df_emr["paradigm_id"] = xs_emr["profile_id"]
                 list_df.append(df_emr)
+                
+            # handle emr (modams) part
+            if len(df_modams) > 0:
+                xs_modams                = df_modams["id"].str.split("_", expand = True)
+                xs_modams.columns        = ["year", "season_nom", "flight_id", "pulse", "date", "part"]
+                df_modams["season"]      = season
+                df_modams["profile_id"]  = xs_modams["season_nom"] + "_" + xs_modams["flight_id"] + "_" + xs_modams["pulse"] + "_" + xs_modams["date"] + "_" + xs_modams["part"]
+                df_modams["paradigm_id"] = xs_modams["season_nom"] + "_" + xs_modams["flight_id"] + "_" + xs_modams["pulse"] + "_" + xs_modams["date"] + "_" + xs_modams["part"]
+                list_df.append(df_modams)
                 
             # handle accu part
             if len(df_accu) > 0:
@@ -367,7 +383,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
         for name, group in groups:
             try:
                 line = name
-                group_list.append(group)
+                # group_list.append(group)
                 if len(df[df.duplicated(subset=["profile_id","trace"], keep=False)]) != 0:
                     group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
                     
@@ -375,8 +391,10 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
                 res_id = int(group["paradigm_id"].iloc[0][4])
                 pid    = str(group["profile_id"].iloc[0])
                 
-                # print(pid)
                 
+                if "EMR" in pid:
+                    res_system = "MODAMS"
+                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
                 if res_id == 2:
                     res_system = "EMR"
                     ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
@@ -423,6 +441,9 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
 
                 print("Saving: {}\\{}_{}.csv".format(out_dir, layer, line))
                 df_out.to_csv("{}\\{}_{}.csv".format(out_dir, layer, line), sep="\t", index=False)
+                
+                
+                # print("Bla Bla Bla: {}\\{}_{}.csv".format(out_dir, layer, line))
                 
             except:
                 print("Problem with: {}".format(pid))
