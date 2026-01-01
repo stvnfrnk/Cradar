@@ -20,7 +20,7 @@ def coords2distance(X, Y, EPSG=4326):
         pass
     else:
         # convert coordinates from EPSG:???? to EPSG:4326
-        transformer = Transformer.from_crs(EPSG, 4326)
+        transformer = Transformer.from_crs(EPSG, 4326, always_xy=True)
         X, Y        = transformer.transform(X, Y)
         
     ## Get real distance for traces
@@ -96,7 +96,7 @@ def coords2shape(X, Y, Frame, Segment, Season, EPSG_in=4326, EPSG_out=4326, geom
         Y_in = Y
 
         # convert coordinates from EPSG_in to EPSG_out
-        transformer = Transformer.from_crs(EPSG_in, EPSG_out)
+        transformer = Transformer.from_crs(EPSG_in, EPSG_out, always_xy=True)
         X, Y        = transformer.transform(X_in, Y_in)
 
     # create the data frame with the coordinates as well as the attributes
@@ -271,7 +271,7 @@ def gridtrack3(geotif='', X='', Y='', EPSG_xy='', EPSG_raster=''):
     EPSG_raster = EPSG_raster
 
     # convert coordinates from EPSG_in to EPSG_out
-    transformer = Transformer.from_crs(EPSG_xy, EPSG_raster)
+    transformer = Transformer.from_crs(EPSG_xy, EPSG_raster, always_xy=True)
     X, Y        = transformer.transform(X_in, Y_in)
 
 

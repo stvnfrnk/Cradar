@@ -59,7 +59,7 @@ def spectral_roughness( Line_ID='',
 
     EPSG = EPSG
 
-    transformer = Transformer.from_crs(4326, EPSG)
+    transformer = Transformer.from_crs(4326, EPSG, always_xy=True)
     X, Y        = transformer.transform(Longitude, Latitude)
 
     #######################################################################
