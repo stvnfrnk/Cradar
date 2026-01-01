@@ -31,6 +31,10 @@ def coords2distance(X, Y, EPSG=4326):
         spacing_i  = geopy.distance.geodesic(coord_1, coord_2).meters
         spacing    = np.append(spacing, spacing_i)
 
+    # Stack into list of (lat, lon) tuples
+    # points  = list(zip(Y, X))
+    # spacing = np.array([geopy.distance.geodesic(points[i], points[i+1]).meters for i in range(len(points)-1)])
+
     distance       = np.cumsum(spacing)        # cumulative sum of spacing
     distance       = np.insert(distance, 0, 0) # insert zero at first location
     distance       = np.insert(distance, len(distance), distance[-1] + spacing.mean())
