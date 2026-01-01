@@ -205,7 +205,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 #########################################
 # Functions for Horizon conversion
 
-def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_format, layer_group, layer, filter):
+def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_format, layer_group, layer, filter, AWI_radar_metadata):
 
     '''
     
@@ -213,6 +213,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
     '''
 
     import pandas as pd
+    import numpy as np
     import os, glob
     import copy
 
@@ -225,6 +226,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
 
 
     pick_files   = sorted(glob.glob("{}\\{}\\{}*{}*{}.txt".format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
+    df_metadata  = pd.read_csv(AWI_radar_metadata, sep=";")
 
     for file in pick_files:
         print("")
@@ -388,35 +390,36 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
                     group.drop_duplicates(subset=["profile_id", "trace"], keep="first", inplace=True)
                     
                 # get lon lat from corresponding .ll file
-                res_id = int(group["paradigm_id"].iloc[0][4])
+                # res_id = int(group["paradigm_id"].iloc[0][4])
                 pid    = str(group["profile_id"].iloc[0])
                 
+
+                ll_file = np.array(df_metadata["LL File Path Win"].loc[df_metadata.index[df_metadata["Profile ID"] == pid]])[0]                                
                 
-                if "EMR" in pid:
-                    res_system = "MODAMS"
-                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 2:
-                    res_system = "EMR"
-                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 3:
-                    res_system = "EMR"
-                    ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 4:
-                    res_system = "ACCU"
-                    # print("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))
-                    # group.to_csv("C:\\Users\\sfranke\\Desktop\\group.csv", sep="\t", index=False)
-                    ll_file    = glob.glob("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 5:
-                    res_system = "SNOW"
-                    ll_file    = glob.glob("{}\\{}\\*\\SNOW_{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 7:
-                    res_system = "UWB"
-                    ll_file    = glob.glob("{}\\{}\\*\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
-                if res_id == 8:
-                    res_system = "UWBM"
-                    ll_file    = glob.glob("{}\\{}\\*\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if "EMR" in pid:
+                #     res_system = "MODAMS"
+                #     ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 2:
+                #     res_system = "EMR"
+                #     ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 3:
+                #     res_system = "EMR"
+                #     ll_file    = glob.glob("{}\\{}\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 4:
+                #     res_system = "ACCU"
+                #     # print("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))
+                #     # group.to_csv("C:\\Users\\sfranke\\Desktop\\group.csv", sep="\t", index=False)
+                #     ll_file    = glob.glob("{}\\{}\\*\\ACCU_{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 5:
+                #     res_system = "SNOW"
+                #     ll_file    = glob.glob("{}\\{}\\*\\SNOW_{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 7:
+                #     res_system = "UWB"
+                #     ll_file    = glob.glob("{}\\{}\\*_standard\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
+                # if res_id == 8:
+                #     res_system = "UWBM"
+                #     ll_file    = glob.glob("{}\\{}\\*\\*\\*{}*.ll".format(dir_ll_files, res_system, pid))[0]
                 
-                #print(ll_file)
                 df_ll               = pd.read_csv(ll_file, sep="\s+")
                 df_ll["profile_id"] = pid
                 df_ll["NR"]         = df_ll["NR"].astype(int)
@@ -424,12 +427,15 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_ll_files, picks_fo
                 group["profile_id"] = group["profile_id"].astype(str)
                 group["trace"]      = group["trace"].astype(int)
                 
+                # df_ll.to_csv("C:\\Users\\sfranke\\Desktop\\tmp\\{}_ll_file.csv".format(line), sep="\t", index=False)
+                # group.to_csv("C:\\Users\\sfranke\\Desktop\\tmp\\{}_group.csv".format(line), sep="\t", index=False)
                 
                 #print(df_ll.dtypes)
                 #print(group.dtypes)
                 
                 # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
                 df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
+                # df_out.to_csv("C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv".format(line), sep="\t", index=False)
                 df_out['longitude'] = df_out['LONGITUDE']
                 df_out['latitude']  = df_out['LATITUDE']
                 df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
