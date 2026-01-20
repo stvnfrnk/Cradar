@@ -215,7 +215,7 @@ def plot_radargram( crd_object,
 
                     # Plot each segment
                     for seg, val_seg in zip(segments, value_segments):
-                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth)
+                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth, label=lr)
 
                 elif lr == 'Base':
                     # Mask out 0 values in value_idx
@@ -232,7 +232,7 @@ def plot_radargram( crd_object,
 
                     # Plot each segment
                     for seg, val_seg in zip(segments, value_segments):
-                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth)
+                        plt.plot(seg, val_seg, color=crd_object.Layer[lr]['color'], linewidth=linewidth, label=lr)
 
 
                 elif lr != 'Surface' and lr != 'Base' and lr != 'Surface_m':

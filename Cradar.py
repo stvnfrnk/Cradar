@@ -1104,8 +1104,6 @@ class Cradar:
 
         return p2b_obj
 
-        del df
-
 
     ########## END of pull2surface() ###########
 
@@ -1178,6 +1176,7 @@ class Cradar:
     ##################################
     # Method: clip data along-track
     ##################################
+    
 
     def clip_along(self, start_val, end_val, mode='trace'):
 
@@ -1293,7 +1292,7 @@ class Cradar:
             start = start_val
             end   = end_val
 
-        if mode == 'elevation':
+        elif mode == 'elevation':
             lower_lim = np.abs(self.Z - start_val).argmin()  # np.where(self.Z == start_val)[0][0]
             upper_lim = np.abs(self.Z - end_val).argmin()    # np.where(self.Z == end_val)[0][0]
 
@@ -1304,7 +1303,7 @@ class Cradar:
                 start = lower_lim
                 end   = upper_lim
 
-        if mode == 'twt':
+        elif mode == 'twt':
             start_val = start_val / 10**9
             end_val   = end_val   / 10**9
 
@@ -1325,6 +1324,7 @@ class Cradar:
             t_start   = self.Time[start]
             self.Time = self.Time[start:end]
             self.Time = self.Time - t_start
+            # print(t_start, start, end, len(self.Time))
             
             # if not starting at 0, ggf. noch was tun?
 

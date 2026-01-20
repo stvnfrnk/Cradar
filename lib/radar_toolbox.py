@@ -36,7 +36,7 @@ def radar_twt2surface(data="", twt="", surf_idx="", padding=0):
 
     #plt.figure(figsize=(12,7))
     for i in np.arange(0, len(surf_idx)):
-        print(surf_idx[i])
+        # print(surf_idx[i])
         if (i % LOG_EVERY_N) == 0:
             end = time.time()
             print('... processed  {}  of  {}  traces in {:.2f} s'.format(i + 1, len(surf_idx), end - start))
