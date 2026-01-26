@@ -219,12 +219,14 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
 
     pd.options.mode.chained_assignment = None  # default='warn'
 
-    if layer == 'Base_master' or layer == 'Surface_master' or layer == 'Base_from_ice':
-        out_dir        = '{}\\{}'.format(dir_csv_picks, layer)
-        out_dir_remote = '{}\\{}'.format(dir_csv_picks_remote, layer)
-    else:
-        out_dir        = '{}\\IRHs\\{}'.format(dir_csv_picks, layer)
-        out_dir_remote = '{}\\IRHs\\{}'.format(dir_csv_picks_remote, layer)
+    # if layer == 'Base_master' or layer == 'Surface_master' or layer == 'Base_from_ice':
+    out_dir        = '{}\\{}'.format(dir_csv_picks, layer_group)
+    out_dir_remote = '{}\\{}'.format(dir_csv_picks_remote, layer_group)
+    # elif:
+    
+    # else:
+    #     out_dir        = '{}\\IRHs\\{}'.format(dir_csv_picks, layer)
+    #     out_dir_remote = '{}\\IRHs\\{}'.format(dir_csv_picks_remote, layer)
 
 
     pick_files   = sorted(glob.glob('{}\\{}\\{}*{}*{}.txt'.format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
