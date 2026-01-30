@@ -205,7 +205,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 #########################################
 # Functions for Horizon conversion
 
-def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, picks_format, layer_group, layer, filter, AWI_radar_metadata):
+def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, picks_format, layer_group, layer, filter, Radar_metadata):
 
     '''
     
@@ -230,7 +230,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
 
 
     pick_files   = sorted(glob.glob('{}\\{}\\{}*{}*{}.txt'.format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
-    df_metadata  = pd.read_csv(AWI_radar_metadata, sep=';')
+    df_metadata  = pd.read_csv(Radar_metadata, sep=';')
 
     for file in pick_files:
         print('')
@@ -295,6 +295,10 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
             mask     = df['id'].str.contains('{}_{}8_'.format(season, year))
             df_uwbm  = df[mask]
             
+            # get CReSIS rds
+            mask       = df['id'].str.contains('sis_profiles_sf_cresis_rds_')
+            df_cresis  = df[mask]
+            
             list_df  = []
 
             # handle emr part
@@ -356,6 +360,17 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
                 df_uwbm['paradigm_id'] = df_uwbm['prefix'] + df_uwbm['profile_id']
                 list_df.append(df_uwbm)
                 
+                
+             # handle cresis rds part
+            if len(df_cresis) > 0:
+                xs_cresis                = df_cresis['id'].str.split('sis_profiles_sf_cresis_rds_', expand = True)
+                xs_cresis.columns        = ['season_nom', 'profile_id']
+                df_cresis['season']      = season
+                df_cresis['prefix']      = 'cresis_rds_'.format(year)
+                df_cresis['profile_id']  = xs_cresis['profile_id']
+                df_cresis['paradigm_id'] = df_cresis['prefix'] + df_cresis['profile_id']
+                list_df.append(df_cresis)
+                
             # combine data frames
             df = pd.concat(list_df).reset_index(drop=True)
             
@@ -372,40 +387,40 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
         groups     = df.groupby('paradigm_id')
 
         for name, group in groups:
-            try:
-                line = name
-                if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
-                    group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
-                    
-                # get lon lat from corresponding .ll file
-                pid    = str(group['profile_id'].iloc[0])
+            # try:
+            line = name
+            if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
+                group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
                 
-                ll_file = np.array(df_metadata['LL File Path Win'].loc[df_metadata.index[df_metadata['Profile ID'] == pid]])[0]                                
-                
-                df_ll               = pd.read_csv(ll_file, sep='\s+')
-                df_ll['profile_id'] = pid
-                df_ll['NR']         = df_ll['NR'].astype(int)
-                
-                group['profile_id'] = group['profile_id'].astype(str)
-                group['trace']      = group['trace'].astype(int)
-                
-                # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
-                df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
-                # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
-                df_out['longitude'] = df_out['LONGITUDE']
-                df_out['latitude']  = df_out['LATITUDE']
-                df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
-                
-                df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-                df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-                df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
-                df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
+            # get lon lat from corresponding .ll file
+            pid    = str(group['profile_id'].iloc[0])
+            
+            ll_file = np.array(df_metadata['LL File Path Win'].loc[df_metadata.index[df_metadata['Profile ID'] == pid]])[0]                                
+            
+            df_ll               = pd.read_csv(ll_file, sep='\s+')
+            df_ll['profile_id'] = pid
+            df_ll['NR']         = df_ll['NR'].astype(int)
+            
+            group['profile_id'] = group['profile_id'].astype(str)
+            group['trace']      = group['trace'].astype(int)
+            
+            # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
+            df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
+            # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
+            df_out['longitude'] = df_out['LONGITUDE']
+            df_out['latitude']  = df_out['LATITUDE']
+            df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
+            
+            df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+            df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+            df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
+            df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
 
-                print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
-                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
-                
-                print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
-                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
-                                
-            except:
-                print('Problem with: {}'.format(pid))
+            print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
+            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
+            
+            print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
+            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
+                            
+            # except:
+            #     print('Problem with: {}'.format(pid))
