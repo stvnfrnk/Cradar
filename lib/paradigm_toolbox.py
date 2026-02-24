@@ -29,7 +29,7 @@ def read_readme(file_readme):
             try:
                 num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(' ', '')
             except:
-                num_samples     = text.split('Number of raw data samples:         ')[1].split('\n')[0]#.replace('         ', '')
+                num_samples     = int(text.split('Number of raw data samples:')[1].split('\n')[0])
         except:
             print("'Number of samples per trace:' string not found... calculating num_samples instead...")
             num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
@@ -387,40 +387,41 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
         groups     = df.groupby('paradigm_id')
 
         for name, group in groups:
-            # try:
-            line = name
-            if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
-                group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
+            try:
+                line = name
+                if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
+                    group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
+                    
+                # get lon lat from corresponding .ll file
+                pid    = str(group['profile_id'].iloc[0])
+                print(pid)
                 
-            # get lon lat from corresponding .ll file
-            pid    = str(group['profile_id'].iloc[0])
-            
-            ll_file = np.array(df_metadata['LL File Path Win'].loc[df_metadata.index[df_metadata['Profile ID'] == pid]])[0]                                
-            
-            df_ll               = pd.read_csv(ll_file, sep='\s+')
-            df_ll['profile_id'] = pid
-            df_ll['NR']         = df_ll['NR'].astype(int)
-            
-            group['profile_id'] = group['profile_id'].astype(str)
-            group['trace']      = group['trace'].astype(int)
-            
-            # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
-            df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
-            # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
-            df_out['longitude'] = df_out['LONGITUDE']
-            df_out['latitude']  = df_out['LATITUDE']
-            df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
-            
-            df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-            df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-            df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
-            df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
+                ll_file = np.array(df_metadata['LL File Path Win'].loc[df_metadata.index[df_metadata['Profile ID'] == pid]])[0]                        
+                
+                df_ll               = pd.read_csv(ll_file, sep='\s+')
+                df_ll['profile_id'] = pid
+                df_ll['NR']         = df_ll['NR'].astype(int)
+                
+                group['profile_id'] = group['profile_id'].astype(str)
+                group['trace']      = group['trace'].astype(int)
+                
+                # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
+                df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
+                # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
+                df_out['longitude'] = df_out['LONGITUDE']
+                df_out['latitude']  = df_out['LATITUDE']
+                df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
+                
+                df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+                df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+                df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
+                df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
 
-            print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
-            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
-            
-            print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
-            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
+                print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
+                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
+                
+                print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
+                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
                             
-            # except:
-            #     print('Problem with: {}'.format(pid))
+            except:
+                print('Problem with: {}'.format(pid))
