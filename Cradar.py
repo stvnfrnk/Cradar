@@ -172,42 +172,38 @@ class Cradar:
     ########## END of load_awi_nc() ###########
 
 
-
-
     #############################
     # Method: load_awi_nc
     #############################
 
 
-    def load_awi_nc_old(self, nc_file='', read_agc=False):
+    def load_hicars_nc(self, nc_file, frame='', gain_mode='low gain'):
 
         '''
 
 
         '''
 
-        from lib.read_input import read_awi_nc_old
+        from lib.read_input import read_hicars_nc
 
         
-        Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Layer = read_awi_nc_old(nc_file)
+        Data, Time, Longitude, Latitude, Aircraft_altitude = read_hicars_nc(nc_file, gain_mode=gain_mode)
 
-        #self.Frame      = Frame
+        self.Frame      = frame
         self.Reader     = 'xarray'
         self.Domain     = 'twt'
         self.Data       = Data
         self.Time       = Time
         self.Longitude  = Longitude
         self.Latitude   = Latitude
-
-        # self.Aircraft_altitude  = Aircraft_altitude
-        # self.GPS_time   = GPS_time
-        self.Layer      = Layer
         self.dB         = True
+
+        print("")
+        print('==> Loaded {}'.format(nc_file))
 
         return self
 
     ########## END of load_awi_nc() ###########
-
 
 
 

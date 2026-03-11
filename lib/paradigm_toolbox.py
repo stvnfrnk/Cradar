@@ -7,32 +7,43 @@
 def read_readme(file_readme):
     with open(file_readme) as f:
         text = f.read()
+        
+        ####
         start_time      = text.split('Start time: ')[1].split('T')[1].split('.00\n')[0].replace(' ', '')
         stop_time       = text.split('Stop time: ')[1].split('T')[1].split('.00\n')[0].replace(' ', '')
 
-        try:
-            num_traces      = text.split('Number of traces:')[1].split('\n')[0].replace(' ', '')
-        except:
-            text.split('Number of traces:')[1].split('\n')[0].replace('         ', '')
+        # try:
+        num_traces      = int(float(text.split('Number of traces:')[1].split('\n')[0].replace(' ', '')))
+        # except:
+        #     text.split('Number of traces:')[1].split('\n')[0].replace('         ', '')
 
+        # Get sample interval (preferred from SGY file sample interval)
         try:
-            sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(' ', '')
+            sample_interval = float(text.split('SGY File Sample interval in ns:')[1].split('\n')[0])
         except:
-            sample_interval = text.split('Raw data Sample interval in ns:')[1].split('\n')[0].replace(' ', '')
-
-        try:
-            twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(' ', '')
-        except:
-            twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(' ', '')
-        
-        try:
             try:
-                num_samples     = text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(' ', '')
+                sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(' ', '')
             except:
-                num_samples     = int(text.split('Number of raw data samples:')[1].split('\n')[0])
+                sample_interval = text.split('Raw data Sample interval in ns:')[1].split('\n')[0].replace(' ', '')
+
+        # Get TWT trace in ms (preferrable from SEGY File TWT)
+        try:
+            twt_trace = float(text.split('SGY File TWT of full trace in micro s:')[1].split('\n')[0])
         except:
-            print("'Number of samples per trace:' string not found... calculating num_samples instead...")
-            num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) + 1 )
+            try:
+                twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(' ', '')
+            except:
+                twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(' ', '')
+        
+        # Get number of samples
+        # try:
+        try:
+            num_samples     = int(float(text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(' ', '')))
+            # except:
+            #     num_samples     = int(text.split('Number of raw data samples:')[1].split('\n')[0])
+        except:
+            print("'Number of resampled SGY file samples:' string not found... calculating num_samples instead...")
+            num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) )
 
 
         return num_traces, sample_interval, twt_trace, num_samples
@@ -43,14 +54,14 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
 
     t_length = float(sample_interval) * float(num_samples)
 
-    if int(num_samples) <= 1024:
-        new_num_samples = 1024
-    else:
-        i = (int(num_samples) // 1024) + 1
-        new_num_samples = 1024 * i
+    # if int(num_samples) <= 1024:
+    #     new_num_samples = 1024
+    # else:
+    #     i = (int(num_samples) // 1024) + 1
+    #     new_num_samples = 1024 * i
 
-    new_sample_interval = int(t_length // new_num_samples)
-    new_t_length        = int(new_num_samples * new_sample_interval)
+    new_sample_interval = sample_interval # int(t_length // new_num_samples)
+    # new_t_length        = int(new_num_samples * new_sample_interval)
 
     ts_buffer = ' ' * int(9 - len(str(int(t_length))))
 
@@ -205,7 +216,7 @@ def create_coord_file(file_ll, line_label, line_label_coords, line_folder):
 #########################################
 # Functions for Horizon conversion
 
-def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, picks_format, layer_group, layer, filter, Radar_metadata):
+def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, picks_format, layer_group, layer, filter, Radar_metadata_AWI, Radar_metadata_CRESIS):
 
     '''
     
@@ -229,8 +240,9 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
     #     out_dir_remote = '{}\\IRHs\\{}'.format(dir_csv_picks_remote, layer)
 
 
-    pick_files   = sorted(glob.glob('{}\\{}\\{}*{}*{}.txt'.format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
-    df_metadata  = pd.read_csv(Radar_metadata, sep=';')
+    pick_files          = sorted(glob.glob('{}\\{}\\{}*{}*{}.txt'.format(dir_paradigm_picks, layer_group, layer, filter, picks_format)))
+    df_metadata_AWI     = pd.read_csv(Radar_metadata_AWI, sep=';')
+    df_metadata_CRESIS  = pd.read_csv(Radar_metadata_CRESIS, sep=';')
 
     for file in pick_files:
         print('')
@@ -299,6 +311,9 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
             mask       = df['id'].str.contains('sis_profiles_sf_cresis_rds_')
             df_cresis  = df[mask]
             
+            mask       = df['id'].str.contains('cresis_rds')
+            df_cresis  = df[mask]
+            
             list_df  = []
 
             # handle emr part
@@ -363,13 +378,26 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
                 
              # handle cresis rds part
             if len(df_cresis) > 0:
-                xs_cresis                = df_cresis['id'].str.split('sis_profiles_sf_cresis_rds_', expand = True)
-                xs_cresis.columns        = ['season_nom', 'profile_id']
-                df_cresis['season']      = season
-                df_cresis['prefix']      = 'cresis_rds_'.format(year)
-                df_cresis['profile_id']  = xs_cresis['profile_id']
-                df_cresis['paradigm_id'] = df_cresis['prefix'] + df_cresis['profile_id']
-                list_df.append(df_cresis)
+                try:
+                    xs_cresis                = df_cresis['id'].str.split('sis_profiles_sf_cresis_rds_', expand = True)
+                    xs_cresis.columns        = ['season_nom', 'profile_id']
+                    df_cresis['season']      = season
+                    df_cresis['prefix']      = 'cresis_rds_'.format(year)
+                    df_cresis['profile_id']  = xs_cresis['profile_id']
+                    df_cresis['paradigm_id'] = df_cresis['prefix'] + df_cresis['profile_id']
+                    list_df.append(df_cresis)
+                except:
+                    pass
+                try:
+                    xs_cresis                = df_cresis['id'].str.split('_cresis_rds_', expand = True)
+                    xs_cresis.columns        = ['season_nom', 'profile_id']
+                    df_cresis['season']      = season
+                    df_cresis['prefix']      = 'cresis_rds_'.format(year)
+                    df_cresis['profile_id']  = xs_cresis['profile_id']
+                    df_cresis['paradigm_id'] = df_cresis['prefix'] + df_cresis['profile_id']
+                    list_df.append(df_cresis)
+                except:
+                    pass
                 
             # combine data frames
             df = pd.concat(list_df).reset_index(drop=True)
@@ -387,41 +415,45 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
         groups     = df.groupby('paradigm_id')
 
         for name, group in groups:
-            try:
-                line = name
-                if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
-                    group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
-                    
-                # get lon lat from corresponding .ll file
-                pid    = str(group['profile_id'].iloc[0])
-                print(pid)
+            # try:
+            line = name
+            if len(df[df.duplicated(subset=['profile_id','trace'], keep=False)]) != 0:
+                group.drop_duplicates(subset=['profile_id', 'trace'], keep='first', inplace=True)
                 
-                ll_file = np.array(df_metadata['LL File Path Win'].loc[df_metadata.index[df_metadata['Profile ID'] == pid]])[0]                        
-                
-                df_ll               = pd.read_csv(ll_file, sep='\s+')
-                df_ll['profile_id'] = pid
-                df_ll['NR']         = df_ll['NR'].astype(int)
-                
-                group['profile_id'] = group['profile_id'].astype(str)
-                group['trace']      = group['trace'].astype(int)
-                
-                # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
-                df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
-                # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
-                df_out['longitude'] = df_out['LONGITUDE']
-                df_out['latitude']  = df_out['LATITUDE']
-                df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
-                
-                df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-                df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
-                df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
-                df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
+            # get lon lat from corresponding .ll file
+            pid    = str(group['profile_id'].iloc[0])
+            print(pid)
+            # print(group)
+            
+            if 'cresis_rds' in group['paradigm_id'].iloc[0]:
+                ll_file = np.array(df_metadata_CRESIS['LL File Path Win'].loc[df_metadata_CRESIS.index[df_metadata_CRESIS['Profile ID'] == pid]])[0]
+            else:
+                ll_file = np.array(df_metadata_AWI['LL File Path Win'].loc[df_metadata_AWI.index[df_metadata_AWI['Profile ID'] == pid]])[0]                        
+            
+            df_ll               = pd.read_csv(ll_file, sep='\s+')
+            df_ll['profile_id'] = pid
+            df_ll['NR']         = df_ll['NR'].astype(int)
+            
+            group['profile_id'] = group['profile_id'].astype(str)
+            group['trace']      = group['trace'].astype(int)
+            
+            # Merge df1 with df2 on 'profile_id' and 'trace'/'NR'
+            df_out              = group.merge(df_ll[['profile_id', 'NR', 'LONGITUDE', 'LATITUDE']], left_on=['profile_id', 'trace'], right_on=['profile_id', 'NR'], how='left')
+            # df_out.to_csv('C:\\Users\\sfranke\\Desktop\\tmp\\{}_merged.csv'.format(line), sep='\t', index=False)
+            df_out['longitude'] = df_out['LONGITUDE']
+            df_out['latitude']  = df_out['LATITUDE']
+            df_out              = df_out.drop(columns=['LONGITUDE', 'LATITUDE', 'NR'])
+            
+            df_out['longitude'] = df_out['longitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+            df_out['latitude']  = df_out['latitude'].astype(float).apply(lambda x: '{:.9f}'.format(x))
+            df_out['twt']       = df_out['twt'].astype(float).apply(lambda x: '{:.12f}'.format(x))
+            df_out['trace']     = df_out['trace'].astype(int).apply(lambda x: '{:5d}'.format(x))
 
-                print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
-                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
-                
-                print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
-                df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
+            print('Saving: {}\\{}_{}.csv'.format(out_dir, layer, line))
+            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir, layer, line), sep='\t', index=False)
+            
+            print('Saving: {}\\{}_{}.csv'.format(out_dir_remote, layer, line))
+            df_out.to_csv('{}\\{}_{}.csv'.format(out_dir_remote, layer, line), sep='\t', index=False)
                             
-            except:
-                print('Problem with: {}'.format(pid))
+            # except:
+            #     print('Problem with: {}'.format(pid))

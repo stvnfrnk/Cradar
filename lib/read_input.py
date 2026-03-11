@@ -185,3 +185,33 @@ def read_awi_nc(nc_file, read_agc=False):
     return Data, Time, Longitude, Latitude, Aircraft_altitude, Ice_surface_elevation, Ice_thickness, Layer
 
 
+################################################################################################
+################################################################################################
+
+###################
+# HICARS NC Files
+###################
+
+def read_hicars_nc(nc_file, gain_mode='low_gain'):
+
+    '''
+
+    '''
+
+    import xarray as xr
+    import numpy as np
+
+    dx =  xr.load_dataset(nc_file)
+
+    if gain_mode == 'low gain':
+        Data       = dx.variables['amplitude_low_gain'].T.values
+    elif gain_mode == 'high gain':
+        Data       = dx.variables['amplitude_high_gain'].T.values
+
+    Longitude              = dx.variables['lon'].values.astype(float)
+    Latitude               = dx.variables['lat'].values.astype(float)
+    Time                   = dx.variables['fasttime'].values.astype(float) / 1000 / 1000 / 1000
+    Aircraft_altitude      = dx.variables['altitude'].values.astype(float)
+
+
+    return Data, Time, Longitude, Latitude, Aircraft_altitude
