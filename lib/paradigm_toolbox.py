@@ -18,29 +18,22 @@ def read_readme(file_readme):
         #     text.split('Number of traces:')[1].split('\n')[0].replace('         ', '')
 
         # Get sample interval (preferred from SGY file sample interval)
-        try:
-            sample_interval = float(text.split('SGY File Sample interval in ns:')[1].split('\n')[0])
-        except:
-            try:
-                sample_interval = text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(' ', '')
-            except:
-                sample_interval = text.split('Raw data Sample interval in ns:')[1].split('\n')[0].replace(' ', '')
 
-        # Get TWT trace in ms (preferrable from SEGY File TWT)
         try:
-            twt_trace = float(text.split('SGY File TWT of full trace in micro s:')[1].split('\n')[0])
+            sample_interval = float(text.split('Resampled data sample interval in ns:')[1].split('\n')[0].replace(' ', ''))
         except:
-            try:
-                twt_trace       = text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(' ', '')
-            except:
-                twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(' ', '')
+            sample_interval = text.split('Raw data Sample interval in ns:')[1].split('\n')[0].replace(' ', '')
+
+        # Get TWT trace in ms (for EMR, BAS, ... resampled File TWT)
+        try:
+            twt_trace       = float(text.split('TWT of resampled full trace in ms:')[1].split('\n')[0].replace(' ', ''))*1000
+        except:
+            twt_trace       = text.split('TWT of full trace in ms:')[1].split('\n')[0].replace(' ', '')
         
         # Get number of samples
         # try:
         try:
-            num_samples     = int(float(text.split('Number of resampled SGY file samples:')[1].split('\n')[0].replace(' ', '')))
-            # except:
-            #     num_samples     = int(text.split('Number of raw data samples:')[1].split('\n')[0])
+            num_samples = int(float(text.split('Number of resampled SGY file samples:')[1].split('\n')[0]))
         except:
             print("'Number of resampled SGY file samples:' string not found... calculating num_samples instead...")
             num_samples = int( (float(twt_trace) * 1000) / float(sample_interval) )
@@ -50,9 +43,9 @@ def read_readme(file_readme):
 
 
 
-def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label_coords, segment, seissrv_sgy_path, gin_filename, file_sgy, line_folder):
+def write_gin(sample_interval, num_samples, twt_trace, line_label, label_suffix, line_label_coords, segment, seissrv_sgy_path, gin_filename, file_sgy, line_folder):
 
-    t_length = float(sample_interval) * float(num_samples)
+    t_length = twt_trace #float(sample_interval) * float(num_samples)
 
     # if int(num_samples) <= 1024:
     #     new_num_samples = 1024
@@ -82,7 +75,7 @@ def write_gin(sample_interval, num_samples, line_label, label_suffix, line_label
         gin.write('*END')
 
 
-def write_gin_agc(sample_interval, num_samples, line_label, label_suffix, line_label_coords, segment, seissrv_segy_agc_path, gin_agc_filename, file_sgy_agc, line_folder):
+def write_gin_agc(sample_interval, num_samples, twt_trace, line_label, label_suffix, line_label_coords, segment, seissrv_segy_agc_path, gin_agc_filename, file_sgy_agc, line_folder):
 
     t_length = float(sample_interval) * float(num_samples)
 
