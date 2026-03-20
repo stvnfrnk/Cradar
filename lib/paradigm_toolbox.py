@@ -77,16 +77,17 @@ def write_gin(sample_interval, num_samples, twt_trace, line_label, label_suffix,
 
 def write_gin_agc(sample_interval, num_samples, twt_trace, line_label, label_suffix, line_label_coords, segment, seissrv_segy_agc_path, gin_agc_filename, file_sgy_agc, line_folder):
 
-    t_length = float(sample_interval) * float(num_samples)
+    t_length = twt_trace #float(sample_interval) * float(num_samples)
+    # t_length = float(sample_interval) * float(num_samples)
 
-    if int(num_samples) <= 1024:
-        new_num_samples = 1024
-    else:
-        i = (int(num_samples) // 1024) + 1
-        new_num_samples = 1024 * i
+    # if int(num_samples) <= 1024:
+    #     new_num_samples = 1024
+    # else:
+    #     i = (int(num_samples) // 1024) + 1
+    #     new_num_samples = 1024 * i
 
-    new_sample_interval = int(t_length // new_num_samples)
-    new_t_length        = int(new_num_samples * new_sample_interval)
+    # new_sample_interval = int(t_length // new_num_samples)
+    # new_t_length        = int(new_num_samples * new_sample_interval)
 
     ts_buffer = ' ' * int(9 - len(str(int(t_length))))
 
