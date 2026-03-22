@@ -281,7 +281,7 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
             df_emr60  = df[mask]
             df_emr    = pd.concat([df_emr600, df_emr60])
             
-            # get EMR (MODAMS)
+            # get EMR (MODAMS, MEDUSAP, SEA)
             mask      = df['id'].str.contains('EMR'.format(season, year))
             df_modams = df[mask]
             
@@ -319,13 +319,22 @@ def paradigm_picks2csv(dir_paradigm_picks, dir_csv_picks, dir_csv_picks_remote, 
                 df_emr['paradigm_id'] = xs_emr['profile_id']
                 list_df.append(df_emr)
                 
-            # handle emr (modams) part
+            # handle emr (modams, meduasp, sea) part
             if len(df_modams) > 0:
                 xs_modams                = df_modams['id'].str.split('_', expand = True)
-                xs_modams.columns        = ['year', 'season_nom', 'flight_id', 'pulse', 'date', 'part']
-                df_modams['season']      = season
-                df_modams['profile_id']  = xs_modams['season_nom'] + '_' + xs_modams['flight_id'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
-                df_modams['paradigm_id'] = xs_modams['season_nom'] + '_' + xs_modams['flight_id'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
+                
+                if len(xs_modams.iloc[0].values) == 6:
+                    xs_modams.columns        = ['year', 'season_nom', 'flight_id', 'pulse', 'date', 'part']
+                    df_modams['season']      = season
+                    df_modams['profile_id']  = xs_modams['season_nom'] + '_' + xs_modams['flight_id'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
+                    df_modams['paradigm_id'] = xs_modams['season_nom'] + '_' + xs_modams['flight_id'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
+                
+                elif len(xs_modams.iloc[0].values) == 5:
+                    xs_modams.columns        = ['season_nom', 'season_nom2', 'pulse', 'date', 'part']
+                    df_modams['season']      = season
+                    df_modams['profile_id']  = xs_modams['season_nom'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
+                    df_modams['paradigm_id'] = xs_modams['season_nom'] + '_' + xs_modams['pulse'] + '_' + xs_modams['date'] + '_' + xs_modams['part']
+                
                 list_df.append(df_modams)
                 
             # handle accu part
